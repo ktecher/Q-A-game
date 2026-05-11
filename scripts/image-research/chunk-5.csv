@@ -1,0 +1,31 @@
+id,category_slug,difficulty,question_en,answer_en,image_url,source_page,notes
+6ab41f94-08fa-44c3-b061-cfff4246f2a6,f1,200,How many Formula 1 World Championships has Lewis Hamilton won?,Seven,https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Prime_Minister_Keir_Starmer_meets_Sir_Lewis_Hamilton_%2854566928382%29_%28cropped%29.jpg/640px-Prime_Minister_Keir_Starmer_meets_Sir_Lewis_Hamilton_%2854566928382%29_%28cropped%29.jpg,https://en.wikipedia.org/wiki/Lewis_Hamilton,Lewis Hamilton portrait — Wikipedia infobox
+f29833de-bebf-452c-baad-bacbe5144f32,f1,200,About how many laps does a typical Formula 1 race last?,50–70 laps (305 km total),,,text-based stat question — no specific driver/team image needed
+4690e1d8-1293-4ce3-9b02-94d1d30c4074,f1,400,In which country is the Monaco Grand Prix held?,Monaco,,,text/geography question — circuit map SVG not suitable as trivia image
+b3c20bdc-5405-4934-85af-9ee4b7d55016,f1,400,With which team did Michael Schumacher win most of his titles?,Ferrari,https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/A%C3%A9cio_Neves%2C_Michael_Schumacher_e_Didi_%28Cropped%29.jpg/640px-A%C3%A9cio_Neves%2C_Michael_Schumacher_e_Didi_%28Cropped%29.jpg,https://en.wikipedia.org/wiki/Michael_Schumacher,Michael Schumacher portrait — Wikipedia infobox; answer is Ferrari
+d7a449f9-ef0f-4af9-bc0c-611573e3d044,f1,600,Who was the first F1 World Champion in 1950?,Giuseppe Farina,https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Giuseppe_Farina_-_El_Gr%C3%A1fico_1750.jpg/640px-Giuseppe_Farina_-_El_Gr%C3%A1fico_1750.jpg,https://en.wikipedia.org/wiki/Giuseppe_Farina,Giuseppe Farina portrait — Wikipedia infobox
+edc22b63-10ce-4b9c-9143-df379d506de3,f1,600,Which Finnish driver won the F1 World Championship in 2007?,Kimi Räikkönen,https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/F12019_Schloss_Gabelhofen_%2822%29_%28cropped%29.jpg/640px-F12019_Schloss_Gabelhofen_%2822%29_%28cropped%29.jpg,https://en.wikipedia.org/wiki/Kimi_R%C3%A4ikk%C3%B6nen,Kimi Räikkönen portrait — Wikipedia infobox
+0db3f223-5ad4-462b-9b3e-8c636b7f26da,quran,200,What is the longest surah in the Quran?,Surah Al-Baqarah,,,text-based — no image needed
+28a5e1cd-6b6a-4dae-92b4-19c7eafcc3f3,quran,200,What is the shortest surah in the Quran?,Surah Al-Kawthar,,,text-based — no image needed
+910ccb98-caee-433f-940d-f1d64e4dbbb6,quran,400,What is the first surah of the Quran?,Surah Al-Fatihah,,,text-based — no image needed
+bddc5a92-28b6-472b-87a3-94237f4e1a34,quran,400,How many parts (juz') is the Quran divided into?,30 parts,,,text-based — no image needed
+13846461-d835-4e5b-8c23-c1655a8d016b,quran,600,How many verses are in Surah Al-Baqarah?,286 verses,,,text-based — no image needed
+35cd5888-7b9e-4b12-9661-f3df5a1cf2e4,quran,600,Which surah does not begin with the Bismillah?,Surah At-Tawbah,,,text-based — no image needed
+0f59f810-0171-425d-9876-2b4664614925,hadith,200,"What famous hadith begins with ""Actions are by intentions""?","The ""Actions by intentions"" hadith — first in Sahih al-Bukhari",,,no image — text-based
+6307593d-08fa-4c72-8038-da91785e0f43,hadith,200,"Which Imam compiled ""Sahih al-Bukhari""?",Imam Muhammad ibn Ismail al-Bukhari,,,no image — text-based
+3ddd176a-f75c-4a93-8fe0-2fe2085c3ec2,hadith,400,"Which Imam compiled ""Sunan al-Tirmidhi""?",Imam at-Tirmidhi,,,no image — text-based
+46bba319-c3eb-41b6-a187-4681de7173c8,hadith,400,What is considered the second most authentic hadith collection after Sahih al-Bukhari?,Sahih Muslim,,,no image — text-based
+0fc1e285-2365-4803-b189-9800fd3d3eb5,hadith,600,"How many books make up the ""Six Books"" of Hadith?",Six,,,no image — text-based
+4a60725f-4080-41b5-8c55-0c50d1d8d93d,hadith,600,"Which Imam compiled ""Sunan Abi Dawud""?",Imam Abu Dawud al-Sijistani,,,no image — text-based
+a1dd3450-c5e6-4ad7-824b-b18cb122ec6d,proverbs,200,"Complete the Arabic proverb: ""Fi al-haraka..."" (In motion...)",Baraka (blessing),,,text-based — no image needed
+aced4e9b-8870-4853-9a60-e8d297ca63f2,proverbs,200,"Complete the proverb: ""He who doesn't know the falcon...""",Will grill it,,,text-based — no image needed
+97301510-4c25-40b0-a6c5-7dacffefe23e,proverbs,400,"What does the proverb ""If you speak, let your words be better than your silence"" teach?",To speak only when speech is beneficial,,,text-based — no image needed
+b0915e86-490d-4d13-ace1-29416e1115ae,proverbs,400,"What does the proverb ""The neighbor before the house"" mean?",Choose a good neighbor before choosing a house,,,text-based — no image needed
+74bd21c4-db95-4dc2-b3f5-a71cddc7a2f9,proverbs,600,"Who composed: ""Every thing has a bane from its kind / Even iron is overcome by the file""?",Al-Mutanabbi,,,text-based — no image needed
+df2848f2-ad37-4993-8b2d-0ed9c494044f,proverbs,600,"Who composed the verse ""I am the one whose words even the blind have seen / and the deaf have heard""?",Al-Mutanabbi,,,text-based — no image needed
+cedeeb04-84af-46a4-a445-3e057bad6b26,dialects,200,"What does ""zain"" mean in Kuwaiti dialect?",Good / Nice,,,no image — dialect identification
+ddcea393-3dee-43b5-bb1f-26fe51afa3f5,dialects,200,"What does ""shlonak"" mean in Khaleeji (Gulf) dialect?",How are you?,,,no image — dialect identification
+8dd1880b-7429-4322-8319-6b3c899fd7b3,dialects,400,"What does ""halla'"" mean in Levantine dialect?",Now,,,no image — dialect identification
+ee8db5b6-39f3-498b-9aab-330586bc2924,dialects,400,"What does ""wayed"" mean in Kuwaiti dialect?",A lot / Very,,,no image — dialect identification
+0e8c7c21-85c0-4463-bc1c-7f62fa74b5d3,dialects,600,"What does ""khōsh"" mean in Khaleeji dialect?",Good / Nice,,,no image — dialect identification
+efee8c6f-936b-48c1-afef-5682f59553b6,dialects,600,"What does ""mashi"" mean in most Arabic dialects when responding to a request?",OK / Alright,,,no image — dialect identification
