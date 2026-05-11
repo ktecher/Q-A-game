@@ -1,5 +1,43 @@
-import { createContext, useContext, useReducer, useMemo } from 'react';
+import { createContext, useContext, useReducer, useMemo, useEffect } from 'react';
 import { getCategoryBySlug, pickRandomSix } from '../data/categories';
+
+// Bump when the persisted state shape changes in a non-backwards-compatible
+// way — old localStorage entries are then ignored on load.
+const STORAGE_KEY = 'uah.game_state';
+const STORAGE_VERSION = 1;
+
+function serializeState(state) {
+  return {
+    version: STORAGE_VERSION,
+    state: {
+      ...state,
+      picked: Array.from(state.picked),
+      challengeCells: Array.from(state.challengeCells),
+    },
+  };
+}
+
+function deserializeState(payload) {
+  if (!payload || payload.version !== STORAGE_VERSION) return null;
+  const s = payload.state;
+  if (!s || typeof s !== 'object') return null;
+  return {
+    ...s,
+    picked: new Set(s.picked ?? []),
+    challengeCells: new Set(s.challengeCells ?? []),
+  };
+}
+
+function loadStoredState() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return deserializeState(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
 
 /**
  * GameContext — single source of truth for an in-progress game.
@@ -292,8 +330,32 @@ function reducer(state, action) {
 
 const GameContext = createContext(null);
 
+function initState() {
+  const stored = loadStoredState();
+  // Only restore if a real game was in progress — an unstarted stored state
+  // is no different from a fresh init, and skipping the restore avoids
+  // surprising users with stale demo state.
+  if (stored && stored.started && !stored.gameOver) return stored;
+  return createInitialState();
+}
+
 export function GameProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, undefined, createInitialState);
+  const [state, dispatch] = useReducer(reducer, undefined, initState);
+
+  // Persist on every change. Reset/unstarted/finished games clear the slot
+  // so a new tab doesn't accidentally resume them.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (state.started && !state.gameOver) {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeState(state)));
+      } else {
+        window.localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      // Quota exceeded or storage disabled — in-memory state still works.
+    }
+  }, [state]);
 
   const value = useMemo(() => {
     const totalCells = 6 * ROW_VALUES.length;

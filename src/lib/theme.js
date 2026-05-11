@@ -1,6 +1,6 @@
 // Theme persistence + read/write helpers.
 // Theme is applied via `data-theme` attribute on <html>.
-// Supported values: 'dark' (default) | 'light'.
+// Supported values: 'dark' | 'light' (default).
 
 const STORAGE_KEY = 'uah.theme';
 
@@ -11,7 +11,7 @@ export function readTheme() {
   } catch {
     // ignore (private mode, etc.)
   }
-  return 'dark';
+  return 'light';
 }
 
 export function writeTheme(theme) {
