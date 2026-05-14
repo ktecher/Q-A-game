@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدينة أم الهيمان — Retro Arcade Gold</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400;500;600;700&family=Tajawal:wght@300;400;500;700;900&family=Press+Start+2P&family=Audiowide&family=Orbitron:wght@400;700;900&family=Inter:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+
+<style>
+/* ─── TOKENS ──────────────────────────────────────────── */
+:root {
+  --bg:           #0E0A1A;
+  --surface:      #1A1530;
+  --surface-2:    #221D3A;
+  --gold-e:       #FFD700;
+  --gold-m:       #C9A84C;
+  --gold-d:       #7A6420;
+  --cyan-e:       #00E5FF;
+  --cyan-dim:     rgba(0,229,255,0.15);
+  --magenta:      #FF2D92;
+  --magenta-dim:  rgba(255,45,146,0.15);
+  --cream:        #F5EBD7;
+  --muted:        rgba(245,235,215,0.4);
+
+  --shadow-gold:  0 0 8px #FFD70088, 0 0 24px #FFD70044, 0 0 48px #FFD70022;
+  --shadow-cyan:  0 0 8px #00E5FF88, 0 0 24px #00E5FF44;
+  --shadow-mag:   0 0 8px #FF2D9288, 0 0 24px #FF2D9244;
+  --glow-gold:    0 0 4px #FFD700, 0 0 12px #C9A84C88, 0 0 30px #7A642044;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: 'Tajawal', 'Inter', sans-serif;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ─── GLOBAL SCANLINES OVERLAY ─────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.04) 3px,
+    rgba(0,0,0,0.04) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ─── SECTION DIVIDERS ─────────────────────────────────── */
+.section-wrap {
+  position: relative;
+  border-bottom: 1px solid rgba(255,215,0,0.12);
+  padding: 60px 0 80px;
+}
+.section-label {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--gold-m);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--bg);
+  padding: 0 16px;
+  border: 1px solid var(--gold-d);
+  border-radius: 2px;
+  direction: ltr;
+}
+
+/* ─── TYPOGRAPHY ────────────────────────────────────────── */
+.font-kufi      { font-family: 'Reem Kufi', serif; }
+.font-tajawal   { font-family: 'Tajawal', sans-serif; }
+.font-arcade    { font-family: 'Press Start 2P', monospace; direction: ltr; unicode-bidi: isolate; }
+.font-audio     { font-family: 'Audiowide', sans-serif; direction: ltr; unicode-bidi: isolate; }
+.font-orbitron  { font-family: 'Orbitron', sans-serif; direction: ltr; unicode-bidi: isolate; }
+.font-inter     { font-family: 'Inter', sans-serif; direction: ltr; unicode-bidi: isolate; }
+
+/* ─── GOLD TEXT GLOW ────────────────────────────────────── */
+.text-gold-glow {
+  color: var(--gold-e);
+  text-shadow: 0 0 6px #FFD700, 0 0 18px #FFD70088, 0 0 40px #C9A84C55;
+}
+.text-cyan-glow {
+  color: var(--cyan-e);
+  text-shadow: 0 0 6px #00E5FF, 0 0 20px #00E5FF88;
+}
+.text-mag-glow {
+  color: var(--magenta);
+  text-shadow: 0 0 6px #FF2D92, 0 0 20px #FF2D9288;
+}
+
+/* ─── HERO NUMBER ───────────────────────────────────────── */
+.hero-num {
+  font-family: 'Audiowide', sans-serif;
+  font-size: clamp(56px, 8vw, 96px);
+  color: var(--gold-e);
+  text-shadow: var(--shadow-gold);
+  direction: ltr;
+  unicode-bidi: isolate;
+  line-height: 1;
+}
+
+/* ─── GOLD BORDER CARD ──────────────────────────────────── */
+.gold-card {
+  background: var(--surface);
+  border: 1px solid var(--gold-m);
+  border-radius: 4px;
+  position: relative;
+}
+.gold-card::before, .gold-card::after {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  border-color: var(--gold-e);
+  border-style: solid;
+}
+.gold-card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.gold-card::after  { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+
+.gold-card-bl::before, .gold-card-bl::after {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  border-color: var(--gold-e);
+  border-style: solid;
+}
+.gold-card-bl::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.gold-card-bl::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+/* ─── ARCADE BUTTON ─────────────────────────────────────── */
+.btn-arcade {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 32px;
+  border: 2px solid var(--gold-m);
+  background: linear-gradient(135deg, #2A2040 0%, #1A1530 100%);
+  color: var(--gold-e);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  text-decoration: none;
+  direction: ltr;
+  unicode-bidi: isolate;
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+}
+.btn-arcade:hover {
+  border-color: var(--cyan-e);
+  color: var(--cyan-e);
+  box-shadow: var(--shadow-cyan), inset 0 0 20px rgba(0,229,255,0.05);
+  transform: translateY(-2px);
+}
+.btn-arcade.magenta:hover {
+  border-color: var(--magenta);
+  color: var(--magenta);
+  box-shadow: var(--shadow-mag);
+}
+.btn-arcade.active-btn {
+  border-color: var(--cyan-e);
+  color: var(--cyan-e);
+  box-shadow: var(--shadow-cyan);
+}
+
+/* ─── SPARKLE PARTICLE ──────────────────────────────────── */
+.sparkle {
+  position: absolute;
+  pointer-events: none;
+  animation: sparkle-float 3s ease-in-out infinite;
+}
+.sparkle svg { fill: var(--gold-e); }
+
+@keyframes sparkle-float {
+  0%   { transform: translateY(0) scale(1) rotate(0deg); opacity: 0.7; }
+  50%  { transform: translateY(-20px) scale(1.2) rotate(180deg); opacity: 1; }
+  100% { transform: translateY(0) scale(1) rotate(360deg); opacity: 0.7; }
+}
+
+/* ambient drift sparkles */
+.drift-sparkle {
+  position: absolute;
+  pointer-events: none;
+  animation: drift 6s ease-in-out infinite;
+  opacity: 0;
+}
+@keyframes drift {
+  0%   { transform: translateY(60px) translateX(0) scale(0.5) rotate(0deg); opacity: 0; }
+  20%  { opacity: 0.8; }
+  80%  { opacity: 0.6; }
+  100% { transform: translateY(-60px) translateX(20px) scale(1.2) rotate(360deg); opacity: 0; }
+}
+
+/* ─── PULSE ANIMATIONS ──────────────────────────────────── */
+@keyframes pulse-cyan {
+  0%, 100% { box-shadow: 0 0 8px #00E5FF88, 0 0 20px #00E5FF44; }
+  50%       { box-shadow: 0 0 16px #00E5FF, 0 0 40px #00E5FF66, 0 0 60px #00E5FF22; }
+}
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 8px #FFD70088, 0 0 20px #FFD70044; }
+  50%       { box-shadow: 0 0 16px #FFD700, 0 0 40px #FFD70066; }
+}
+@keyframes pulse-mag {
+  0%, 100% { box-shadow: 0 0 8px #FF2D9288, 0 0 20px #FF2D9244; }
+  50%       { box-shadow: 0 0 16px #FF2D92, 0 0 40px #FF2D9266; }
+}
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+@keyframes score-count {
+  0%   { content: "800"; color: #FFD700; transform: scale(1); }
+  50%  { color: #00E5FF; transform: scale(1.08); }
+  100% { color: #FFD700; transform: scale(1); }
+}
+@keyframes timer-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.05); }
+}
+@keyframes burst-out {
+  0%   { transform: scale(0) rotate(0deg); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: scale(1) rotate(720deg); opacity: 0; }
+}
+@keyframes radial-burst {
+  0%   { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+}
+@keyframes float-confetti {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120px) rotate(360deg); opacity: 0; }
+}
+@keyframes winner-glow {
+  0%, 100% { text-shadow: 0 0 10px #FFD700, 0 0 30px #FFD700, 0 0 60px #C9A84C; }
+  50%       { text-shadow: 0 0 20px #FFD700, 0 0 60px #FFD700, 0 0 100px #C9A84C, 0 0 140px #7A6420; }
+}
+@keyframes slide-up {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─── KHATAM STAR ───────────────────────────────────────── */
+.khatam-star {
+  width: 48px; height: 48px;
+  animation: spin-slow 20s linear infinite;
+  opacity: 0.5;
+}
+
+/* ─── CONTAINER ─────────────────────────────────────────── */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ─── SCREEN INDICATOR LABEL ────────────────────────────── */
+.screen-id {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--gold-d);
+  letter-spacing: 0.15em;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ==========================================================
+   SCREEN 1 · HOME
+   ========================================================== */
+#screen-home {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 40%, rgba(201,168,76,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 20% 80%, rgba(0,229,255,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.home-title-ar {
+  font-family: 'Reem Kufi', serif;
+  font-size: clamp(48px, 9vw, 90px);
+  font-weight: 700;
+  color: var(--gold-e);
+  text-shadow: 0 0 8px #FFD700, 0 0 24px #FFD70088, 0 0 60px #C9A84C44, 0 0 100px #7A642022;
+  line-height: 1.1;
+  text-align: center;
+}
+.home-title-en {
+  font-family: 'Audiowide', sans-serif;
+  font-size: clamp(14px, 2.5vw, 26px);
+  color: var(--cyan-e);
+  text-shadow: var(--shadow-cyan);
+  letter-spacing: 0.2em;
+  text-align: center;
+  direction: ltr;
+  unicode-bidi: isolate;
+  margin-top: 6px;
+}
+.home-tagline {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--gold-m);
+  letter-spacing: 0.15em;
+  text-align: center;
+  direction: ltr;
+  unicode-bidi: isolate;
+  margin-top: 20px;
+  opacity: 0.8;
+}
+.home-divider {
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-m), transparent);
+  margin: 20px auto;
+}
+.home-khatam {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+}
+
+/* blink insert coin */
+.blink {
+  animation: blink-cursor 1.2s ease-in-out infinite;
+}
+
+/* ==========================================================
+   SCREEN 2 · SETUP
+   ========================================================== */
+#screen-setup {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.player-slot {
+  border: 2px solid var(--gold-d);
+  background: var(--surface);
+  border-radius: 4px;
+  padding: 24px;
+  position: relative;
+  transition: all 0.3s;
+}
+.player-slot.cyan  { border-color: var(--cyan-e); box-shadow: 0 0 12px rgba(0,229,255,0.2); }
+.player-slot.magenta { border-color: var(--magenta); box-shadow: 0 0 12px rgba(255,45,146,0.2); }
+
+.player-avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  border: 2px solid;
+  flex-shrink: 0;
+}
+.player-avatar.cyan    { border-color: var(--cyan-e); box-shadow: 0 0 12px rgba(0,229,255,0.4); background: rgba(0,229,255,0.08); }
+.player-avatar.magenta { border-color: var(--magenta); box-shadow: 0 0 12px rgba(255,45,146,0.4); background: rgba(255,45,146,0.08); }
+
+.slot-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  direction: ltr;
+  unicode-bidi: isolate;
+  letter-spacing: 0.1em;
+}
+.slot-label.cyan    { color: var(--cyan-e); }
+.slot-label.magenta { color: var(--magenta); }
+
+.arcade-input {
+  background: var(--bg);
+  border: 1px solid var(--gold-d);
+  border-radius: 2px;
+  padding: 10px 14px;
+  color: var(--cream);
+  font-family: 'Tajawal', sans-serif;
+  font-size: 16px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.arcade-input:focus { border-color: var(--gold-m); }
+
+.cat-tile {
+  background: var(--surface);
+  border: 1px solid var(--gold-d);
+  border-radius: 3px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Reem Kufi', serif;
+  font-size: 14px;
+  color: var(--cream);
+  position: relative;
+}
+.cat-tile:hover, .cat-tile.active {
+  border-color: var(--gold-e);
+  color: var(--gold-e);
+  box-shadow: 0 0 8px rgba(255,215,0,0.25);
+  transform: translateY(-2px);
+}
+.cat-tile.active { background: rgba(255,215,0,0.06); }
+
+.diff-btn {
+  border: 1px solid var(--gold-d);
+  background: var(--surface);
+  border-radius: 2px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.diff-btn:hover { border-color: var(--gold-m); color: var(--gold-m); }
+.diff-btn.active { border-color: var(--gold-e); color: var(--gold-e); background: rgba(255,215,0,0.06); }
+
+.timer-btn {
+  border: 1px solid var(--gold-d);
+  background: var(--surface);
+  border-radius: 2px;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-family: 'Audiowide', sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  transition: all 0.2s;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.timer-btn:hover { border-color: var(--cyan-e); color: var(--cyan-e); }
+.timer-btn.active { border-color: var(--cyan-e); color: var(--cyan-e); box-shadow: 0 0 8px rgba(0,229,255,0.2); }
+
+/* ==========================================================
+   SCREEN 3 · BOARD
+   ========================================================== */
+#screen-board {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* scoreboard */
+.scoreboard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--gold-d);
+  border-radius: 4px;
+  padding: 16px 20px;
+  position: relative;
+}
+.score-tile {
+  flex: 1;
+  text-align: center;
+  border: 2px solid transparent;
+  border-radius: 3px;
+  padding: 12px 16px;
+  transition: all 0.3s;
+  position: relative;
+}
+.score-tile.team-cyan {
+  border-color: var(--cyan-e);
+  animation: pulse-cyan 2s ease-in-out infinite;
+  background: rgba(0,229,255,0.04);
+}
+.score-tile.team-magenta {
+  border-color: var(--magenta);
+  background: rgba(255,45,146,0.04);
+}
+.score-name {
+  font-family: 'Tajawal', sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.score-num {
+  font-family: 'Audiowide', sans-serif;
+  font-size: 44px;
+  line-height: 1;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.score-num.cyan  { color: var(--cyan-e); text-shadow: var(--shadow-cyan); }
+.score-num.magenta { color: var(--magenta); text-shadow: var(--shadow-mag); }
+.score-num.counting {
+  animation: score-count-up 0.8s ease-out;
+}
+@keyframes score-count-up {
+  0%   { transform: scale(1.2) translateY(-4px); color: var(--gold-e); text-shadow: var(--shadow-gold); }
+  60%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+.vs-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--gold-m);
+  direction: ltr;
+  unicode-bidi: isolate;
+  flex-shrink: 0;
+}
+.round-badge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--gold-d);
+  letter-spacing: 0.1em;
+  direction: ltr;
+  unicode-bidi: isolate;
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* category headers */
+.cat-header {
+  text-align: center;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--gold-d);
+}
+.cat-header-ar {
+  font-family: 'Reem Kufi', serif;
+  font-size: 15px;
+  color: var(--gold-e);
+  line-height: 1.2;
+}
+.cat-header-en {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  color: var(--gold-m);
+  letter-spacing: 0.1em;
+  direction: ltr;
+  unicode-bidi: isolate;
+  margin-top: 3px;
+}
+
+/* grid cells */
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.cat-headers-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.board-cell {
+  aspect-ratio: 1 / 0.65;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 1px solid var(--gold-d);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  overflow: hidden;
+}
+.board-cell:hover {
+  transform: translateY(-3px);
+  border-color: var(--gold-e);
+  box-shadow: 0 4px 16px rgba(255,215,0,0.2);
+}
+.cell-value {
+  font-family: 'Audiowide', sans-serif;
+  font-size: clamp(18px, 2.5vw, 28px);
+  line-height: 1;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.cell-200 .cell-value { color: var(--gold-m); }
+.cell-400 { border-color: var(--gold-m); }
+.cell-400 .cell-value { color: var(--gold-e); }
+.cell-600 {
+  border-color: var(--magenta);
+  box-shadow: 0 0 8px rgba(255,45,146,0.25), inset 0 0 20px rgba(255,45,146,0.05);
+}
+.cell-600 .cell-value { color: var(--gold-e); text-shadow: var(--shadow-gold); }
+
+/* played cell */
+.board-cell.played {
+  opacity: 0.3;
+  cursor: default;
+  pointer-events: none;
+}
+.board-cell.played::after {
+  content: '✕';
+  position: absolute;
+  font-size: 24px;
+  color: var(--gold-d);
+}
+
+/* bonus cell */
+.board-cell.bonus {
+  border-color: var(--magenta);
+  animation: pulse-mag 2s ease-in-out infinite;
+}
+.bonus-q {
+  font-family: 'Audiowide', sans-serif;
+  font-size: 28px;
+  color: var(--magenta);
+  text-shadow: var(--shadow-mag);
+}
+
+/* 600-pt sparkle children */
+.cell-sparkle {
+  position: absolute;
+  pointer-events: none;
+  animation: cell-particle 2s ease-in-out infinite;
+  opacity: 0;
+}
+@keyframes cell-particle {
+  0%   { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  30%  { opacity: 0.7; }
+  70%  { opacity: 0.5; }
+  100% { opacity: 0; transform: scale(1.5) rotate(180deg); }
+}
+
+/* ==========================================================
+   SCREEN 4 · QUESTION
+   ========================================================== */
+#screen-question {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* circular timer */
+.timer-wrap {
+  position: relative;
+  width: 140px; height: 140px;
+  flex-shrink: 0;
+}
+.timer-ring {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+.timer-ring circle {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 408;
+  transition: stroke-dashoffset 1s linear, stroke 0.5s;
+}
+.timer-ring .track  { stroke: rgba(255,255,255,0.08); stroke-dashoffset: 0; }
+.timer-ring .fill   { stroke: #FFB300; stroke-dashoffset: 204; } /* 5s amber */
+.timer-num {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Audiowide', sans-serif;
+  font-size: 48px;
+  color: #FFB300;
+  text-shadow: 0 0 8px #FFB300, 0 0 24px #FFB30088;
+  direction: ltr;
+  animation: timer-pulse 0.8s ease-in-out infinite;
+}
+.timer-label {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #FFB300;
+  white-space: nowrap;
+  direction: ltr;
+  letter-spacing: 0.1em;
+}
+
+/* question card */
+.question-card {
+  background: var(--surface);
+  border: 2px solid var(--gold-m);
+  border-radius: 4px;
+  padding: 32px;
+  position: relative;
+}
+/* four-corner kufi motif */
+.corner-motif {
+  position: absolute;
+  width: 28px; height: 28px;
+  pointer-events: none;
+}
+.corner-motif.tl { top: -1px; left: -1px; }
+.corner-motif.tr { top: -1px; right: -1px; transform: scaleX(-1); }
+.corner-motif.bl { bottom: -1px; left: -1px; transform: scaleY(-1); }
+.corner-motif.br { bottom: -1px; right: -1px; transform: scale(-1); }
+
+.q-text-ar {
+  font-family: 'Reem Kufi', serif;
+  font-size: clamp(22px, 3.5vw, 34px);
+  color: var(--cream);
+  line-height: 1.6;
+  text-align: center;
+}
+.q-text-en {
+  font-family: 'Inter', sans-serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--muted);
+  text-align: center;
+  direction: ltr;
+  unicode-bidi: isolate;
+  margin-top: 10px;
+}
+.img-placeholder {
+  width: 100%; max-width: 280px;
+  aspect-ratio: 16/10;
+  background: var(--surface-2);
+  border: 2px solid var(--gold-d);
+  border-radius: 3px;
+  margin: 16px auto 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'Press Start 2P', monospace;
+  direction: ltr;
+  position: relative;
+}
+
+/* lifeline power-up cards */
+.lifeline-card {
+  background: var(--surface);
+  border: 1px solid var(--gold-d);
+  border-radius: 3px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+  transition: all 0.2s;
+  flex: 1;
+}
+.lifeline-card:hover {
+  border-color: var(--gold-e);
+  box-shadow: 0 0 12px rgba(255,215,0,0.25);
+  transform: translateY(-3px);
+}
+.lifeline-icon {
+  font-size: 22px;
+}
+.lifeline-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: var(--gold-m);
+  letter-spacing: 0.08em;
+  direction: ltr;
+  text-align: center;
+}
+
+/* award buttons */
+.award-btn {
+  flex: 1;
+  padding: 18px 24px;
+  border: 2px solid;
+  border-radius: 3px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  direction: ltr;
+}
+.award-btn .award-team { font-size: 12px; }
+.award-btn.cyan   { border-color: var(--cyan-e); color: var(--cyan-e); background: rgba(0,229,255,0.05); }
+.award-btn.cyan:hover { background: rgba(0,229,255,0.12); box-shadow: var(--shadow-cyan); transform: translateY(-2px); }
+.award-btn.magenta { border-color: var(--magenta); color: var(--magenta); background: rgba(255,45,146,0.05); }
+.award-btn.magenta:hover { background: rgba(255,45,146,0.12); box-shadow: var(--shadow-mag); transform: translateY(-2px); }
+.pass-btn {
+  padding: 14px 28px;
+  border: 1px solid var(--gold-d);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  direction: ltr;
+}
+.pass-btn:hover { border-color: var(--gold-m); color: var(--gold-m); }
+
+/* hover sparkles snapshot */
+.btn-sparkle-wrap { position: relative; display: inline-block; }
+.hover-sparkle {
+  position: absolute;
+  pointer-events: none;
+  animation: sparkle-pop 1.5s ease-in-out infinite;
+}
+@keyframes sparkle-pop {
+  0%   { transform: scale(0) rotate(0deg); opacity: 0; }
+  30%  { opacity: 1; }
+  80%  { opacity: 0.6; }
+  100% { transform: scale(1.4) rotate(180deg); opacity: 0; }
+}
+
+/* ==========================================================
+   SCREEN 5 · RESULTS
+   ========================================================== */
+#screen-results {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.results-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(201,168,76,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.game-over-banner {
+  font-family: 'Reem Kufi', serif;
+  font-size: clamp(52px, 9vw, 100px);
+  font-weight: 700;
+  color: var(--gold-e);
+  text-align: center;
+  animation: winner-glow 2s ease-in-out infinite;
+  line-height: 1;
+}
+.winner-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--cyan-e);
+  text-align: center;
+  direction: ltr;
+  letter-spacing: 0.2em;
+  margin-top: 8px;
+  text-shadow: var(--shadow-cyan);
+}
+.high-score-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--gold-m);
+  direction: ltr;
+  letter-spacing: 0.15em;
+  text-align: center;
+}
+.winning-score {
+  font-family: 'Audiowide', sans-serif;
+  font-size: clamp(72px, 12vw, 120px);
+  color: var(--gold-e);
+  text-shadow: 0 0 8px #FFD700, 0 0 24px #FFD700, 0 0 60px #C9A84C, 0 0 100px #7A6420;
+  line-height: 1;
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: center;
+  animation: winner-glow 2.5s ease-in-out infinite;
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--gold-d);
+  border-radius: 4px;
+  padding: 20px 24px;
+  position: relative;
+}
+.rank-row.rank-1 {
+  border-color: var(--gold-e);
+  box-shadow: var(--shadow-gold);
+}
+.rank-num {
+  font-family: 'Audiowide', sans-serif;
+  font-size: 36px;
+  color: var(--gold-e);
+  text-shadow: var(--shadow-gold);
+  direction: ltr;
+  min-width: 40px;
+}
+.rank-num.second { color: var(--muted); text-shadow: none; }
+.rank-score {
+  font-family: 'Audiowide', sans-serif;
+  font-size: 40px;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.rank-score.cyan    { color: var(--cyan-e); text-shadow: var(--shadow-cyan); }
+.rank-score.magenta { color: var(--magenta); text-shadow: var(--shadow-mag); }
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,215,0,0.1);
+}
+.stat-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--gold-m);
+  direction: ltr;
+  letter-spacing: 0.1em;
+}
+.stat-val {
+  font-family: 'Audiowide', sans-serif;
+  font-size: 18px;
+  color: var(--gold-e);
+  direction: ltr;
+}
+
+/* radial burst */
+.burst-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+}
+.burst-particle {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold-e);
+  animation: burst-radial 2s ease-out infinite;
+  transform-origin: 0 0;
+}
+@keyframes burst-radial {
+  0%   { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+  70%  { opacity: 0.8; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); opacity: 0; }
+}
+
+/* confetti */
+.confetti-piece {
+  position: absolute;
+  width: 8px; height: 8px;
+  animation: float-confetti var(--dur) ease-in infinite;
+  animation-delay: var(--delay);
+  opacity: 0;
+}
+
+/* play again button */
+.play-again-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: var(--bg);
+  background: var(--cyan-e);
+  border: none;
+  padding: 18px 40px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  direction: ltr;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+  box-shadow: 0 0 20px rgba(0,229,255,0.5), 0 0 40px rgba(0,229,255,0.3);
+  transition: all 0.2s;
+}
+.play-again-btn:hover {
+  background: var(--gold-e);
+  box-shadow: var(--shadow-gold);
+  transform: scale(1.03);
+}
+
+/* ─── UTIL ──────────────────────────────────────────────── */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.items-start  { align-items: flex-start; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.gap-6 { gap: 24px; }
+.gap-8 { gap: 32px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mt-8 { margin-top: 32px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.w-full { width: 100%; }
+.text-center { text-align: center; }
+.relative { position: relative; }
+.overflow-hidden { overflow: hidden; }
+
+.setup-section-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--gold-d);
+  letter-spacing: 0.15em;
+  direction: ltr;
+  unicode-bidi: isolate;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+
+<!-- ======================================================
+     SCREEN 1 · HOME
+     ====================================================== -->
+<div id="screen-home" class="section-wrap">
+  <div class="section-label">SCREEN 01 · HOME / SIGN-IN</div>
+
+  <!-- Ambient bg gradient -->
+  <div class="home-bg-gradient"></div>
+
+  <!-- Ambient gold drift sparkles -->
+  <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+    <!-- 10 drifting sparkle SVGs -->
+    <div class="drift-sparkle" style="left:8%;top:70%;animation-duration:5s;animation-delay:0s;">
+      <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,0 7.2,4.8 12,6 7.2,7.2 6,12 4.8,7.2 0,6 4.8,4.8" fill="#FFD700" opacity="0.8"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:20%;top:60%;animation-duration:7s;animation-delay:1s;">
+      <svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#C9A84C" opacity="0.6"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:35%;top:80%;animation-duration:6s;animation-delay:2s;">
+      <svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,0 6,4 10,5 6,6 5,10 4,6 0,5 4,4" fill="#FFD700" opacity="0.7"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:55%;top:75%;animation-duration:8s;animation-delay:0.5s;">
+      <svg width="6" height="6" viewBox="0 0 6 6"><polygon points="3,0 3.6,2.4 6,3 3.6,3.6 3,6 2.4,3.6 0,3 2.4,2.4" fill="#C9A84C" opacity="0.5"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:70%;top:65%;animation-duration:5.5s;animation-delay:3s;">
+      <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,0 7.2,4.8 12,6 7.2,7.2 6,12 4.8,7.2 0,6 4.8,4.8" fill="#FFD700" opacity="0.75"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:82%;top:72%;animation-duration:6.5s;animation-delay:1.5s;">
+      <svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#C9A84C" opacity="0.6"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:15%;top:50%;animation-duration:9s;animation-delay:4s;">
+      <svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,0 6,4 10,5 6,6 5,10 4,6 0,5 4,4" fill="#FFD700" opacity="0.55"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:48%;top:55%;animation-duration:7.5s;animation-delay:2.5s;">
+      <svg width="7" height="7" viewBox="0 0 7 7"><polygon points="3.5,0 4.2,2.8 7,3.5 4.2,4.2 3.5,7 2.8,4.2 0,3.5 2.8,2.8" fill="#C9A84C" opacity="0.65"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:90%;top:40%;animation-duration:5s;animation-delay:0.8s;">
+      <svg width="9" height="9" viewBox="0 0 9 9"><polygon points="4.5,0 5.4,3.6 9,4.5 5.4,5.4 4.5,9 3.6,5.4 0,4.5 3.6,3.6" fill="#FFD700" opacity="0.7"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:60%;top:85%;animation-duration:6s;animation-delay:3.5s;">
+      <svg width="11" height="11" viewBox="0 0 11 11"><polygon points="5.5,0 6.6,4.4 11,5.5 6.6,6.6 5.5,11 4.4,6.6 0,5.5 4.4,4.4" fill="#FFD700" opacity="0.8"/></svg>
+    </div>
+  </div>
+
+  <!-- Khatam star — corner accent -->
+  <div class="home-khatam">
+    <svg class="khatam-star" viewBox="0 0 100 100" fill="none">
+      <polygon points="50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35" fill="none" stroke="#FFD700" stroke-width="1.5" opacity="0.7"/>
+      <polygon points="50,20 57,40 80,40 62,53 69,75 50,62 31,75 38,53 20,40 43,40" fill="none" stroke="#C9A84C" stroke-width="1" opacity="0.5"/>
+      <circle cx="50" cy="50" r="8" fill="none" stroke="#FFD700" stroke-width="1" opacity="0.4"/>
+    </svg>
+  </div>
+
+  <div class="container" style="text-align:center;position:relative;z-index:1;">
+
+    <!-- Blink insert coin top -->
+    <div class="font-arcade blink" style="font-size:7px;color:var(--gold-d);letter-spacing:0.2em;direction:ltr;unicode-bidi:isolate;margin-bottom:24px;">
+      ▶ INSERT COIN ◀
+    </div>
+
+    <!-- Main Arabic title -->
+    <div class="home-title-ar">مدينة أم الهيمان</div>
+
+    <!-- English subtitle -->
+    <div class="home-title-en">UMM AL HAYMAN</div>
+
+    <div class="home-divider"></div>
+
+    <!-- Tagline -->
+    <div class="home-tagline">FAMILY TRIVIA &nbsp;·&nbsp; 1 CREDIT &nbsp;·&nbsp; 2 PLAYERS</div>
+
+    <!-- CTA Buttons -->
+    <div class="flex justify-center gap-4 mt-8" style="flex-wrap:wrap;">
+      <!-- Sign In -->
+      <div class="btn-sparkle-wrap">
+        <button class="btn-arcade active-btn">
+          <span>تسجيل الدخول</span>
+          <span style="font-size:8px;font-family:'Press Start 2P',monospace;direction:ltr;unicode-bidi:isolate;">SIGN IN</span>
+        </button>
+        <!-- Hover sparkles snapshot -->
+        <div class="hover-sparkle" style="top:-10px;left:-6px;animation-delay:0s;">
+          <svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,0 6,4 10,5 6,6 5,10 4,6 0,5 4,4" fill="#00E5FF"/></svg>
+        </div>
+        <div class="hover-sparkle" style="top:-6px;right:-8px;animation-delay:0.4s;">
+          <svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#FFD700"/></svg>
+        </div>
+        <div class="hover-sparkle" style="bottom:-8px;left:20%;animation-delay:0.7s;">
+          <svg width="7" height="7" viewBox="0 0 7 7"><polygon points="3.5,0 4.2,2.8 7,3.5 4.2,4.2 3.5,7 2.8,4.2 0,3.5 2.8,2.8" fill="#00E5FF"/></svg>
+        </div>
+        <div class="hover-sparkle" style="top:50%;right:-14px;animation-delay:0.2s;">
+          <svg width="9" height="9" viewBox="0 0 9 9"><polygon points="4.5,0 5.4,3.6 9,4.5 5.4,5.4 4.5,9 3.6,5.4 0,4.5 3.6,3.6" fill="#FFD700"/></svg>
+        </div>
+      </div>
+
+      <button class="btn-arcade">
+        <span>إنشاء حساب</span>
+        <span style="font-size:8px;font-family:'Press Start 2P',monospace;direction:ltr;unicode-bidi:isolate;">SIGN UP</span>
+      </button>
+
+      <button class="btn-arcade" style="border-color:var(--gold-d);color:var(--muted);">
+        <span style="font-size:12px;font-family:'Tajawal',sans-serif;">دخول كضيف</span>
+        <span style="font-size:7px;font-family:'Press Start 2P',monospace;direction:ltr;unicode-bidi:isolate;">GUEST MODE</span>
+      </button>
+    </div>
+
+    <div class="mt-8" style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--gold-d);letter-spacing:0.1em;direction:ltr;unicode-bidi:isolate;">
+      © 2026 UMM AL HAYMAN &nbsp;·&nbsp; ALL RIGHTS RESERVED &nbsp;·&nbsp; <span style="color:var(--gold-m);">v1.0.0</span>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     SCREEN 2 · SETUP
+     ====================================================== -->
+<div id="screen-setup" class="section-wrap">
+  <div class="section-label">SCREEN 02 · GAME SETUP</div>
+
+  <div class="container">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div class="font-kufi" style="font-size:36px;color:var(--gold-e);text-shadow:var(--glow-gold);">إعداد اللعبة</div>
+      <div class="font-arcade" style="font-size:8px;color:var(--cyan-e);direction:ltr;letter-spacing:0.2em;margin-top:6px;">GAME SETUP · SELECT YOUR OPTIONS</div>
+    </div>
+
+    <!-- Player Slots -->
+    <div class="flex gap-6" style="flex-wrap:wrap;margin-bottom:40px;">
+      <!-- P1 Cyan -->
+      <div class="player-slot cyan" style="flex:1;min-width:280px;">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="player-avatar cyan">🎮</div>
+          <div>
+            <div class="slot-label cyan">PLAYER 1</div>
+            <div class="font-tajawal" style="font-size:12px;color:var(--muted);margin-top:2px;">الفريق الأول</div>
+          </div>
+          <div style="margin-right:auto;">
+            <div style="width:14px;height:14px;border-radius:50%;background:var(--cyan-e);box-shadow:var(--shadow-cyan);"></div>
+          </div>
+        </div>
+        <input class="arcade-input" type="text" placeholder="اسم الفريق..." value="فريق البحر" style="border-color:rgba(0,229,255,0.4);" dir="rtl">
+        <div style="margin-top:10px;font-family:'Press Start 2P',monospace;font-size:6px;color:var(--cyan-e);direction:ltr;letter-spacing:0.1em;">
+          COLOR: ELECTRIC CYAN &nbsp; ■ LOCKED
+        </div>
+      </div>
+
+      <!-- VS divider -->
+      <div class="flex items-center justify-center" style="flex-shrink:0;padding:0 8px;">
+        <div>
+          <div class="font-arcade" style="font-size:16px;color:var(--gold-m);">VS</div>
+          <div style="width:1px;height:60px;background:linear-gradient(180deg,transparent,var(--gold-d),transparent);margin:8px auto;"></div>
+        </div>
+      </div>
+
+      <!-- P2 Magenta -->
+      <div class="player-slot magenta" style="flex:1;min-width:280px;">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="player-avatar magenta">🕹️</div>
+          <div>
+            <div class="slot-label magenta">PLAYER 2</div>
+            <div class="font-tajawal" style="font-size:12px;color:var(--muted);margin-top:2px;">الفريق الثاني</div>
+          </div>
+          <div style="margin-right:auto;">
+            <div style="width:14px;height:14px;border-radius:50%;background:var(--magenta);box-shadow:var(--shadow-mag);"></div>
+          </div>
+        </div>
+        <input class="arcade-input" type="text" placeholder="اسم الفريق..." value="فريق الصحراء" style="border-color:rgba(255,45,146,0.4);" dir="rtl">
+        <div style="margin-top:10px;font-family:'Press Start 2P',monospace;font-size:6px;color:var(--magenta);direction:ltr;letter-spacing:0.1em;">
+          COLOR: NEON MAGENTA &nbsp; ■ LOCKED
+        </div>
+      </div>
+    </div>
+
+    <!-- Category picker -->
+    <div style="margin-bottom:32px;">
+      <div class="setup-section-title">CATEGORIES · اختر الفئات</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">
+        <div class="cat-tile active">🏛️<br>تاريخ الكويت<br><span style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">Kuwait History</span></div>
+        <div class="cat-tile active">🌊<br>البيئة والطبيعة<br><span style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">Nature & Sea</span></div>
+        <div class="cat-tile active">🎭<br>الثقافة والفنون<br><span style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">Culture & Arts</span></div>
+        <div class="cat-tile active">🏙️<br>مدن الكويت<br><span style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">Cities & Places</span></div>
+        <div class="cat-tile">🍽️<br>الطعام التراثي<br><span style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">Heritage Food</span></div>
+        <div class="cat-tile">⚽<br>الرياضة<br><span style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">Sports</span></div>
+        <div class="cat-tile active">👨‍👩‍👧<br>العائلة والمجتمع<br><span style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">Family & Society</span></div>
+        <div class="cat-tile">📚<br>الأدب والشعر<br><span style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">Literature</span></div>
+      </div>
+    </div>
+
+    <!-- Difficulty + Timer row -->
+    <div class="flex gap-8" style="flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;">
+        <div class="setup-section-title">DIFFICULTY · الصعوبة</div>
+        <div class="flex gap-3" style="flex-wrap:wrap;">
+          <button class="diff-btn">NORMAL</button>
+          <button class="diff-btn active">HARD</button>
+          <button class="diff-btn" style="border-color:var(--magenta);color:var(--magenta);">NIGHTMARE</button>
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <div class="setup-section-title">TIMER · المؤقت</div>
+        <div class="flex gap-3">
+          <button class="timer-btn">20s</button>
+          <button class="timer-btn active">30s</button>
+          <button class="timer-btn">45s</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start button -->
+    <div style="text-align:center;margin-top:40px;">
+      <button class="btn-arcade" style="font-size:12px;padding:18px 48px;border-color:var(--gold-e);background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(201,168,76,0.05));box-shadow:var(--shadow-gold);">
+        ابدأ اللعبة &nbsp; START GAME
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     SCREEN 3 · BOARD
+     ====================================================== -->
+<div id="screen-board" class="section-wrap">
+  <div class="section-label">SCREEN 03 · GAME BOARD</div>
+
+  <!-- Ambient background drift -->
+  <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+    <div class="drift-sparkle" style="left:5%;top:40%;animation-duration:8s;animation-delay:1s;">
+      <svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,0 6,4 10,5 6,6 5,10 4,6 0,5 4,4" fill="#FFD700" opacity="0.5"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:92%;top:60%;animation-duration:6s;animation-delay:3s;">
+      <svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#C9A84C" opacity="0.6"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:50%;top:80%;animation-duration:7s;animation-delay:0s;">
+      <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,0 7.2,4.8 12,6 7.2,7.2 6,12 4.8,7.2 0,6 4.8,4.8" fill="#FFD700" opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <div class="container" style="position:relative;z-index:1;">
+
+    <!-- Scoreboard -->
+    <div class="scoreboard mb-6" style="position:relative;">
+      <div class="round-badge" style="position:static;transform:none;margin-bottom:4px;">
+        <span style="font-size:7px;font-family:'Press Start 2P',monospace;color:var(--gold-d);direction:ltr;letter-spacing:0.1em;">TURN 4 · ROUND 2</span>
+      </div>
+
+      <div style="width:100%;display:flex;align-items:center;gap:12px;">
+        <!-- Team 1 active -->
+        <div class="score-tile team-cyan" style="flex:1;">
+          <div class="flex items-center gap-2 justify-center mb-2">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--cyan-e);box-shadow:0 0 6px var(--cyan-e);"></div>
+            <div class="font-tajawal" style="font-size:14px;color:var(--cyan-e);">فريق البحر</div>
+            <div class="font-arcade" style="font-size:6px;color:var(--cyan-e);direction:ltr;">▶ ACTIVE</div>
+          </div>
+          <!-- Score mid count-up animation snapshot: 800→1200 -->
+          <div class="score-num cyan counting" style="position:relative;">
+            1200
+            <div style="position:absolute;top:-8px;right:-8px;font-family:'Press Start 2P',monospace;font-size:6px;color:var(--gold-e);direction:ltr;animation:blink-cursor 0.8s infinite;">+400</div>
+          </div>
+          <div class="font-arcade" style="font-size:6px;color:var(--cyan-e);margin-top:4px;direction:ltr;letter-spacing:0.1em;">POINTS</div>
+        </div>
+
+        <div style="text-align:center;flex-shrink:0;">
+          <div class="font-arcade" style="font-size:14px;color:var(--gold-m);">VS</div>
+          <div style="width:1px;height:30px;background:linear-gradient(180deg,transparent,var(--gold-d),transparent);margin:4px auto;"></div>
+        </div>
+
+        <!-- Team 2 -->
+        <div class="score-tile team-magenta" style="flex:1;">
+          <div class="flex items-center gap-2 justify-center mb-2">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--magenta);box-shadow:0 0 6px var(--magenta);"></div>
+            <div class="font-tajawal" style="font-size:14px;color:var(--magenta);">فريق الصحراء</div>
+          </div>
+          <div class="score-num magenta">800</div>
+          <div class="font-arcade" style="font-size:6px;color:var(--magenta);margin-top:4px;direction:ltr;letter-spacing:0.1em;">POINTS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category headers row -->
+    <div class="cat-headers-grid">
+      <div class="cat-header"><div class="cat-header-ar">التاريخ</div><div class="cat-header-en">HISTORY</div></div>
+      <div class="cat-header"><div class="cat-header-ar">البيئة</div><div class="cat-header-en">NATURE</div></div>
+      <div class="cat-header"><div class="cat-header-ar">الثقافة</div><div class="cat-header-en">CULTURE</div></div>
+      <div class="cat-header"><div class="cat-header-ar">المدن</div><div class="cat-header-en">CITIES</div></div>
+      <div class="cat-header"><div class="cat-header-ar">الطعام</div><div class="cat-header-en">FOOD</div></div>
+      <div class="cat-header"><div class="cat-header-ar">العائلة</div><div class="cat-header-en">FAMILY</div></div>
+    </div>
+
+    <!-- Board grid — 6 rows × 6 cols -->
+    <!-- Row 200 -->
+    <div class="board-grid" style="margin-bottom:6px;">
+      <div class="board-cell cell-200 played"><div class="cell-value">200</div></div>
+      <div class="board-cell cell-200"><div class="cell-value">200</div></div>
+      <div class="board-cell cell-200 played"><div class="cell-value">200</div></div>
+      <div class="board-cell cell-200"><div class="cell-value">200</div></div>
+      <div class="board-cell cell-200 played"><div class="cell-value">200</div></div>
+      <div class="board-cell cell-200"><div class="cell-value">200</div></div>
+    </div>
+    <!-- Row 200 b -->
+    <div class="board-grid" style="margin-bottom:6px;">
+      <div class="board-cell cell-200"><div class="cell-value">200</div></div>
+      <div class="board-cell cell-200 played"><div class="cell-value">200</div></div>
+      <div class="board-cell cell-200"><div class="cell-value">200</div></div>
+      <div class="board-cell cell-200 played"><div class="cell-value">200</div></div>
+      <div class="board-cell cell-200"><div class="cell-value">200</div></div>
+      <div class="board-cell cell-200 played"><div class="cell-value">200</div></div>
+    </div>
+    <!-- Row 400 -->
+    <div class="board-grid" style="margin-bottom:6px;">
+      <div class="board-cell cell-400 played"><div class="cell-value">400</div></div>
+      <div class="board-cell cell-400"><div class="cell-value">400</div></div>
+      <div class="board-cell cell-400"><div class="cell-value">400</div></div>
+      <div class="board-cell cell-400 played"><div class="cell-value">400</div></div>
+      <div class="board-cell cell-400"><div class="cell-value">400</div></div>
+      <div class="board-cell cell-400 played"><div class="cell-value">400</div></div>
+    </div>
+    <!-- Row 400 b -->
+    <div class="board-grid" style="margin-bottom:6px;">
+      <div class="board-cell cell-400"><div class="cell-value">400</div></div>
+      <div class="board-cell cell-400 played"><div class="cell-value">400</div></div>
+      <!-- BONUS cell -->
+      <div class="board-cell bonus" style="grid-column:span 1;">
+        <div class="bonus-q">?</div>
+        <div style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-family:'Press Start 2P',monospace;font-size:5px;color:var(--magenta);direction:ltr;white-space:nowrap;">BONUS</div>
+        <!-- Bonus sparkles -->
+        <div class="cell-sparkle" style="top:4px;left:4px;animation-delay:0s;"><svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#FF2D92"/></svg></div>
+        <div class="cell-sparkle" style="top:4px;right:4px;animation-delay:0.7s;"><svg width="6" height="6" viewBox="0 0 6 6"><polygon points="3,0 3.6,2.4 6,3 3.6,3.6 3,6 2.4,3.6 0,3 2.4,2.4" fill="#FFD700"/></svg></div>
+        <div class="cell-sparkle" style="bottom:4px;left:4px;animation-delay:1.2s;"><svg width="7" height="7" viewBox="0 0 7 7"><polygon points="3.5,0 4.2,2.8 7,3.5 4.2,4.2 3.5,7 2.8,4.2 0,3.5 2.8,2.8" fill="#FF2D92"/></svg></div>
+      </div>
+      <div class="board-cell cell-400"><div class="cell-value">400</div></div>
+      <div class="board-cell cell-400"><div class="cell-value">400</div></div>
+      <div class="board-cell cell-400 played"><div class="cell-value">400</div></div>
+    </div>
+    <!-- Row 600 -->
+    <div class="board-grid" style="margin-bottom:6px;">
+      <div class="board-cell cell-600" style="position:relative;overflow:visible;">
+        <div class="cell-value">600</div>
+        <div class="cell-sparkle" style="top:-4px;left:20%;animation-delay:0s;"><svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#FFD700"/></svg></div>
+        <div class="cell-sparkle" style="top:20%;right:-4px;animation-delay:0.5s;"><svg width="6" height="6" viewBox="0 0 6 6"><polygon points="3,0 3.6,2.4 6,3 3.6,3.6 3,6 2.4,3.6 0,3 2.4,2.4" fill="#00E5FF"/></svg></div>
+        <div class="cell-sparkle" style="bottom:-4px;left:60%;animation-delay:1s;"><svg width="7" height="7" viewBox="0 0 7 7"><polygon points="3.5,0 4.2,2.8 7,3.5 4.2,4.2 3.5,7 2.8,4.2 0,3.5 2.8,2.8" fill="#FFD700"/></svg></div>
+      </div>
+      <div class="board-cell cell-600" style="position:relative;overflow:visible;">
+        <div class="cell-value">600</div>
+        <div class="cell-sparkle" style="top:-4px;right:20%;animation-delay:0.3s;"><svg width="9" height="9" viewBox="0 0 9 9"><polygon points="4.5,0 5.4,3.6 9,4.5 5.4,5.4 4.5,9 3.6,5.4 0,4.5 3.6,3.6" fill="#FFD700"/></svg></div>
+        <div class="cell-sparkle" style="bottom:20%;left:-4px;animation-delay:0.8s;"><svg width="6" height="6" viewBox="0 0 6 6"><polygon points="3,0 3.6,2.4 6,3 3.6,3.6 3,6 2.4,3.6 0,3 2.4,2.4" fill="#FF2D92"/></svg></div>
+      </div>
+      <div class="board-cell cell-600 played"><div class="cell-value">600</div></div>
+      <div class="board-cell cell-600" style="position:relative;overflow:visible;">
+        <div class="cell-value">600</div>
+        <div class="cell-sparkle" style="top:-4px;left:50%;animation-delay:0.6s;"><svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#FFD700"/></svg></div>
+        <div class="cell-sparkle" style="bottom:-4px;right:20%;animation-delay:1.1s;"><svg width="6" height="6" viewBox="0 0 6 6"><polygon points="3,0 3.6,2.4 6,3 3.6,3.6 3,6 2.4,3.6 0,3 2.4,2.4" fill="#00E5FF"/></svg></div>
+      </div>
+      <div class="board-cell cell-600"><div class="cell-value">600</div>
+        <div class="cell-sparkle" style="top:-4px;right:30%;animation-delay:0.2s;"><svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#C9A84C"/></svg></div>
+      </div>
+      <div class="board-cell cell-600 played"><div class="cell-value">600</div></div>
+    </div>
+    <!-- Row 600 b -->
+    <div class="board-grid">
+      <div class="board-cell cell-600 played"><div class="cell-value">600</div></div>
+      <div class="board-cell cell-600" style="position:relative;overflow:visible;">
+        <div class="cell-value">600</div>
+        <div class="cell-sparkle" style="top:-4px;left:30%;animation-delay:0.4s;"><svg width="9" height="9" viewBox="0 0 9 9"><polygon points="4.5,0 5.4,3.6 9,4.5 5.4,5.4 4.5,9 3.6,5.4 0,4.5 3.6,3.6" fill="#FFD700"/></svg></div>
+        <div class="cell-sparkle" style="bottom:-4px;right:20%;animation-delay:0.9s;"><svg width="6" height="6" viewBox="0 0 6 6"><polygon points="3,0 3.6,2.4 6,3 3.6,3.6 3,6 2.4,3.6 0,3 2.4,2.4" fill="#00E5FF"/></svg></div>
+        <div class="cell-sparkle" style="top:50%;right:-4px;animation-delay:1.4s;"><svg width="7" height="7" viewBox="0 0 7 7"><polygon points="3.5,0 4.2,2.8 7,3.5 4.2,4.2 3.5,7 2.8,4.2 0,3.5 2.8,2.8" fill="#FF2D92"/></svg></div>
+      </div>
+      <div class="board-cell cell-600"><div class="cell-value">600</div></div>
+      <div class="board-cell cell-600 played"><div class="cell-value">600</div></div>
+      <div class="board-cell cell-600" style="position:relative;overflow:visible;">
+        <div class="cell-value">600</div>
+        <div class="cell-sparkle" style="top:-4px;left:40%;animation-delay:0.7s;"><svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#FFD700"/></svg></div>
+      </div>
+      <div class="board-cell cell-600"><div class="cell-value">600</div>
+        <div class="cell-sparkle" style="top:-4px;right:25%;animation-delay:0.15s;"><svg width="7" height="7" viewBox="0 0 7 7"><polygon points="3.5,0 4.2,2.8 7,3.5 4.2,4.2 3.5,7 2.8,4.2 0,3.5 2.8,2.8" fill="#C9A84C"/></svg></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======================================================
+     SCREEN 4 · QUESTION
+     ====================================================== -->
+<div id="screen-question" class="section-wrap">
+  <div class="section-label">SCREEN 04 · QUESTION · 5s TIMER STATE</div>
+
+  <div class="container" style="position:relative;z-index:1;">
+
+    <!-- Mini scoreboard -->
+    <div class="scoreboard mb-6" style="padding:12px 16px;">
+      <div style="display:flex;align-items:center;gap:12px;width:100%;">
+        <div style="flex:1;text-align:center;border:2px solid var(--cyan-e);border-radius:3px;padding:8px;animation:pulse-cyan 2s infinite;background:rgba(0,229,255,0.04);">
+          <div class="font-tajawal" style="font-size:12px;color:var(--muted);">فريق البحر</div>
+          <div class="font-audio" style="font-size:30px;color:var(--cyan-e);text-shadow:var(--shadow-cyan);direction:ltr;">1200</div>
+        </div>
+        <div class="font-arcade" style="font-size:10px;color:var(--gold-m);">VS</div>
+        <div style="flex:1;text-align:center;border:1px solid var(--gold-d);border-radius:3px;padding:8px;background:rgba(255,45,146,0.02);">
+          <div class="font-tajawal" style="font-size:12px;color:var(--muted);">فريق الصحراء</div>
+          <div class="font-audio" style="font-size:30px;color:var(--magenta);text-shadow:var(--shadow-mag);direction:ltr;">800</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category + value bar -->
+    <div style="text-align:center;margin-bottom:24px;">
+      <div class="font-arcade" style="font-size:7px;color:var(--gold-d);direction:ltr;letter-spacing:0.2em;">CATEGORY: HISTORY · التاريخ</div>
+      <div class="font-audio" style="font-size:28px;color:var(--gold-e);text-shadow:var(--shadow-gold);direction:ltr;margin-top:4px;">600 PTS</div>
+    </div>
+
+    <!-- Timer + Question layout -->
+    <div class="flex gap-6 items-start" style="flex-wrap:wrap;">
+
+      <!-- Timer - 5s amber state -->
+      <div style="flex-shrink:0;text-align:center;">
+        <div class="timer-wrap">
+          <svg class="timer-ring" viewBox="0 0 140 140">
+            <circle class="track" cx="70" cy="70" r="65"/>
+            <!-- 5s state: about 5/30 = 16% remaining, dashoffset = 408*(1-0.16) = 343 -->
+            <circle class="fill" cx="70" cy="70" r="65" style="stroke-dashoffset:343;stroke:#FFB300;"/>
+          </svg>
+          <div class="timer-num" style="color:#FFB300;">5</div>
+          <div class="timer-label">TIME · الوقت</div>
+        </div>
+        <div style="margin-top:32px;font-family:'Press Start 2P',monospace;font-size:7px;color:#FFB300;direction:ltr;letter-spacing:0.1em;animation:blink-cursor 0.6s infinite;">
+          ⚠ LAST SECONDS
+        </div>
+      </div>
+
+      <!-- Question card -->
+      <div class="question-card gold-card gold-card-bl" style="flex:1;min-width:280px;">
+        <!-- Corner kufi motifs -->
+        <div class="corner-motif tl">
+          <svg viewBox="0 0 28 28" fill="none">
+            <rect x="0" y="0" width="28" height="28" fill="none"/>
+            <path d="M2,2 L14,2 L14,8 L8,8 L8,14 L2,14 Z" fill="none" stroke="#FFD700" stroke-width="1.5"/>
+            <rect x="4" y="4" width="6" height="6" fill="none" stroke="#C9A84C" stroke-width="1"/>
+            <circle cx="7" cy="7" r="1.5" fill="#FFD700" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="corner-motif tr">
+          <svg viewBox="0 0 28 28" fill="none">
+            <path d="M2,2 L14,2 L14,8 L8,8 L8,14 L2,14 Z" fill="none" stroke="#FFD700" stroke-width="1.5"/>
+            <rect x="4" y="4" width="6" height="6" fill="none" stroke="#C9A84C" stroke-width="1"/>
+            <circle cx="7" cy="7" r="1.5" fill="#FFD700" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="corner-motif bl">
+          <svg viewBox="0 0 28 28" fill="none">
+            <path d="M2,2 L14,2 L14,8 L8,8 L8,14 L2,14 Z" fill="none" stroke="#FFD700" stroke-width="1.5"/>
+            <rect x="4" y="4" width="6" height="6" fill="none" stroke="#C9A84C" stroke-width="1"/>
+            <circle cx="7" cy="7" r="1.5" fill="#FFD700" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="corner-motif br">
+          <svg viewBox="0 0 28 28" fill="none">
+            <path d="M2,2 L14,2 L14,8 L8,8 L8,14 L2,14 Z" fill="none" stroke="#FFD700" stroke-width="1.5"/>
+            <rect x="4" y="4" width="6" height="6" fill="none" stroke="#C9A84C" stroke-width="1"/>
+            <circle cx="7" cy="7" r="1.5" fill="#FFD700" opacity="0.6"/>
+          </svg>
+        </div>
+
+        <!-- Question text -->
+        <div class="q-text-ar">في أي عام تم تأسيس مدينة الكويت؟</div>
+        <div class="q-text-en">In which year was Kuwait City founded?</div>
+
+        <!-- Image placeholder -->
+        <div class="img-placeholder">
+          <div style="text-align:center;">
+            <div style="font-size:24px;margin-bottom:6px;opacity:0.3;">🖼️</div>
+            <div>IMAGE CLUE</div>
+          </div>
+          <!-- corner gold accents on image -->
+          <div style="position:absolute;top:-1px;left:-1px;width:12px;height:12px;border-top:2px solid var(--gold-e);border-left:2px solid var(--gold-e);"></div>
+          <div style="position:absolute;top:-1px;right:-1px;width:12px;height:12px;border-top:2px solid var(--gold-e);border-right:2px solid var(--gold-e);"></div>
+          <div style="position:absolute;bottom:-1px;left:-1px;width:12px;height:12px;border-bottom:2px solid var(--gold-e);border-left:2px solid var(--gold-e);"></div>
+          <div style="position:absolute;bottom:-1px;right:-1px;width:12px;height:12px;border-bottom:2px solid var(--gold-e);border-right:2px solid var(--gold-e);"></div>
+          <!-- sparkle accents on image -->
+          <div class="sparkle" style="top:-8px;left:30%;animation-delay:0.2s;">
+            <svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#FFD700"/></svg>
+          </div>
+          <div class="sparkle" style="top:-8px;right:30%;animation-delay:1s;">
+            <svg width="6" height="6" viewBox="0 0 6 6"><polygon points="3,0 3.6,2.4 6,3 3.6,3.6 3,6 2.4,3.6 0,3 2.4,2.4" fill="#C9A84C"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lifelines row -->
+    <div class="mt-6">
+      <div class="setup-section-title">POWER-UPS · خطوط النجاة</div>
+      <div class="flex gap-3" style="flex-wrap:wrap;">
+        <!-- Each with hover sparkles -->
+        <div class="btn-sparkle-wrap" style="flex:1;min-width:100px;">
+          <div class="lifeline-card" style="border-color:var(--gold-m);">
+            <div class="lifeline-icon">⏱️</div>
+            <div class="lifeline-label">TIME +15</div>
+            <div style="font-family:'Tajawal';font-size:11px;color:var(--muted);">وقت إضافي</div>
+          </div>
+          <div class="hover-sparkle" style="top:-8px;left:20%;animation-delay:0.1s;">
+            <svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#FFD700"/></svg>
+          </div>
+          <div class="hover-sparkle" style="top:-6px;right:20%;animation-delay:0.6s;">
+            <svg width="6" height="6" viewBox="0 0 6 6"><polygon points="3,0 3.6,2.4 6,3 3.6,3.6 3,6 2.4,3.6 0,3 2.4,2.4" fill="#C9A84C"/></svg>
+          </div>
+          <div class="hover-sparkle" style="bottom:-8px;left:50%;animation-delay:1s;">
+            <svg width="7" height="7" viewBox="0 0 7 7"><polygon points="3.5,0 4.2,2.8 7,3.5 4.2,4.2 3.5,7 2.8,4.2 0,3.5 2.8,2.8" fill="#FFD700"/></svg>
+          </div>
+        </div>
+
+        <div class="btn-sparkle-wrap" style="flex:1;min-width:100px;">
+          <div class="lifeline-card" style="border-color:var(--gold-m);">
+            <div class="lifeline-icon">💡</div>
+            <div class="lifeline-label">HINT</div>
+            <div style="font-family:'Tajawal';font-size:11px;color:var(--muted);">تلميح</div>
+          </div>
+          <div class="hover-sparkle" style="top:-8px;right:25%;animation-delay:0.3s;">
+            <svg width="9" height="9" viewBox="0 0 9 9"><polygon points="4.5,0 5.4,3.6 9,4.5 5.4,5.4 4.5,9 3.6,5.4 0,4.5 3.6,3.6" fill="#FFD700"/></svg>
+          </div>
+          <div class="hover-sparkle" style="bottom:-6px;left:25%;animation-delay:0.8s;">
+            <svg width="6" height="6" viewBox="0 0 6 6"><polygon points="3,0 3.6,2.4 6,3 3.6,3.6 3,6 2.4,3.6 0,3 2.4,2.4" fill="#C9A84C"/></svg>
+          </div>
+        </div>
+
+        <div class="btn-sparkle-wrap" style="flex:1;min-width:100px;">
+          <div class="lifeline-card" style="border-color:var(--magenta);">
+            <div class="lifeline-icon">🔀</div>
+            <div class="lifeline-label">STEAL</div>
+            <div style="font-family:'Tajawal';font-size:11px;color:var(--muted);">سرقة الإجابة</div>
+          </div>
+          <div class="hover-sparkle" style="top:-8px;left:30%;animation-delay:0.5s;">
+            <svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#FF2D92"/></svg>
+          </div>
+          <div class="hover-sparkle" style="bottom:-8px;right:30%;animation-delay:1.1s;">
+            <svg width="6" height="6" viewBox="0 0 6 6"><polygon points="3,0 3.6,2.4 6,3 3.6,3.6 3,6 2.4,3.6 0,3 2.4,2.4" fill="#FFD700"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Award + Pass buttons -->
+    <div class="mt-6">
+      <div class="setup-section-title">AWARD · منح النقاط</div>
+      <div class="flex gap-4 items-center" style="flex-wrap:wrap;">
+        <button class="award-btn cyan">
+          <span class="award-team font-kufi">فريق البحر</span>
+          <span>AWARD POINTS</span>
+          <span class="font-audio" style="font-size:20px;color:var(--gold-e);text-shadow:var(--shadow-gold);">+600</span>
+        </button>
+        <button class="award-btn magenta">
+          <span class="award-team font-kufi">فريق الصحراء</span>
+          <span>AWARD POINTS</span>
+          <span class="font-audio" style="font-size:20px;color:var(--gold-e);text-shadow:var(--shadow-gold);">+600</span>
+        </button>
+        <button class="pass-btn">PASS ⏭</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======================================================
+     SCREEN 5 · RESULTS
+     ====================================================== -->
+<div id="screen-results" class="section-wrap" style="min-height:100vh;position:relative;overflow:hidden;">
+  <div class="section-label">SCREEN 05 · RESULTS / VICTORY</div>
+
+  <!-- BG radial glow -->
+  <div class="results-bg"></div>
+
+  <!-- Continuous gold confetti -->
+  <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+    <!-- 12 confetti pieces -->
+    <div class="confetti-piece" style="left:5%;top:0;--dur:3s;--delay:0s;background:var(--gold-e);border-radius:2px;transform:rotate(15deg);"></div>
+    <div class="confetti-piece" style="left:12%;top:0;--dur:4s;--delay:0.5s;background:var(--cyan-e);border-radius:50%;"></div>
+    <div class="confetti-piece" style="left:20%;top:0;--dur:3.5s;--delay:1s;background:var(--gold-m);transform:rotate(-20deg);"></div>
+    <div class="confetti-piece" style="left:30%;top:0;--dur:5s;--delay:0.3s;background:var(--magenta);border-radius:2px;transform:rotate(40deg);"></div>
+    <div class="confetti-piece" style="left:40%;top:0;--dur:3.8s;--delay:1.5s;background:var(--gold-e);border-radius:50%;"></div>
+    <div class="confetti-piece" style="left:50%;top:0;--dur:4.2s;--delay:0.7s;background:var(--cyan-e);transform:rotate(-10deg);"></div>
+    <div class="confetti-piece" style="left:60%;top:0;--dur:3.3s;--delay:2s;background:var(--gold-e);border-radius:2px;transform:rotate(30deg);"></div>
+    <div class="confetti-piece" style="left:68%;top:0;--dur:4.8s;--delay:0.2s;background:var(--magenta);border-radius:50%;"></div>
+    <div class="confetti-piece" style="left:76%;top:0;--dur:3.6s;--delay:1.2s;background:var(--gold-m);transform:rotate(-25deg);"></div>
+    <div class="confetti-piece" style="left:83%;top:0;--dur:4.5s;--delay:0.8s;background:var(--gold-e);border-radius:2px;transform:rotate(50deg);"></div>
+    <div class="confetti-piece" style="left:90%;top:0;--dur:3.2s;--delay:1.8s;background:var(--cyan-e);transform:rotate(-5deg);"></div>
+    <div class="confetti-piece" style="left:95%;top:0;--dur:5.5s;--delay:0.4s;background:var(--gold-e);border-radius:50%;"></div>
+
+    <!-- Ambient drift sparkles -->
+    <div class="drift-sparkle" style="left:10%;top:60%;animation-duration:5s;animation-delay:0s;">
+      <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0 8.4,5.6 14,7 8.4,8.4 7,14 5.6,8.4 0,7 5.6,5.6" fill="#FFD700" opacity="0.8"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:80%;top:50%;animation-duration:7s;animation-delay:2s;">
+      <svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,0 6,4 10,5 6,6 5,10 4,6 0,5 4,4" fill="#C9A84C" opacity="0.7"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:40%;top:70%;animation-duration:6s;animation-delay:1s;">
+      <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,0 7.2,4.8 12,6 7.2,7.2 6,12 4.8,7.2 0,6 4.8,4.8" fill="#FFD700" opacity="0.9"/></svg>
+    </div>
+    <div class="drift-sparkle" style="left:65%;top:65%;animation-duration:8s;animation-delay:3s;">
+      <svg width="8" height="8" viewBox="0 0 8 8"><polygon points="4,0 4.8,3.2 8,4 4.8,4.8 4,8 3.2,4.8 0,4 3.2,3.2" fill="#C9A84C" opacity="0.6"/></svg>
+    </div>
+  </div>
+
+  <!-- Radial burst from winning score -->
+  <div class="burst-container" style="top:35%;left:50%;">
+    <div class="burst-particle" style="animation-delay:0s;--dx:80px;--dy:-60px;animation-duration:2s;"></div>
+    <div class="burst-particle" style="animation-delay:0.1s;--dx:-70px;--dy:-80px;animation-duration:2.2s;background:var(--cyan-e);"></div>
+    <div class="burst-particle" style="animation-delay:0.2s;--dx:90px;--dy:40px;animation-duration:1.8s;"></div>
+    <div class="burst-particle" style="animation-delay:0.3s;--dx:-60px;--dy:70px;animation-duration:2s;background:var(--gold-m);"></div>
+    <div class="burst-particle" style="animation-delay:0.15s;--dx:40px;--dy:90px;animation-duration:2.4s;"></div>
+    <div class="burst-particle" style="animation-delay:0.25s;--dx:-90px;--dy:-30px;animation-duration:1.9s;background:var(--magenta);width:4px;height:4px;"></div>
+    <div class="burst-particle" style="animation-delay:0.05s;--dx:60px;--dy:-90px;animation-duration:2.1s;"></div>
+    <div class="burst-particle" style="animation-delay:0.35s;--dx:-50px;--dy:-70px;animation-duration:2.3s;background:var(--gold-m);"></div>
+  </div>
+
+  <div class="container" style="position:relative;z-index:1;text-align:center;">
+
+    <!-- GAME OVER / WINNER banner -->
+    <div style="margin-bottom:8px;">
+      <div class="game-over-banner">الفائز!</div>
+      <div class="winner-label">WINNER!</div>
+    </div>
+
+    <!-- HIGH SCORE treatment -->
+    <div style="margin:32px 0;">
+      <div class="high-score-label">HIGH SCORE</div>
+      <div class="winning-score mt-2">1200</div>
+      <div style="margin-top:8px;">
+        <span class="font-tajawal" style="font-size:20px;color:var(--cyan-e);text-shadow:var(--shadow-cyan);">فريق البحر</span>
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--cyan-e);box-shadow:var(--shadow-cyan);display:inline-block;margin-right:8px;vertical-align:middle;"></div>
+      </div>
+    </div>
+
+    <!-- Rankings -->
+    <div style="max-width:560px;margin:0 auto 40px;display:flex;flex-direction:column;gap:12px;">
+
+      <!-- 1st place -->
+      <div class="rank-row rank-1">
+        <div class="rank-num">1ST</div>
+        <div style="flex:1;text-align:right;">
+          <div class="font-tajawal" style="font-size:18px;color:var(--cream);">فريق البحر</div>
+          <div class="font-arcade" style="font-size:7px;color:var(--cyan-e);direction:ltr;letter-spacing:0.1em;">TEAM 1 · CYAN</div>
+        </div>
+        <div class="rank-score cyan">1200</div>
+      </div>
+
+      <!-- 2nd place -->
+      <div class="rank-row">
+        <div class="rank-num second">2ND</div>
+        <div style="flex:1;text-align:right;">
+          <div class="font-tajawal" style="font-size:18px;color:var(--cream);">فريق الصحراء</div>
+          <div class="font-arcade" style="font-size:7px;color:var(--magenta);direction:ltr;letter-spacing:0.1em;">TEAM 2 · MAGENTA</div>
+        </div>
+        <div class="rank-score magenta">800</div>
+      </div>
+    </div>
+
+    <!-- Arcade stats -->
+    <div style="max-width:560px;margin:0 auto 40px;background:var(--surface);border:1px solid var(--gold-d);border-radius:4px;padding:20px 24px;text-align:right;">
+      <div class="setup-section-title" style="text-align:center;margin-bottom:16px;">GAME STATS · إحصائيات اللعبة</div>
+      <div class="stat-row">
+        <div class="stat-label">QUESTIONS PLAYED</div>
+        <div class="stat-val">18</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">CORRECT ANSWERS</div>
+        <div class="stat-val">14</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">BEST STREAK</div>
+        <div class="stat-val">5×</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">BONUS ROUNDS</div>
+        <div class="stat-val">1</div>
+      </div>
+      <div class="stat-row" style="border-bottom:none;">
+        <div class="stat-label">LIFELINES USED</div>
+        <div class="stat-val">3</div>
+      </div>
+    </div>
+
+    <!-- Play Again -->
+    <button class="play-again-btn">
+      INSERT COIN · PLAY AGAIN
+    </button>
+
+    <div style="margin-top:24px;font-family:'Press Start 2P',monospace;font-size:6px;color:var(--gold-d);direction:ltr;letter-spacing:0.1em;">
+      THANK YOU FOR PLAYING &nbsp;·&nbsp; شكراً للعب
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
