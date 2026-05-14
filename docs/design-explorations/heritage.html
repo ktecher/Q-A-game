@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Umm Al Hayman · Heritage Festive Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* ── PALETTE ── */
+  :root {
+    --lapis:      #0B1F3A;
+    --navy:       #173D6E;
+    --navy-mid:   #1E4D88;
+    --gold:       #D4AF37;
+    --gold-lt:    #E8C84A;
+    --gold-dk:    #A8872A;
+    --pearl:      #F5EBD7;
+    --pearl-dim:  rgba(245,235,215,0.65);
+    --pearl-faint:rgba(245,235,215,0.30);
+    --ruby:       #9B2D3A;
+    --ruby-lt:    #C44150;
+    --ink:        #070E1C;
+    --gold-glow:  rgba(212,175,55,0.45);
+    --gold-faint: rgba(212,175,55,0.22);
+  }
+
+  /* ── RESET / BASE ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+  body {
+    background-color: var(--lapis);
+    color: var(--pearl);
+    font-family: 'Tajawal', sans-serif;
+    direction: rtl;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+  [lang="en"] { direction: ltr; unicode-bidi: isolate; font-family: 'Cormorant Garamond', Georgia, serif; }
+  .en-ui { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+  /* ── GLOBAL PATTERN OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.055;
+    background-color: var(--gold);
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='%23000'%3E%3Cpolygon points='60,4 67,22 86,22 71,34 77,52 60,41 43,52 49,34 34,22 53,22'/%3E%3Cpolygon points='60,116 67,98 86,98 71,86 77,68 60,79 43,68 49,86 34,98 53,98'/%3E%3Cpolygon points='4,60 22,53 22,34 34,49 52,43 41,60 52,77 34,71 22,86 22,67'/%3E%3Cpolygon points='116,60 98,53 98,34 86,49 68,43 79,60 68,77 86,71 98,86 98,67'/%3E%3Crect x='55' y='55' width='10' height='10' transform='rotate(45 60 60)'/%3E%3C/g%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='%23000'%3E%3Cpolygon points='60,4 67,22 86,22 71,34 77,52 60,41 43,52 49,34 34,22 53,22'/%3E%3Cpolygon points='60,116 67,98 86,98 71,86 77,68 60,79 43,68 49,86 34,98 53,98'/%3E%3Cpolygon points='4,60 22,53 22,34 34,49 52,43 41,60 52,77 34,71 22,86 22,67'/%3E%3Cpolygon points='116,60 98,53 98,34 86,49 68,43 79,60 68,77 86,71 98,86 98,67'/%3E%3Crect x='55' y='55' width='10' height='10' transform='rotate(45 60 60)'/%3E%3C/g%3E%3C/svg%3E");
+    mask-size: 120px 120px;
+    -webkit-mask-size: 120px 120px;
+  }
+
+  /* ── LAYOUT SHELL ── */
+  .preview-shell { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ── SECTION DIVIDERS ── */
+  .section-label {
+    display: flex; align-items: center; gap: 16px;
+    padding: 48px 0 28px;
+  }
+  .section-label::before, .section-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(to var(--dir, right), transparent, var(--gold-faint), var(--gold-dk), var(--gold-faint), transparent);
+  }
+  .section-label::after { --dir: left; }
+  .section-tag {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--gold-dk);
+    background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.06));
+    border: 1px solid var(--gold-faint);
+    padding: 4px 14px; border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ── SADU STRIP ── */
+  .sadu-strip {
+    height: 8px; width: 100%; border-radius: 2px; overflow: hidden;
+    display: flex;
+  }
+  .sadu-strip span {
+    flex: 1; height: 100%;
+  }
+
+  /* ── GOLD BORDER SHIMMER ── */
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+  .gold-border-shimmer {
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+    position: relative;
+  }
+  .gold-border-shimmer::after {
+    content: '';
+    position: absolute; inset: -1.5px;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--gold-dk), var(--gold-lt), var(--gold), var(--gold-dk), var(--gold-lt));
+    background-size: 200% 100%;
+    animation: shimmer 4s linear infinite;
+    z-index: -1;
+    padding: 1.5px;
+  }
+
+  /* ── CARD BASE ── */
+  .card {
+    background: linear-gradient(160deg, rgba(23,61,110,0.55), rgba(7,14,28,0.85));
+    border: 1px solid var(--gold-faint);
+    border-radius: 16px;
+  }
+  .card-pearl {
+    background: linear-gradient(150deg, rgba(245,235,215,0.07) 0%, rgba(7,14,28,0.5) 100%);
+    border: 1px solid rgba(245,235,215,0.12);
+    border-radius: 16px;
+  }
+
+  /* ── GOLD CORNER ORNAMENTS ── */
+  .corner-ornament { position: relative; }
+  .corner-ornament::before, .corner-ornament::after {
+    content: '✦'; position: absolute;
+    font-size: 11px; color: var(--gold-dk); opacity: 0.7; line-height: 1;
+  }
+  .corner-ornament::before { top: 10px; right: 12px; }
+  .corner-ornament::after  { top: 10px; left:  12px; }
+  .corner-ornament-b::before { top: auto; bottom: 10px; right: 12px; }
+  .corner-ornament-b::after  { top: auto; bottom: 10px; left:  12px; }
+
+  /* ── BUTTONS ── */
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold-lt), var(--gold), var(--gold-dk));
+    color: var(--ink);
+    font-family: 'Tajawal', sans-serif; font-weight: 700;
+    border: none; border-radius: 12px;
+    padding: 14px 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(212,175,55,0.38), 0 1px 0 rgba(255,255,255,0.15) inset;
+    transition: filter 0.15s, transform 0.15s;
+    display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .btn-gold:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+  .btn-outline {
+    background: rgba(7,14,28,0.55);
+    color: var(--pearl);
+    font-family: 'Tajawal', sans-serif; font-weight: 600;
+    border: 1px solid var(--gold-faint);
+    border-radius: 12px;
+    padding: 14px 28px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.15s;
+    display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .btn-outline:hover {
+    border-color: var(--gold);
+    background: rgba(212,175,55,0.08);
+    transform: translateY(-1px);
+  }
+
+  .btn-lifeline {
+    background: rgba(7,14,28,0.6);
+    border: 1px solid var(--gold-faint);
+    border-radius: 10px;
+    color: var(--pearl);
+    font-family: 'Tajawal', sans-serif; font-weight: 600;
+    padding: 12px 8px;
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .btn-lifeline:hover { border-color: var(--gold); background: rgba(212,175,55,0.08); }
+
+  /* ── TYPOGRAPHY ── */
+  .ar-display { font-family: 'Amiri', serif; font-weight: 700; }
+  .en-display { font-family: 'Cormorant Garamond', serif; }
+  .ar-ui      { font-family: 'Tajawal', sans-serif; }
+  .text-gold  { color: var(--gold); }
+  .text-gold-lt { color: var(--gold-lt); }
+  .text-gold-dk { color: var(--gold-dk); }
+  .text-pearl   { color: var(--pearl); }
+  .text-pearl-dim { color: var(--pearl-dim); }
+  .text-ruby  { color: var(--ruby-lt); }
+
+  /* ── BOARD CELLS ── */
+  .board-cell {
+    aspect-ratio: 4/3;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    position: relative; overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 1px solid var(--gold-faint);
+  }
+  .board-cell:hover { transform: translateY(-2px) scale(1.04); }
+  .board-cell.tier-200 {
+    background: linear-gradient(155deg, rgba(15,42,77,0.88), rgba(15,42,77,0.55));
+  }
+  .board-cell.tier-200:hover { box-shadow: 0 0 28px rgba(58,123,200,0.45); }
+  .board-cell.tier-400 {
+    background: linear-gradient(155deg, rgba(23,61,110,0.9), rgba(23,61,110,0.55));
+    border-color: rgba(212,175,55,0.4);
+  }
+  .board-cell.tier-400:hover { box-shadow: 0 0 32px rgba(212,175,55,0.45); }
+  .board-cell.tier-600 {
+    background: linear-gradient(155deg, rgba(100,20,30,0.85), rgba(60,8,16,0.7));
+    border-color: rgba(155,45,58,0.55);
+  }
+  .board-cell.tier-600:hover { box-shadow: 0 0 36px rgba(196,65,80,0.55); }
+  .board-cell.played {
+    background: rgba(7,14,28,0.6);
+    border-color: rgba(245,235,215,0.06);
+    opacity: 0.28; cursor: default;
+  }
+  .board-cell.played:hover { transform: none; }
+  .board-cell.challenge {
+    background: linear-gradient(135deg, rgba(80,20,100,0.85), rgba(40,5,65,0.7));
+    border-color: rgba(180,100,220,0.5);
+    animation: challenge-pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes challenge-pulse {
+    0%,100% { box-shadow: 0 0 12px rgba(180,100,220,0.3), inset 0 0 0 1px rgba(180,100,220,0.3); }
+    50%      { box-shadow: 0 0 28px rgba(180,100,220,0.6), inset 0 0 0 1px rgba(180,100,220,0.5); }
+  }
+  .cell-value-200 { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 22px; color: #3A7BC8; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+  .cell-value-400 { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 26px; color: var(--gold); text-shadow: 0 1px 8px rgba(212,175,55,0.55); }
+  .cell-value-600 { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 30px; color: var(--ruby-lt); text-shadow: 0 2px 10px rgba(196,65,80,0.55); }
+
+  /* ── CATEGORY HEADER ── */
+  .cat-header {
+    border-radius: 10px 10px 0 0;
+    min-height: 80px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    padding: 8px 6px;
+    text-align: center;
+    position: relative; overflow: hidden;
+    box-shadow: inset 0 -1px 0 rgba(212,175,55,0.4), inset 0 0 0 1px rgba(245,235,215,0.06);
+  }
+
+  /* ── TIMER BAR ── */
+  @keyframes timer-shrink { from { width: 100%; } to { width: 0%; } }
+  .timer-bar-track { height: 5px; background: rgba(245,235,215,0.1); border-radius: 3px; overflow: hidden; }
+  .timer-bar-fill  { height: 100%; background: linear-gradient(90deg, var(--gold-dk), var(--gold-lt)); border-radius: 3px; width: 62%; transition: background 0.5s; }
+
+  /* ── TEAM STATUS CHIP ── */
+  .team-cell-answering {
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 0 2px rgba(212,175,55,0.18), 0 0 24px rgba(212,175,55,0.35);
+  }
+
+  /* ── SCORE COUNTER ANIMATION ── */
+  @keyframes count-up { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+  .score-reveal { animation: count-up 0.6s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+  /* ── CONFETTI PIECES ── */
+  @keyframes paper-fall {
+    0%   { transform: translateY(-30px) rotate(0deg); opacity: 0; }
+    8%   { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateY(600px) rotate(720deg); opacity: 0; }
+  }
+  .confetti-piece { position: absolute; animation: paper-fall linear infinite; }
+
+  /* ── STAR ORNAMENT SPIN ── */
+  @keyframes star-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .star-spin-slow { animation: star-spin 18s linear infinite; }
+  .star-spin-rev  { animation: star-spin 24s linear infinite reverse; }
+
+  /* ── PEARL IRIDESCENCE ── */
+  @keyframes iridescent {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .pearl-iridescent {
+    background: linear-gradient(135deg, #f5ebd7, #e8d5b0, #c9b48a, #e0cbaa, #f0e2c8, #b8d4e8, #d4e8f0, #f0e8d4);
+    background-size: 300% 300%;
+    animation: iridescent 5s ease infinite;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ── TWINKLING STARS ── */
+  @keyframes twinkle { 0%,100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+  .twinkle { animation: twinkle ease-in-out infinite; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .board-grid { font-size: 14px; }
+    .board-cell { aspect-ratio: 1/1; }
+    .cat-header { min-height: 60px; }
+  }
+
+  /* ── IRIDESCENT HIGHLIGHT STATE ── */
+  .iridescent-border {
+    border: 1px solid transparent;
+    background-image: linear-gradient(160deg, rgba(23,61,110,0.55), rgba(7,14,28,0.85)),
+      linear-gradient(90deg, #d4af37, #b8d4e8, #e8c84a, #d4e8f0, #d4af37);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-shell">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCREEN 1 · HOME / SIGN-IN
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label">
+    <span class="section-tag">Screen 1 · الشاشة الرئيسية · Home</span>
+  </div>
+
+  <!-- Sadu strip -->
+  <div class="sadu-strip" style="margin-bottom:32px;">
+    <span style="background:#0B1F3A;flex:2;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#9B2D3A;flex:1;"></span>
+    <span style="background:#173D6E;flex:2;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#0B1F3A;flex:3;"></span>
+    <span style="background:#9B2D3A;flex:1;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#173D6E;flex:2;"></span>
+  </div>
+
+  <div style="min-height:640px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; padding:40px 20px;">
+
+    <!-- Ambient star ornaments -->
+    <div style="position:absolute;top:24px;right:32px;opacity:0.18;pointer-events:none;" class="star-spin-slow">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="var(--gold)">
+        <polygon points="32,2 36,24 58,24 40,37 47,60 32,47 17,60 24,37 6,24 28,24"/>
+        <polygon points="32,14 34,26 46,26 37,33 40,45 32,38 24,45 27,33 18,26 30,26" fill="none" stroke="var(--gold-lt)" stroke-width="0.5"/>
+      </svg>
+    </div>
+    <div style="position:absolute;bottom:30px;left:40px;opacity:0.13;pointer-events:none;" class="star-spin-rev">
+      <svg width="48" height="48" viewBox="0 0 64 64" fill="var(--gold-dk)">
+        <polygon points="32,2 36,24 58,24 40,37 47,60 32,47 17,60 24,37 6,24 28,24"/>
+      </svg>
+    </div>
+    <div style="position:absolute;top:50%;left:20px;opacity:0.08;pointer-events:none;transform:translateY(-50%);" class="star-spin-slow">
+      <svg width="80" height="80" viewBox="0 0 64 64" fill="var(--gold)">
+        <polygon points="32,2 36,24 58,24 40,37 47,60 32,47 17,60 24,37 6,24 28,24"/>
+      </svg>
+    </div>
+
+    <!-- Main card -->
+    <div class="card corner-ornament corner-ornament-b gold-border-shimmer"
+         style="width:100%;max-width:440px;padding:48px 36px 40px;text-align:center;position:relative;">
+
+      <!-- Top filigree ornament -->
+      <div style="margin-bottom:20px;">
+        <svg width="180" height="22" viewBox="0 0 180 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin:0 auto;display:block;opacity:0.65;">
+          <path d="M90 11 L72 3 L54 11 L72 19 Z" fill="var(--gold-dk)"/>
+          <path d="M90 11 L108 3 L126 11 L108 19 Z" fill="var(--gold-dk)"/>
+          <line x1="0" y1="11" x2="48" y2="11" stroke="var(--gold-dk)" stroke-width="1"/>
+          <line x1="132" y1="11" x2="180" y2="11" stroke="var(--gold-dk)" stroke-width="1"/>
+          <circle cx="90" cy="11" r="4" fill="var(--gold)"/>
+          <circle cx="54" cy="11" r="2.5" fill="var(--gold-dk)"/>
+          <circle cx="126" cy="11" r="2.5" fill="var(--gold-dk)"/>
+          <circle cx="24" cy="11" r="1.5" fill="var(--gold-dk)" opacity="0.5"/>
+          <circle cx="156" cy="11" r="1.5" fill="var(--gold-dk)" opacity="0.5"/>
+        </svg>
+      </div>
+
+      <!-- Title Arabic -->
+      <h1 class="ar-display" style="font-size:36px;line-height:1.15;color:var(--pearl);margin-bottom:4px;">
+        مدينة أم الهيمان
+      </h1>
+
+      <!-- Title English -->
+      <p class="en-display" lang="en"
+         style="font-size:18px;font-style:italic;color:var(--gold-lt);margin-bottom:6px;letter-spacing:0.04em;">
+        Umm Al Hayman City
+      </p>
+
+      <!-- Subtitle -->
+      <p class="ar-ui" style="font-size:14px;color:var(--pearl-dim);margin-bottom:4px;">
+        لعبة المعلومات العائلية
+      </p>
+      <p class="en-display" lang="en" style="font-size:13px;font-style:italic;color:rgba(245,235,215,0.45);margin-bottom:32px;letter-spacing:0.06em;">
+        The Family Trivia Game
+      </p>
+
+      <!-- Ornament divider -->
+      <div style="text-align:center;margin-bottom:28px;color:var(--gold-dk);opacity:0.6;font-size:13px;letter-spacing:0.5em;">
+        ❖ ◈ ◇ ◈ ❖
+      </div>
+
+      <!-- CTAs -->
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="btn-gold" style="width:100%;font-size:16px;">
+          <span>تسجيل الدخول</span>
+          <span lang="en" class="en-display" style="font-size:13px;font-style:italic;opacity:0.8;font-weight:400;">Sign In</span>
+        </button>
+        <button class="btn-outline" style="width:100%;font-size:16px;">
+          <span>إنشاء حساب</span>
+          <span lang="en" class="en-display" style="font-size:13px;font-style:italic;opacity:0.75;font-weight:400;">Sign Up</span>
+        </button>
+        <button class="btn-outline" style="width:100%;font-size:16px;">
+          <span>العب كضيف</span>
+          <span lang="en" class="en-display" style="font-size:13px;font-style:italic;opacity:0.75;font-weight:400;">Continue as Guest</span>
+        </button>
+      </div>
+
+      <!-- Bottom filigree -->
+      <div style="margin-top:28px;">
+        <svg width="180" height="22" viewBox="0 0 180 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin:0 auto;display:block;opacity:0.65;transform:scaleY(-1);">
+          <path d="M90 11 L72 3 L54 11 L72 19 Z" fill="var(--gold-dk)"/>
+          <path d="M90 11 L108 3 L126 11 L108 19 Z" fill="var(--gold-dk)"/>
+          <line x1="0" y1="11" x2="48" y2="11" stroke="var(--gold-dk)" stroke-width="1"/>
+          <line x1="132" y1="11" x2="180" y2="11" stroke="var(--gold-dk)" stroke-width="1"/>
+          <circle cx="90" cy="11" r="4" fill="var(--gold)"/>
+          <circle cx="54" cy="11" r="2.5" fill="var(--gold-dk)"/>
+          <circle cx="126" cy="11" r="2.5" fill="var(--gold-dk)"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Version tag -->
+    <p class="en-display" lang="en" style="margin-top:20px;font-size:12px;font-style:italic;color:rgba(245,235,215,0.38);letter-spacing:0.1em;">
+      v0.1 · Built with care for diwaniya nights
+    </p>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCREEN 2 · SETUP
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label">
+    <span class="section-tag">Screen 2 · إعداد اللعبة · Setup</span>
+  </div>
+
+  <div class="sadu-strip" style="margin-bottom:32px;">
+    <span style="background:#9B2D3A;flex:1;"></span>
+    <span style="background:#D4AF37;flex:2;"></span>
+    <span style="background:#0B1F3A;flex:3;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#9B2D3A;flex:1;"></span>
+    <span style="background:#173D6E;flex:2;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#0B1F3A;flex:2;"></span>
+  </div>
+
+  <!-- Setup sticky header -->
+  <div style="background:rgba(7,14,28,0.92);border-bottom:1px solid var(--gold-faint);padding:12px 20px;
+              display:flex;align-items:center;justify-content:space-between;border-radius:12px 12px 0 0;margin-bottom:0;">
+    <span class="ar-display" style="font-size:22px;color:var(--gold-lt);">أم الهيمان ❖</span>
+    <span style="display:flex;align-items:center;gap:8px;background:rgba(245,235,215,0.06);border:1px solid var(--gold-faint);
+                 border-radius:20px;padding:5px 14px;font-size:13px;" class="ar-ui">
+      <span>ضيف</span>
+      <span lang="en" class="en-display" style="font-style:italic;opacity:0.6;font-size:12px;">· Guest</span>
+    </span>
+  </div>
+
+  <!-- Setup page title -->
+  <div style="text-align:center;padding:24px 0 16px;background:linear-gradient(180deg,rgba(7,14,28,0.5),transparent);">
+    <h2 class="ar-display" style="font-size:28px;color:var(--pearl);">إعداد اللعبة</h2>
+    <p class="en-display" lang="en" style="font-style:italic;color:var(--pearl-dim);font-size:14px;margin-top:3px;">Game Setup</p>
+  </div>
+
+  <!-- Setup card wrapper -->
+  <div style="border:1px solid var(--gold-faint);border-radius:0 0 16px 16px;overflow:hidden;
+              background:rgba(11,31,58,0.45);">
+
+    <!-- Section A: Categories -->
+    <div style="border-bottom:1px solid var(--gold-faint);padding:16px 20px 6px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span class="ar-ui" style="font-size:11px;font-weight:700;color:var(--gold);background:rgba(212,175,55,0.12);
+                    border:1px solid rgba(212,175,55,0.25);border-radius:6px;padding:2px 10px;">هـ · E</span>
+        <span class="ar-ui" style="font-size:15px;color:var(--pearl-dim);">اختر الفئات
+          <span lang="en" class="en-display" style="font-style:italic;font-size:13px;opacity:0.6;"> · Pick Categories</span>
+        </span>
+        <span style="margin-right:auto;background:rgba(212,175,55,0.15);border:1px solid var(--gold);
+                     border-radius:20px;padding:2px 12px;font-size:12px;color:var(--gold);" class="ar-ui">6 / 6 ✓</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding-bottom:16px;">
+        <!-- Category tiles -->
+        <div style="background:linear-gradient(160deg,rgba(26,80,140,0.7),rgba(10,30,70,0.9));border:2px solid var(--gold);
+                    border-radius:12px;padding:10px 6px 8px;text-align:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;left:0;height:3px;background:#1a4d8a;border-radius:3px 3px 0 0;"></div>
+          <div style="position:absolute;top:6px;left:6px;width:16px;height:16px;background:var(--gold);
+                      border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--ink);">✓</div>
+          <div style="width:100%;height:52px;background:#1a4d8a;border-radius:8px;margin-bottom:6px;
+                      display:flex;align-items:center;justify-content:center;font-size:24px;">🕌</div>
+          <div class="ar-ui" style="font-size:11px;color:var(--pearl);">التاريخ</div>
+          <div lang="en" class="en-display" style="font-size:9px;color:var(--pearl-dim);font-style:italic;">History</div>
+        </div>
+        <div style="background:linear-gradient(160deg,rgba(80,30,30,0.7),rgba(40,10,10,0.9));border:2px solid var(--gold);
+                    border-radius:12px;padding:10px 6px 8px;text-align:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;left:0;height:3px;background:#8B1A1A;"></div>
+          <div style="position:absolute;top:6px;left:6px;width:16px;height:16px;background:var(--gold);
+                      border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--ink);">✓</div>
+          <div style="width:100%;height:52px;background:#6B1A1A;border-radius:8px;margin-bottom:6px;
+                      display:flex;align-items:center;justify-content:center;font-size:24px;">⚽</div>
+          <div class="ar-ui" style="font-size:11px;color:var(--pearl);">الرياضة</div>
+          <div lang="en" class="en-display" style="font-size:9px;color:var(--pearl-dim);font-style:italic;">Sports</div>
+        </div>
+        <div style="background:linear-gradient(160deg,rgba(20,80,50,0.7),rgba(8,35,20,0.9));border:2px solid var(--gold);
+                    border-radius:12px;padding:10px 6px 8px;text-align:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;left:0;height:3px;background:#1a6b3a;"></div>
+          <div style="position:absolute;top:6px;left:6px;width:16px;height:16px;background:var(--gold);
+                      border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--ink);">✓</div>
+          <div style="width:100%;height:52px;background:#1a5e32;border-radius:8px;margin-bottom:6px;
+                      display:flex;align-items:center;justify-content:center;font-size:24px;">🔬</div>
+          <div class="ar-ui" style="font-size:11px;color:var(--pearl);">العلوم</div>
+          <div lang="en" class="en-display" style="font-size:9px;color:var(--pearl-dim);font-style:italic;">Science</div>
+        </div>
+        <div style="background:linear-gradient(160deg,rgba(80,50,10,0.7),rgba(40,25,5,0.9));border:2px solid var(--gold);
+                    border-radius:12px;padding:10px 6px 8px;text-align:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;left:0;height:3px;background:#7a5010;"></div>
+          <div style="position:absolute;top:6px;left:6px;width:16px;height:16px;background:var(--gold);
+                      border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--ink);">✓</div>
+          <div style="width:100%;height:52px;background:#6a4010;border-radius:8px;margin-bottom:6px;
+                      display:flex;align-items:center;justify-content:center;font-size:24px;">🎭</div>
+          <div class="ar-ui" style="font-size:11px;color:var(--pearl);">الثقافة</div>
+          <div lang="en" class="en-display" style="font-size:9px;color:var(--pearl-dim);font-style:italic;">Culture</div>
+        </div>
+        <div style="background:linear-gradient(160deg,rgba(70,20,70,0.7),rgba(35,8,35,0.9));border:2px solid var(--gold);
+                    border-radius:12px;padding:10px 6px 8px;text-align:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;left:0;height:3px;background:#6a1a7a;"></div>
+          <div style="position:absolute;top:6px;left:6px;width:16px;height:16px;background:var(--gold);
+                      border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--ink);">✓</div>
+          <div style="width:100%;height:52px;background:#5a1268;border-radius:8px;margin-bottom:6px;
+                      display:flex;align-items:center;justify-content:center;font-size:24px;">🎵</div>
+          <div class="ar-ui" style="font-size:11px;color:var(--pearl);">الموسيقى</div>
+          <div lang="en" class="en-display" style="font-size:9px;color:var(--pearl-dim);font-style:italic;">Music</div>
+        </div>
+        <div style="background:linear-gradient(160deg,rgba(30,70,30,0.7),rgba(12,35,12,0.9));border:2px solid var(--gold);
+                    border-radius:12px;padding:10px 6px 8px;text-align:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;left:0;height:3px;background:#2a7a2a;"></div>
+          <div style="position:absolute;top:6px;left:6px;width:16px;height:16px;background:var(--gold);
+                      border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--ink);">✓</div>
+          <div style="width:100%;height:52px;background:#246824;border-radius:8px;margin-bottom:6px;
+                      display:flex;align-items:center;justify-content:center;font-size:24px;">🍽️</div>
+          <div class="ar-ui" style="font-size:11px;color:var(--pearl);">الطعام</div>
+          <div lang="en" class="en-display" style="font-size:9px;color:var(--pearl-dim);font-style:italic;">Food</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section B: Teams side by side -->
+    <div style="border-bottom:1px solid var(--gold-faint);padding:16px 20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <span class="ar-ui" style="font-size:11px;font-weight:700;color:var(--gold);background:rgba(212,175,55,0.12);
+                    border:1px solid rgba(212,175,55,0.25);border-radius:6px;padding:2px 10px;">ج · C</span>
+        <span class="ar-ui" style="font-size:15px;color:var(--pearl-dim);">الفرق
+          <span lang="en" class="en-display" style="font-style:italic;font-size:13px;opacity:0.6;"> · Teams</span>
+        </span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <!-- Team 1 card -->
+        <div class="card" style="border-top:3px solid #3A7BC8;padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <span style="font-size:28px;line-height:1;">🦅</span>
+            <div>
+              <div class="ar-display" style="font-size:18px;color:var(--pearl);">الفريق الأول</div>
+              <div lang="en" class="en-display" style="font-style:italic;font-size:12px;color:var(--pearl-dim);">Team Alpha</div>
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div class="ar-ui" style="font-size:12px;color:var(--gold);margin-bottom:5px;">اسم الفريق</div>
+            <div style="background:rgba(7,14,28,0.6);border:1px solid var(--gold-faint);border-radius:8px;
+                        padding:8px 12px;font-size:14px;color:var(--pearl);" class="ar-ui">الفريق الأول</div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div class="ar-ui" style="font-size:12px;color:var(--gold);margin-bottom:6px;">اللون</div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap;">
+              <div style="width:24px;height:24px;border-radius:50%;background:#3A7BC8;outline:2px solid var(--gold);outline-offset:2px;"></div>
+              <div style="width:24px;height:24px;border-radius:50%;background:#9B2D3A;"></div>
+              <div style="width:24px;height:24px;border-radius:50%;background:#D4AF37;"></div>
+              <div style="width:24px;height:24px;border-radius:50%;background:#4A2070;"></div>
+              <div style="width:24px;height:24px;border-radius:50%;background:#A8853B;"></div>
+            </div>
+          </div>
+          <div>
+            <div class="ar-ui" style="font-size:12px;color:var(--gold);margin-bottom:6px;">الرمز</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;">
+              <div style="background:rgba(212,175,55,0.15);border:2px solid var(--gold);border-radius:8px;
+                          width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">🦅</div>
+              <div style="background:rgba(245,235,215,0.05);border:2px solid transparent;border-radius:8px;
+                          width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">🌙</div>
+              <div style="background:rgba(245,235,215,0.05);border:2px solid transparent;border-radius:8px;
+                          width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">🏆</div>
+              <div style="background:rgba(245,235,215,0.05);border:2px solid transparent;border-radius:8px;
+                          width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">☕</div>
+              <div style="background:rgba(245,235,215,0.05);border:2px solid transparent;border-radius:8px;
+                          width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">🎲</div>
+            </div>
+          </div>
+        </div>
+        <!-- Team 2 card -->
+        <div class="card" style="border-top:3px solid #9B2D3A;padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <span style="font-size:28px;line-height:1;">🌙</span>
+            <div>
+              <div class="ar-display" style="font-size:18px;color:var(--pearl);">الفريق الثاني</div>
+              <div lang="en" class="en-display" style="font-style:italic;font-size:12px;color:var(--pearl-dim);">Team Beta</div>
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div class="ar-ui" style="font-size:12px;color:var(--gold);margin-bottom:5px;">اسم الفريق</div>
+            <div style="background:rgba(7,14,28,0.6);border:1px solid var(--gold-faint);border-radius:8px;
+                        padding:8px 12px;font-size:14px;color:var(--pearl);" class="ar-ui">الفريق الثاني</div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div class="ar-ui" style="font-size:12px;color:var(--gold);margin-bottom:6px;">اللون</div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap;">
+              <div style="width:24px;height:24px;border-radius:50%;background:#3A7BC8;"></div>
+              <div style="width:24px;height:24px;border-radius:50%;background:#9B2D3A;outline:2px solid var(--gold);outline-offset:2px;"></div>
+              <div style="width:24px;height:24px;border-radius:50%;background:#D4AF37;"></div>
+              <div style="width:24px;height:24px;border-radius:50%;background:#4A2070;"></div>
+              <div style="width:24px;height:24px;border-radius:50%;background:#A8853B;"></div>
+            </div>
+          </div>
+          <div>
+            <div class="ar-ui" style="font-size:12px;color:var(--gold);margin-bottom:6px;">الرمز</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;">
+              <div style="background:rgba(245,235,215,0.05);border:2px solid transparent;border-radius:8px;
+                          width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">🦅</div>
+              <div style="background:rgba(212,175,55,0.15);border:2px solid var(--gold);border-radius:8px;
+                          width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">🌙</div>
+              <div style="background:rgba(245,235,215,0.05);border:2px solid transparent;border-radius:8px;
+                          width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">🏆</div>
+              <div style="background:rgba(245,235,215,0.05);border:2px solid transparent;border-radius:8px;
+                          width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">☕</div>
+              <div style="background:rgba(245,235,215,0.05);border:2px solid transparent;border-radius:8px;
+                          width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">🎲</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section C: Difficulty + Timer side by side -->
+    <div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <!-- Difficulty -->
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span class="ar-ui" style="font-size:11px;font-weight:700;color:var(--gold);background:rgba(212,175,55,0.12);
+                      border:1px solid rgba(212,175,55,0.25);border-radius:6px;padding:2px 10px;">ب · B</span>
+          <span class="ar-ui" style="font-size:15px;color:var(--pearl-dim);">الصعوبة
+            <span lang="en" class="en-display" style="font-style:italic;font-size:12px;opacity:0.6;"> · Difficulty</span>
+          </span>
+        </div>
+        <div style="display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--gold-faint);">
+          <div style="flex:1;padding:12px 6px;text-align:center;background:rgba(245,235,215,0.04);" class="ar-ui">
+            <div style="font-size:14px;color:var(--pearl-dim);">سهل</div>
+            <div lang="en" class="en-display" style="font-style:italic;font-size:11px;color:rgba(245,235,215,0.4);">Easy</div>
+          </div>
+          <div style="flex:1;padding:12px 6px;text-align:center;background:linear-gradient(135deg,var(--gold-lt),var(--gold),var(--gold-dk));
+                      border-right:1px solid var(--gold-faint);border-left:1px solid var(--gold-faint);" class="ar-ui">
+            <div style="font-size:14px;color:var(--ink);font-weight:700;">متنوع</div>
+            <div lang="en" class="en-display" style="font-style:italic;font-size:11px;color:rgba(7,14,28,0.7);">Mixed</div>
+          </div>
+          <div style="flex:1;padding:12px 6px;text-align:center;background:rgba(245,235,215,0.04);" class="ar-ui">
+            <div style="font-size:14px;color:var(--pearl-dim);">صعب</div>
+            <div lang="en" class="en-display" style="font-style:italic;font-size:11px;color:rgba(245,235,215,0.4);">Hard</div>
+          </div>
+        </div>
+      </div>
+      <!-- Timer -->
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span class="ar-ui" style="font-size:11px;font-weight:700;color:var(--gold);background:rgba(212,175,55,0.12);
+                      border:1px solid rgba(212,175,55,0.25);border-radius:6px;padding:2px 10px;">د · D</span>
+          <span class="ar-ui" style="font-size:15px;color:var(--pearl-dim);">الوقت
+            <span lang="en" class="en-display" style="font-style:italic;font-size:12px;opacity:0.6;"> · Timer</span>
+          </span>
+        </div>
+        <div style="display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--gold-faint);">
+          <div style="flex:1;padding:12px 6px;text-align:center;background:rgba(245,235,215,0.04);" class="ar-ui">
+            <div style="font-size:14px;color:var(--pearl-dim);">٢٠</div>
+            <div lang="en" class="en-display" style="font-style:italic;font-size:11px;color:rgba(245,235,215,0.4);">20s</div>
+          </div>
+          <div style="flex:1;padding:12px 6px;text-align:center;background:linear-gradient(135deg,var(--gold-lt),var(--gold),var(--gold-dk));
+                      border-right:1px solid var(--gold-faint);border-left:1px solid var(--gold-faint);" class="ar-ui">
+            <div style="font-size:14px;color:var(--ink);font-weight:700;">٣٠</div>
+            <div lang="en" class="en-display" style="font-style:italic;font-size:11px;color:rgba(7,14,28,0.7);">30s</div>
+          </div>
+          <div style="flex:1;padding:12px 6px;text-align:center;background:rgba(245,235,215,0.04);" class="ar-ui">
+            <div style="font-size:14px;color:var(--pearl-dim);">٤٥</div>
+            <div lang="en" class="en-display" style="font-style:italic;font-size:11px;color:rgba(245,235,215,0.4);">45s</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start game bar -->
+  <div style="background:rgba(7,14,28,0.9);border-top:1px solid var(--gold-faint);border-radius:0 0 12px 12px;
+              padding:14px 20px;display:flex;gap:12px;align-items:center;margin-bottom:8px;">
+    <span style="background:rgba(212,175,55,0.15);border:1px solid var(--gold);border-radius:20px;
+                 padding:5px 14px;font-size:13px;color:var(--gold);" class="ar-ui">6/6 ✓</span>
+    <button class="btn-gold" style="flex:1;font-size:17px;padding:13px;">
+      <span>ابدأ اللعبة</span>
+      <span lang="en" class="en-display" style="font-size:13px;font-style:italic;opacity:0.8;font-weight:400;">Start Game</span>
+    </button>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCREEN 3 · BOARD
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label">
+    <span class="section-tag">Screen 3 · لوحة اللعبة · Game Board</span>
+  </div>
+
+  <div class="sadu-strip" style="margin-bottom:28px;">
+    <span style="background:#173D6E;flex:3;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#9B2D3A;flex:1;"></span>
+    <span style="background:#D4AF37;flex:2;"></span>
+    <span style="background:#0B1F3A;flex:2;"></span>
+    <span style="background:#9B2D3A;flex:1;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#173D6E;flex:3;"></span>
+  </div>
+
+  <!-- Board top bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;
+              flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="ar-display" style="font-size:18px;color:var(--gold);">أم الهيمان</span>
+      <span style="color:rgba(212,175,55,0.5);font-size:14px;">❖</span>
+    </div>
+    <!-- Scoreboard chips -->
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <!-- Team 1 chip — active -->
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+                  background:rgba(212,175,55,0.1);border:1px solid var(--gold);
+                  box-shadow:0 0 0 2px rgba(212,175,55,0.18),0 0 24px rgba(212,175,55,0.35);">
+        <span style="font-size:22px;line-height:1;">🦅</span>
+        <div>
+          <div class="ar-display" style="font-size:16px;color:var(--pearl);line-height:1.1;">الفريق الأول</div>
+          <div lang="en" class="en-display" style="font-style:italic;font-size:11px;color:var(--pearl-dim);">Team Alpha</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-right:6px;">
+          <span class="en-display" style="font-size:24px;font-weight:700;color:var(--gold);">1800</span>
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;
+                       animation:twinkle 1.4s ease-in-out infinite;"></span>
+        </div>
+      </div>
+      <span class="en-display" style="font-style:italic;color:rgba(212,175,55,0.5);font-size:18px;">vs</span>
+      <!-- Team 2 chip -->
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+                  background:rgba(7,14,28,0.5);border:1px solid var(--gold-faint);">
+        <span style="font-size:22px;line-height:1;">🌙</span>
+        <div>
+          <div class="ar-display" style="font-size:16px;color:var(--pearl);line-height:1.1;">الفريق الثاني</div>
+          <div lang="en" class="en-display" style="font-style:italic;font-size:11px;color:var(--pearl-dim);">Team Beta</div>
+        </div>
+        <span class="en-display" style="font-size:24px;font-weight:700;color:#9B2D3A;margin-right:6px;">1400</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(7,14,28,0.6);
+                  border:1px solid var(--gold-faint);display:flex;align-items:center;justify-content:center;font-size:14px;">🔊</div>
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(7,14,28,0.6);
+                  border:1px solid var(--gold-faint);display:flex;align-items:center;justify-content:center;font-size:14px;">⏸</div>
+    </div>
+  </div>
+
+  <!-- Progress meta -->
+  <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+    <span class="ar-ui" style="font-size:12px;color:var(--pearl-dim);">٨ / ٣٦ سؤال</span>
+    <span class="en-display" lang="en" style="font-style:italic;font-size:12px;color:var(--pearl-dim);">Team Alpha picks</span>
+  </div>
+
+  <!-- Board grid -->
+  <div class="board-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;">
+
+    <!-- Category headers row -->
+    <!-- Col 1: History -->
+    <div class="cat-header" style="background:linear-gradient(180deg,#1a4d8a 0%,#1a4d8acc 100%);">
+      <div style="font-size:22px;margin-bottom:3px;">🕌</div>
+      <div class="ar-display" style="font-size:12px;color:var(--pearl);drop-shadow:0 1px 3px #000;">التاريخ</div>
+      <div lang="en" class="en-display" style="font-size:9px;color:rgba(245,235,215,0.75);font-style:italic;">History</div>
+    </div>
+    <!-- Col 2: Sports -->
+    <div class="cat-header" style="background:linear-gradient(180deg,#8B1A1A 0%,#8B1A1Acc 100%);">
+      <div style="font-size:22px;margin-bottom:3px;">⚽</div>
+      <div class="ar-display" style="font-size:12px;color:var(--pearl);">الرياضة</div>
+      <div lang="en" class="en-display" style="font-size:9px;color:rgba(245,235,215,0.75);font-style:italic;">Sports</div>
+    </div>
+    <!-- Col 3: Science -->
+    <div class="cat-header" style="background:linear-gradient(180deg,#1a6b3a 0%,#1a6b3acc 100%);">
+      <div style="font-size:22px;margin-bottom:3px;">🔬</div>
+      <div class="ar-display" style="font-size:12px;color:var(--pearl);">العلوم</div>
+      <div lang="en" class="en-display" style="font-size:9px;color:rgba(245,235,215,0.75);font-style:italic;">Science</div>
+    </div>
+    <!-- Col 4: Culture -->
+    <div class="cat-header" style="background:linear-gradient(180deg,#7a5010 0%,#7a5010cc 100%);">
+      <div style="font-size:22px;margin-bottom:3px;">🎭</div>
+      <div class="ar-display" style="font-size:12px;color:var(--pearl);">الثقافة</div>
+      <div lang="en" class="en-display" style="font-size:9px;color:rgba(245,235,215,0.75);font-style:italic;">Culture</div>
+    </div>
+    <!-- Col 5: Music -->
+    <div class="cat-header" style="background:linear-gradient(180deg,#6a1a7a 0%,#6a1a7acc 100%);">
+      <div style="font-size:22px;margin-bottom:3px;">🎵</div>
+      <div class="ar-display" style="font-size:12px;color:var(--pearl);">الموسيقى</div>
+      <div lang="en" class="en-display" style="font-size:9px;color:rgba(245,235,215,0.75);font-style:italic;">Music</div>
+    </div>
+    <!-- Col 6: Food -->
+    <div class="cat-header" style="background:linear-gradient(180deg,#246824 0%,#246824cc 100%);">
+      <div style="font-size:22px;margin-bottom:3px;">🍽️</div>
+      <div class="ar-display" style="font-size:12px;color:var(--pearl);">الطعام</div>
+      <div lang="en" class="en-display" style="font-size:9px;color:rgba(245,235,215,0.75);font-style:italic;">Food</div>
+    </div>
+
+    <!-- Row 1: 200 -->
+    <div class="board-cell tier-200 played"></div>
+    <div class="board-cell tier-200"><span class="cell-value-200">200</span></div>
+    <div class="board-cell tier-200 played"></div>
+    <div class="board-cell tier-200"><span class="cell-value-200">200</span></div>
+    <div class="board-cell tier-200"><span class="cell-value-200">200</span></div>
+    <div class="board-cell tier-200 played"></div>
+
+    <!-- Row 2: 200 -->
+    <div class="board-cell tier-200"><span class="cell-value-200">200</span></div>
+    <div class="board-cell tier-200 played"></div>
+    <div class="board-cell tier-200"><span class="cell-value-200">200</span></div>
+    <div class="board-cell tier-200 played"></div>
+    <div class="board-cell tier-200 played"></div>
+    <div class="board-cell tier-200"><span class="cell-value-200">200</span></div>
+
+    <!-- Row 3: 400 -->
+    <div class="board-cell tier-400"><span class="cell-value-400">400</span></div>
+    <div class="board-cell tier-400"><span class="cell-value-400">400</span></div>
+    <div class="board-cell tier-400"><span class="cell-value-400">400</span></div>
+    <div class="board-cell tier-400 played"></div>
+    <div class="board-cell tier-400"><span class="cell-value-400">400</span></div>
+    <div class="board-cell tier-400"><span class="cell-value-400">400</span></div>
+
+    <!-- Row 4: 400 -->
+    <div class="board-cell tier-400 played"></div>
+    <div class="board-cell tier-400"><span class="cell-value-400">400</span></div>
+    <div class="board-cell tier-400"><span class="cell-value-400">400</span></div>
+    <div class="board-cell tier-400"><span class="cell-value-400">400</span></div>
+    <div class="board-cell tier-400 played"></div>
+    <div class="board-cell tier-400"><span class="cell-value-400">400</span></div>
+
+    <!-- Row 5: 600 -->
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+    <div class="board-cell tier-600 challenge" style="">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+        <span style="font-size:20px;filter:drop-shadow(0 0 6px rgba(200,120,255,0.8));">⚡</span>
+        <span class="ar-ui" style="font-size:9px;color:rgba(200,150,255,0.9);font-weight:700;">تحدي!</span>
+      </div>
+    </div>
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+
+    <!-- Row 6: 600 -->
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+    <div class="board-cell tier-600"><span class="cell-value-600">600</span><span style="position:absolute;top:5px;left:6px;font-size:9px;color:rgba(245,235,215,0.4);">✦</span></div>
+  </div>
+
+  <p class="ar-ui" style="margin-top:16px;text-align:center;font-size:12px;color:var(--pearl-dim);">
+    اضغط على خلية لفتح السؤال ·
+    <span lang="en" class="en-display" style="font-style:italic;opacity:0.7;">Tap a cell to open the question</span>
+  </p>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCREEN 4 · QUESTION SCREEN
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label">
+    <span class="section-tag">Screen 4 · السؤال · Question</span>
+  </div>
+
+  <div class="sadu-strip" style="margin-bottom:28px;">
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#9B2D3A;flex:2;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#0B1F3A;flex:3;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#173D6E;flex:2;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+  </div>
+
+  <div style="max-width:640px;margin:0 auto;">
+
+    <!-- Stage label -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <span style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:20px;
+                   background:rgba(212,175,55,0.12);border:1px solid var(--gold-faint);
+                   font-size:12px;" class="ar-ui">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block;"></span>
+        <span style="color:var(--gold-lt);">المرحلة الأولى — الإجابة</span>
+        <span lang="en" class="en-display" style="font-style:italic;font-size:11px;opacity:0.6;">· Stage 1 · Answer Phase</span>
+      </span>
+      <span class="ar-ui" style="font-size:13px;color:var(--pearl-dim);cursor:pointer;">✕ خروج</span>
+    </div>
+
+    <!-- Team cells -->
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;margin-bottom:16px;align-items:center;">
+      <!-- Team 1 — answering -->
+      <div style="padding:12px 14px;border-radius:12px;border:1px solid var(--gold);
+                  background:linear-gradient(135deg,rgba(58,123,200,0.18),rgba(7,14,28,0.5));
+                  box-shadow:0 0 0 2px rgba(212,175,55,0.18),0 0 24px rgba(212,175,55,0.35);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:20px;">🦅</span>
+          <div>
+            <div class="ar-display" style="font-size:15px;color:var(--pearl);">الفريق الأول</div>
+            <div lang="en" class="en-display" style="font-size:11px;font-style:italic;color:var(--pearl-dim);">Team Alpha</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block;
+                       animation:twinkle 1.4s ease-in-out infinite;"></span>
+          <span class="ar-ui" style="font-size:11px;color:var(--gold-lt);">يجيب الآن</span>
+          <span lang="en" class="en-display" style="font-size:10px;font-style:italic;opacity:0.6;">· Answering</span>
+        </div>
+      </div>
+      <span class="en-display" style="font-style:italic;color:rgba(212,175,55,0.5);font-size:18px;text-align:center;">vs</span>
+      <!-- Team 2 — waiting -->
+      <div style="padding:12px 14px;border-radius:12px;border:1px solid var(--gold-faint);
+                  background:rgba(7,14,28,0.5);opacity:0.55;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:20px;">🌙</span>
+          <div>
+            <div class="ar-display" style="font-size:15px;color:var(--pearl);">الفريق الثاني</div>
+            <div lang="en" class="en-display" style="font-size:11px;font-style:italic;color:var(--pearl-dim);">Team Beta</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:rgba(245,235,215,0.3);display:inline-block;"></span>
+          <span class="ar-ui" style="font-size:11px;color:var(--pearl-dim);">التالي · 15ث</span>
+          <span lang="en" class="en-display" style="font-size:10px;font-style:italic;opacity:0.6;">· Up next</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category tag -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;
+                   background:#1a4d8a;font-size:12px;" class="ar-ui">
+        🕌 <span style="color:var(--pearl);font-weight:700;">التاريخ</span>
+      </span>
+      <span lang="en" class="en-display" style="font-style:italic;font-size:11px;color:var(--pearl-dim);text-transform:uppercase;letter-spacing:0.07em;">History</span>
+      <span class="en-display" style="font-weight:700;font-size:20px;color:var(--gold);margin-right:auto;">· 400</span>
+    </div>
+
+    <!-- Dual timer -->
+    <div style="display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:12px;
+                border:1px solid var(--gold-faint);background:rgba(7,14,28,0.55);margin-bottom:16px;">
+      <div>
+        <div class="ar-ui" style="font-size:11px;color:var(--gold-lt);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px;">
+          الوقت الأساسي · <span lang="en">Primary</span>
+        </div>
+        <div class="en-display" style="font-size:44px;font-weight:700;color:var(--gold);line-height:1;
+                    text-shadow:0 0 14px rgba(212,175,55,0.4);">0:22</div>
+        <!-- Timer bar -->
+        <div class="timer-bar-track" style="margin-top:6px;width:120px;">
+          <div class="timer-bar-fill" style="width:73%;"></div>
+        </div>
+      </div>
+      <div style="width:1px;align-self:stretch;background:var(--gold-faint);margin:0 4px;"></div>
+      <div style="opacity:0.6;">
+        <div class="ar-ui" style="font-size:11px;color:rgba(245,235,215,0.6);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">
+          للفريق الآخر · <span lang="en">Team Beta gets</span>
+        </div>
+        <div class="en-display" style="font-size:24px;font-weight:600;color:rgba(245,235,215,0.6);line-height:1;">0:15</div>
+      </div>
+    </div>
+
+    <!-- Question card -->
+    <div class="corner-ornament corner-ornament-b"
+         style="position:relative;border-radius:16px;padding:36px 28px;margin-bottom:18px;text-align:center;
+                background:linear-gradient(160deg,rgba(23,61,110,0.35),rgba(7,14,28,0.88));
+                border:1.5px solid var(--gold-faint);
+                box-shadow:inset 0 0 0 6px rgba(7,14,28,0.5), 0 0 50px rgba(212,175,55,0.08);">
+      <!-- Gold filigree inner border accent -->
+      <div style="position:absolute;inset:6px;border-radius:12px;border:1px solid rgba(212,175,55,0.1);pointer-events:none;"></div>
+
+      <!-- Image placeholder -->
+      <div style="width:100%;height:140px;background:linear-gradient(135deg,rgba(23,61,110,0.6),rgba(11,31,58,0.8));
+                  border-radius:10px;margin-bottom:20px;border:1px solid var(--gold-faint);
+                  display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+        <!-- Decorative khatam pattern in placeholder -->
+        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" style="opacity:0.15;">
+          <polygon points="40,4 46,28 70,28 51,43 58,68 40,53 22,68 29,43 10,28 34,28" fill="var(--gold)"/>
+          <polygon points="40,18 43,32 57,32 46,40 50,54 40,46 30,54 34,40 23,32 37,32" fill="none" stroke="var(--gold-lt)" stroke-width="1"/>
+        </svg>
+        <span class="ar-ui" style="position:absolute;font-size:11px;color:rgba(245,235,215,0.3);letter-spacing:0.1em;">صورة السؤال</span>
+      </div>
+
+      <div class="ar-display" style="font-size:26px;color:var(--pearl);line-height:1.4;margin-bottom:12px;">
+        ما هو العام الذي تأسست فيه الكويت؟
+      </div>
+      <div class="en-display" lang="en" style="font-style:italic;font-size:16px;color:var(--pearl-dim);line-height:1.5;">
+        In what year was Kuwait founded?
+      </div>
+    </div>
+
+    <!-- Lifelines -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;">
+      <button class="btn-lifeline" style="font-size:14px;">
+        <span style="font-size:22px;">⏱</span>
+        <span class="ar-ui" style="font-size:13px;">وقت إضافي</span>
+        <span lang="en" class="en-display" style="font-style:italic;font-size:10px;color:var(--pearl-dim);text-transform:uppercase;letter-spacing:0.06em;">Extra Time</span>
+      </button>
+      <button class="btn-lifeline" style="font-size:14px;">
+        <span style="font-size:22px;">💡</span>
+        <span class="ar-ui" style="font-size:13px;">تلميح</span>
+        <span lang="en" class="en-display" style="font-style:italic;font-size:10px;color:var(--pearl-dim);text-transform:uppercase;letter-spacing:0.06em;">Hint</span>
+      </button>
+      <button class="btn-lifeline" style="font-size:14px;opacity:0.35;cursor:not-allowed;">
+        <span style="font-size:22px;">⚔️</span>
+        <span class="ar-ui" style="font-size:13px;color:var(--ruby-lt);">سرقة</span>
+        <span lang="en" class="en-display" style="font-style:italic;font-size:10px;color:var(--ruby-lt);text-transform:uppercase;letter-spacing:0.06em;">Steal</span>
+      </button>
+    </div>
+
+    <!-- Bottom CTAs -->
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn-outline" style="font-size:14px;padding:12px 20px;">
+        <span>إنهاء دور الفريق الأول</span>
+        <span lang="en" class="en-display" style="font-style:italic;font-size:11px;opacity:0.6;">End Team Alpha's Turn →</span>
+      </button>
+      <button class="btn-gold" style="font-size:14px;padding:12px 22px;">
+        <span style="display:flex;align-items:center;gap:6px;"><span>👁</span> كشف الإجابة</span>
+        <span lang="en" class="en-display" style="font-style:italic;font-size:11px;opacity:0.8;font-weight:400;">Reveal Answer</span>
+      </button>
+    </div>
+
+    <!-- Award stage (reveal sub-panel) -->
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--gold-faint);">
+      <div style="text-align:center;margin-bottom:14px;">
+        <div class="ar-ui" style="font-size:13px;font-weight:700;color:var(--gold-lt);margin-bottom:3px;">من يستحق 400 نقطة؟</div>
+        <div lang="en" class="en-display" style="font-style:italic;font-size:12px;color:var(--pearl-dim);">Who earns the 400 points?</div>
+      </div>
+      <!-- Correct answer reveal -->
+      <div style="border-radius:14px;padding:18px 20px;text-align:center;margin-bottom:14px;
+                  background:linear-gradient(135deg,rgba(212,175,55,0.18),rgba(23,61,110,0.25));
+                  border:1.5px solid var(--gold);box-shadow:0 0 40px rgba(212,175,55,0.25);">
+        <div class="ar-ui" style="font-size:11px;color:var(--gold-lt);text-transform:uppercase;letter-spacing:0.12em;
+                    display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;">
+          ✦ الإجابة الصحيحة · <span lang="en">Correct Answer</span>
+        </div>
+        <div class="ar-display" style="font-size:28px;color:var(--pearl);text-shadow:0 0 14px rgba(212,175,55,0.35);">١٧١٦ م</div>
+        <div lang="en" class="en-display" style="font-style:italic;font-size:15px;color:var(--pearl-dim);margin-top:4px;">1716 AD</div>
+      </div>
+      <!-- Award buttons -->
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch;">
+        <button style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+                       padding:16px 10px;border-radius:12px;border:2px solid rgba(58,123,200,0.7);
+                       background:rgba(7,14,28,0.5);cursor:pointer;transition:transform 0.15s;"
+                onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+          <span style="font-size:22px;">🦅</span>
+          <span class="ar-ui" style="font-size:13px;font-weight:700;color:var(--pearl);">منح الفريق الأول</span>
+          <span lang="en" class="en-display" style="font-size:11px;font-style:italic;color:var(--pearl-dim);">Award · Team Alpha</span>
+          <span class="en-display" style="font-size:18px;font-weight:700;color:#3A7BC8;">+400</span>
+        </button>
+        <button style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+                       padding:12px 16px;border-radius:12px;border:1px solid var(--gold-faint);
+                       background:rgba(7,14,28,0.6);cursor:pointer;min-width:80px;color:var(--pearl-dim);"
+                class="ar-ui">
+          <span style="font-size:18px;opacity:0.7;">✕</span>
+          <span style="font-size:11px;font-weight:600;">بلا منح</span>
+          <span lang="en" class="en-display" style="font-size:10px;font-style:italic;">No Award</span>
+        </button>
+        <button style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+                       padding:16px 10px;border-radius:12px;border:2px solid rgba(155,45,58,0.7);
+                       background:rgba(7,14,28,0.5);cursor:pointer;transition:transform 0.15s;"
+                onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+          <span style="font-size:22px;">🌙</span>
+          <span class="ar-ui" style="font-size:13px;font-weight:700;color:var(--pearl);">منح الفريق الثاني</span>
+          <span lang="en" class="en-display" style="font-size:11px;font-style:italic;color:var(--pearl-dim);">Award · Team Beta</span>
+          <span class="en-display" style="font-size:18px;font-weight:700;color:#9B2D3A;">+400</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCREEN 5 · RESULTS
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label">
+    <span class="section-tag">Screen 5 · النتائج · Results</span>
+  </div>
+
+  <div class="sadu-strip" style="margin-bottom:32px;">
+    <span style="background:#D4AF37;flex:2;"></span>
+    <span style="background:#0B1F3A;flex:1;"></span>
+    <span style="background:#9B2D3A;flex:1;"></span>
+    <span style="background:#D4AF37;flex:3;"></span>
+    <span style="background:#173D6E;flex:1;"></span>
+    <span style="background:#D4AF37;flex:2;"></span>
+    <span style="background:#9B2D3A;flex:1;"></span>
+  </div>
+
+  <!-- Results screen -->
+  <div style="min-height:640px;position:relative;overflow:hidden;text-align:center;padding:40px 20px 60px;">
+
+    <!-- Static ambient particles -->
+    <div style="position:absolute;top:8%;right:12%;font-size:18px;color:var(--gold);opacity:0.22;pointer-events:none;"
+         class="twinkle" style="animation-delay:0s;animation-duration:2.2s;">✦</div>
+    <div style="position:absolute;top:15%;left:14%;font-size:10px;color:var(--gold-dk);opacity:0.18;pointer-events:none;"
+         class="twinkle" style="animation-delay:0.8s;animation-duration:3.1s;">◇</div>
+    <div style="position:absolute;top:40%;right:6%;font-size:22px;color:var(--gold);opacity:0.12;pointer-events:none;"
+         class="twinkle" style="animation-delay:1.4s;animation-duration:2.7s;">❖</div>
+    <div style="position:absolute;bottom:25%;left:8%;font-size:14px;color:var(--gold-lt);opacity:0.2;pointer-events:none;"
+         class="twinkle" style="animation-delay:0.3s;animation-duration:2s;">✦</div>
+    <div style="position:absolute;top:25%;left:5%;font-size:16px;color:var(--gold);opacity:0.15;pointer-events:none;"
+         class="twinkle" style="animation-delay:1.1s;animation-duration:3.5s;">✦</div>
+
+    <!-- Confetti pieces (CSS animated) -->
+    <div class="confetti-piece" style="top:-10px;left:15%;width:5px;height:18px;background:var(--gold);border-radius:1px;animation-duration:4.8s;animation-delay:0s;"></div>
+    <div class="confetti-piece" style="top:-10px;left:28%;width:9px;height:9px;background:var(--ruby-lt);border-radius:0;animation-duration:5.2s;animation-delay:0.4s;"></div>
+    <div class="confetti-piece" style="top:-10px;left:45%;width:7px;height:7px;background:var(--pearl);border-radius:50%;animation-duration:4.5s;animation-delay:0.9s;"></div>
+    <div class="confetti-piece" style="top:-10px;left:62%;width:4px;height:16px;background:var(--gold-lt);border-radius:1px;animation-duration:5s;animation-delay:0.2s;"></div>
+    <div class="confetti-piece" style="top:-10px;left:78%;width:8px;height:8px;background:#3A7BC8;border-radius:0;animation-duration:4.7s;animation-delay:1.1s;"></div>
+    <div class="confetti-piece" style="top:-10px;left:90%;width:6px;height:6px;background:var(--gold);border-radius:50%;animation-duration:5.3s;animation-delay:0.6s;"></div>
+    <div class="confetti-piece" style="top:-10px;left:5%;width:4px;height:14px;background:var(--ruby);border-radius:1px;animation-duration:4.9s;animation-delay:1.5s;"></div>
+    <div class="confetti-piece" style="top:-10px;left:35%;width:9px;height:9px;background:var(--gold);border-radius:0;animation-duration:5.1s;animation-delay:0.7s;"></div>
+    <div class="confetti-piece" style="top:-10px;left:55%;width:5px;height:20px;background:var(--pearl);border-radius:1px;animation-duration:4.6s;animation-delay:1.8s;"></div>
+    <div class="confetti-piece" style="top:-10px;left:72%;width:7px;height:7px;background:var(--gold-lt);border-radius:50%;animation-duration:5.4s;animation-delay:0.3s;"></div>
+
+    <!-- Brand -->
+    <p class="ar-display" style="font-size:16px;color:rgba(212,175,55,0.55);margin-bottom:4px;">أم الهيمان</p>
+    <p lang="en" class="en-display" style="font-style:italic;font-size:13px;color:rgba(212,175,55,0.4);margin-bottom:28px;letter-spacing:0.06em;">Umm Al Hayman City</p>
+
+    <!-- Trophy + wreath -->
+    <div style="font-size:72px;margin-bottom:10px;line-height:1;filter:drop-shadow(0 4px 20px rgba(212,175,55,0.45));">
+      🌿🏆🌿
+    </div>
+
+    <!-- Winner heading -->
+    <h1 class="ar-display" style="font-size:38px;color:var(--gold);margin-bottom:6px;
+               text-shadow:0 0 24px rgba(212,175,55,0.5);">
+      الفريق الأول فاز!
+    </h1>
+    <p lang="en" class="en-display" style="font-style:italic;font-size:22px;color:var(--gold-lt);opacity:0.85;margin-bottom:36px;letter-spacing:0.04em;">
+      Team Alpha Wins!
+    </p>
+
+    <!-- Score cards -->
+    <div style="display:flex;flex-direction:column;gap:16px;align-items:center;max-width:560px;margin:0 auto 28px;">
+      <!-- Winner card -->
+      <div class="corner-ornament corner-ornament-b"
+           style="width:100%;border-radius:20px;padding:28px 32px;position:relative;
+                  background:linear-gradient(135deg,rgba(212,175,55,0.25),rgba(232,200,74,0.1));
+                  border:2px solid var(--gold);
+                  box-shadow:0 0 80px rgba(212,175,55,0.2),inset 0 0 0 1px rgba(245,235,215,0.1);">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;">
+          <span style="font-size:28px;">🦅</span>
+          <div style="text-align:right;">
+            <div class="ar-display" style="font-size:18px;color:var(--pearl);">الفريق الأول</div>
+            <div lang="en" class="en-display" style="font-style:italic;font-size:12px;color:var(--pearl-dim);">Team Alpha</div>
+          </div>
+        </div>
+        <div class="ar-ui" style="font-size:11px;color:var(--gold-lt);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;">
+          النتيجة النهائية · <span lang="en">Final Score</span>
+        </div>
+        <div class="en-display score-reveal"
+             style="font-size:88px;font-weight:700;color:var(--gold);line-height:1;
+                    text-shadow:0 0 30px rgba(212,175,55,0.6);">
+          2200
+        </div>
+        <div lang="en" class="en-display" style="font-size:12px;color:var(--pearl-dim);margin-top:8px;font-style:italic;">
+          14 answered · 2 lifelines · longest streak: 5
+        </div>
+      </div>
+
+      <!-- Runner-up card -->
+      <div style="width:88%;border-radius:14px;padding:18px 24px;
+                  background:rgba(7,14,28,0.5);border:1px solid rgba(155,45,58,0.5);
+                  filter:saturate(0.6) opacity(0.8);">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;">
+          <span style="font-size:22px;">🌙</span>
+          <div style="text-align:right;">
+            <div class="ar-display" style="font-size:15px;color:var(--pearl);">الفريق الثاني</div>
+            <div lang="en" class="en-display" style="font-style:italic;font-size:11px;color:var(--pearl-dim);">Team Beta</div>
+          </div>
+        </div>
+        <div class="ar-ui" style="font-size:11px;color:var(--pearl-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">
+          النتيجة · <span lang="en">Score</span>
+        </div>
+        <div class="en-display" style="font-size:52px;font-weight:700;color:#9B2D3A;line-height:1;">1800</div>
+      </div>
+    </div>
+
+    <!-- Margin -->
+    <p lang="en" class="en-display" style="font-style:italic;font-size:13px;color:var(--pearl-dim);margin-bottom:28px;">
+      Margin of victory: <span style="color:var(--gold-lt);">+400</span>
+    </p>
+
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:480px;margin:0 auto 32px;">
+      <div style="padding:14px 10px;border-radius:12px;background:rgba(7,14,28,0.5);border:1px solid var(--gold-faint);text-align:center;">
+        <div class="en-display" style="font-size:28px;font-weight:700;color:var(--gold);">14</div>
+        <div class="ar-ui" style="font-size:11px;color:var(--pearl-dim);margin-top:2px;">أسئلة</div>
+        <div lang="en" class="en-display" style="font-style:italic;font-size:10px;color:rgba(245,235,215,0.35);">Questions</div>
+      </div>
+      <div style="padding:14px 10px;border-radius:12px;background:rgba(7,14,28,0.5);border:1px solid var(--gold-faint);text-align:center;">
+        <div class="en-display" style="font-size:28px;font-weight:700;color:var(--gold);">2</div>
+        <div class="ar-ui" style="font-size:11px;color:var(--pearl-dim);margin-top:2px;">أطواق نجاة</div>
+        <div lang="en" class="en-display" style="font-style:italic;font-size:10px;color:rgba(245,235,215,0.35);">Lifelines</div>
+      </div>
+      <div style="padding:14px 10px;border-radius:12px;background:rgba(7,14,28,0.5);border:1px solid var(--gold-faint);text-align:center;">
+        <div class="en-display" style="font-size:28px;font-weight:700;color:var(--gold);">5</div>
+        <div class="ar-ui" style="font-size:11px;color:var(--pearl-dim);margin-top:2px;">أطول سلسلة</div>
+        <div lang="en" class="en-display" style="font-style:italic;font-size:10px;color:rgba(245,235,215,0.35);">Best Streak</div>
+      </div>
+    </div>
+
+    <!-- CTAs -->
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;">
+      <button class="btn-gold" style="font-size:15px;padding:14px 24px;">
+        <span>↺ إعادة اللعب</span>
+        <span lang="en" class="en-display" style="font-style:italic;font-size:12px;opacity:0.8;font-weight:400;">Play Again</span>
+      </button>
+      <button class="btn-outline" style="font-size:15px;padding:14px 20px;">
+        <span>⚙ العودة للإعداد</span>
+        <span lang="en" class="en-display" style="font-style:italic;font-size:12px;opacity:0.75;font-weight:400;">Back to Setup</span>
+      </button>
+      <button class="btn-outline" style="font-size:15px;padding:14px 20px;">
+        <span>🏠 الرئيسية</span>
+        <span lang="en" class="en-display" style="font-style:italic;font-size:12px;opacity:0.75;font-weight:400;">Home</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Final sadu strip -->
+  <div class="sadu-strip" style="margin-top:32px;">
+    <span style="background:#0B1F3A;flex:2;"></span>
+    <span style="background:#9B2D3A;flex:1;"></span>
+    <span style="background:#D4AF37;flex:2;"></span>
+    <span style="background:#173D6E;flex:3;"></span>
+    <span style="background:#D4AF37;flex:1;"></span>
+    <span style="background:#9B2D3A;flex:1;"></span>
+    <span style="background:#0B1F3A;flex:2;"></span>
+  </div>
+
+</div><!-- /preview-shell -->
+</body>
+</html>

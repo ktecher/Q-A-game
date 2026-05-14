@@ -11,4 +11,10 @@ if (!isSupabaseConfigured && import.meta.env.DEV) {
   );
 }
 
+if (!isSupabaseConfigured) {
+  console.error(
+    '[supabase] Placeholder Supabase client in use — auth and queries will not work until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.'
+  );
+}
+
 export const supabase = createClient(url ?? 'http://placeholder.local', anonKey ?? 'placeholder');

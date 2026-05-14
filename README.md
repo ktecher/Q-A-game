@@ -116,6 +116,8 @@ The mock-mode bypass is gated on `import.meta.env.DEV` — it cannot ship to a p
 
 ## What's left
 
+The full build spec lives at [`../SEEN_JEEM_BUILD_SPEC.md`](../SEEN_JEEM_BUILD_SPEC.md).
+
 See the plan file at `~/.claude/plans/ok-check-the-md-linked-dawn.md` for the full roadmap. Highlights:
 
 **Pending — Phase 3 (blocked on rotated Supabase keys):**

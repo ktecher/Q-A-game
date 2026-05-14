@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import BrandHeader from './BrandHeader';
+import BrandHeader from '../components/BrandHeader';
 
 export default function PlaceholderScreen({ title, titleEn, screenNum }) {
   return (

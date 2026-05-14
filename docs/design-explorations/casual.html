@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Umm Al Hayman City — Playful Casual Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ── Base tokens ─────────────────────────────── */
+    :root {
+      --bg-cream:    #FFF7ED;
+      --bg-cream-2:  #FEF3C7;
+      --sky:         #38BDF8;
+      --sky-dark:    #0EA5E9;
+      --coral:       #FB7185;
+      --coral-dark:  #F43F5E;
+      --mint:        #34D399;
+      --mint-dark:   #10B981;
+      --yellow:      #FACC15;
+      --yellow-dark: #EAB308;
+      --purple:      #7C3AED;
+      --purple-dark: #6D28D9;
+      --ink:         #1E1B4B;
+      --ink-soft:    #312E81;
+
+      /* radius scale */
+      --r-sm:  8px;
+      --r-md:  16px;
+      --r-lg:  24px;
+      --r-xl:  32px;
+      --r-pill: 9999px;
+
+      /* shadow scale */
+      --sh-card: 0 4px 0 rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08);
+      --sh-btn:  0 4px 0 rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+      --sh-btn-hover: 0 6px 0 rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.12);
+      --sh-lift:  0 8px 0 rgba(0,0,0,0.18), 0 12px 32px rgba(0,0,0,0.14);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Tajawal', 'Nunito', sans-serif;
+      background: var(--bg-cream);
+      color: var(--ink);
+      margin: 0;
+      padding: 0;
+    }
+
+    .font-en { font-family: 'Nunito', sans-serif; }
+    .font-ar { font-family: 'Tajawal', sans-serif; }
+
+    /* ── Keyframe animations ─────────────────────── */
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-3deg) scale(1); }
+      25%       { transform: rotate(4deg)  scale(1.05); }
+      50%       { transform: rotate(-2deg) scale(1.02); }
+      75%       { transform: rotate(3deg)  scale(1.04); }
+    }
+
+    @keyframes bounce-soft {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-6px); }
+    }
+
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(56,189,248,0.55); }
+      70%  { box-shadow: 0 0 0 12px rgba(56,189,248,0); }
+      100% { box-shadow: 0 0 0 0 rgba(56,189,248,0); }
+    }
+
+    @keyframes confetti-fall {
+      0%   { transform: translateY(-40px) rotate(0deg);   opacity: 1; }
+      100% { transform: translateY(100vh)  rotate(720deg); opacity: 0; }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px)   rotate(-2deg); }
+      50%       { transform: translateY(-10px) rotate(2deg); }
+    }
+
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    @keyframes pop-in {
+      0%   { transform: scale(0.5); opacity: 0; }
+      70%  { transform: scale(1.12); }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position:  200% 0; }
+    }
+
+    @keyframes timer-pulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.06); }
+    }
+
+    .mascot-wiggle  { animation: wiggle 3s ease-in-out infinite; }
+    .float-anim     { animation: float 4s ease-in-out infinite; }
+    .bounce-anim    { animation: bounce-soft 2s ease-in-out infinite; }
+    .pop-in-anim    { animation: pop-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .timer-anim     { animation: timer-pulse 1s ease-in-out infinite; }
+    .spin-slow-anim { animation: spin-slow 8s linear infinite; }
+
+    /* ── Chunky tactile button base ──────────────── */
+    .btn-chunky {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 28px;
+      border-radius: var(--r-lg);
+      font-weight: 800;
+      font-size: 1.05rem;
+      cursor: pointer;
+      border: none;
+      box-shadow: var(--sh-btn);
+      transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1),
+                  box-shadow 0.12s ease;
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-chunky:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--sh-btn-hover);
+    }
+    .btn-chunky:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.18);
+    }
+    /* Bottom edge accent for depth */
+    .btn-chunky::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 4px;
+      border-radius: 0 0 var(--r-lg) var(--r-lg);
+      background: rgba(0,0,0,0.18);
+    }
+
+    .btn-sky    { background: var(--sky);    color: #fff; }
+    .btn-coral  { background: var(--coral);  color: #fff; }
+    .btn-mint   { background: var(--mint);   color: #fff; }
+    .btn-yellow { background: var(--yellow); color: var(--ink); }
+    .btn-purple { background: var(--purple); color: #fff; }
+
+    /* ── Screen section wrapper ──────────────────── */
+    .screen-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    /* ── Section divider ─────────────────────────── */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 24px 20px 12px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .section-divider .label {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #9CA3AF;
+      white-space: nowrap;
+    }
+    .section-divider .line {
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(to right, #E5E7EB, transparent);
+      border-radius: 2px;
+    }
+
+    /* ── Card base ────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: var(--r-xl);
+      box-shadow: var(--sh-card);
+      padding: 24px;
+    }
+
+    /* ── Confetti pieces (results screen) ─────────── */
+    .confetti-piece {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      animation: confetti-fall linear both;
+    }
+
+    /* ── Dotted underline heading ─────────────────── */
+    .dotted-under {
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      text-decoration-color: var(--yellow);
+      text-underline-offset: 5px;
+    }
+
+    /* ── Wavy heading accent ─────────────────────── */
+    .wavy-under {
+      text-decoration: underline wavy var(--coral);
+      text-underline-offset: 5px;
+    }
+
+    /* ── Board cell ───────────────────────────────── */
+    .board-cell {
+      border-radius: var(--r-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+      transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1),
+                  box-shadow 0.15s ease;
+      position: relative;
+      overflow: hidden;
+      min-height: 54px;
+    }
+    .board-cell:hover {
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 6px 0 rgba(0,0,0,0.18), 0 8px 20px rgba(0,0,0,0.14);
+    }
+    .board-cell.played {
+      background: #E5E7EB !important;
+      color: #9CA3AF !important;
+      cursor: default;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .board-cell.played:hover { transform: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.08); }
+    .board-cell.challenge {
+      background: linear-gradient(135deg, #7C3AED, #A855F7) !important;
+      color: #fff !important;
+    }
+
+    /* ── Power-up button ─────────────────────────── */
+    .powerup-btn {
+      background: #fff;
+      border: 2.5px solid transparent;
+      border-radius: var(--r-lg);
+      padding: 10px 14px;
+      font-weight: 800;
+      font-size: 0.82rem;
+      cursor: pointer;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      transition: transform 0.14s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.14s ease;
+      position: relative;
+      text-align: center;
+      flex: 1;
+    }
+    .powerup-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 0 rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.10);
+    }
+    .powerup-btn .sparkle {
+      position: absolute;
+      top: -6px; right: -6px;
+      font-size: 14px;
+      animation: spin-slow 6s linear infinite;
+    }
+
+    /* ── Team avatar bubble ──────────────────────── */
+    .team-bubble {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .team-bubble .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--r-pill);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.15), 0 2px 10px rgba(0,0,0,0.12);
+    }
+    .team-bubble .score-badge {
+      min-width: 52px;
+      text-align: center;
+      padding: 3px 12px;
+      border-radius: var(--r-pill);
+      font-weight: 900;
+      font-size: 1.05rem;
+      font-family: 'Nunito', sans-serif;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.14);
+    }
+    .team-bubble .team-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      opacity: 0.7;
+      text-align: center;
+      max-width: 72px;
+      line-height: 1.2;
+    }
+
+    /* ── Color-dot picker ────────────────────────── */
+    .color-dot {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1),
+                  box-shadow 0.15s ease;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.18);
+    }
+    .color-dot.selected {
+      transform: scale(1.25);
+      box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--ink);
+    }
+    .color-dot:hover:not(.selected) { transform: scale(1.15); }
+
+    /* ── Category chip ─────────────────────────── */
+    .cat-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--r-lg);
+      padding: 14px 8px 10px;
+      font-weight: 800;
+      font-size: 0.78rem;
+      cursor: pointer;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
+      transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.15s ease;
+      text-align: center;
+      gap: 6px;
+    }
+    .cat-chip:hover {
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 6px 0 rgba(0,0,0,0.14), 0 8px 20px rgba(0,0,0,0.12);
+    }
+    .cat-chip.selected {
+      outline: 3px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    /* ── Background blobs ────────────────────────── */
+    .bg-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.25;
+      pointer-events: none;
+    }
+
+    /* ── Full-bleed screen backgrounds ──────────── */
+    .screen-bg-home   { background: linear-gradient(160deg, #EFF6FF 0%, #FFF7ED 60%, #FFF0F3 100%); }
+    .screen-bg-setup  { background: linear-gradient(160deg, #F0FDF4 0%, #FFF7ED 100%); }
+    .screen-bg-board  { background: linear-gradient(160deg, #EFF6FF 0%, #F5F3FF 100%); }
+    .screen-bg-q      { background: linear-gradient(160deg, #FFF0F3 0%, #EFF6FF 100%); }
+    .screen-bg-result { background: linear-gradient(160deg, #FFFBEB 0%, #FFF0F3 60%, #F5F3FF 100%); }
+
+    /* ── Stats badge ─────────────────────────────── */
+    .stat-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: #fff;
+      border-radius: var(--r-lg);
+      padding: 14px 16px;
+      box-shadow: var(--sh-card);
+      flex: 1;
+      min-width: 80px;
+    }
+
+    /* ── Difficulty chip ─────────────────────────── */
+    .diff-chip {
+      flex: 1;
+      padding: 12px 8px;
+      border-radius: var(--r-md);
+      font-weight: 800;
+      font-size: 0.85rem;
+      text-align: center;
+      cursor: pointer;
+      border: 2.5px solid transparent;
+      transition: transform 0.14s cubic-bezier(0.34,1.56,0.64,1), border-color 0.14s;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+    }
+    .diff-chip.selected { border-color: var(--ink); transform: scale(1.05); }
+
+    /* ── Timer chip ──────────────────────────────── */
+    .timer-chip {
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: var(--r-md);
+      font-weight: 800;
+      font-size: 0.85rem;
+      text-align: center;
+      cursor: pointer;
+      border: 2.5px solid transparent;
+      background: #fff;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+      transition: transform 0.14s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .timer-chip.selected { border-color: var(--sky); background: #EFF6FF; transform: scale(1.05); }
+
+    /* ── Status pill ─────────────────────────────── */
+    .status-pill {
+      padding: 3px 10px;
+      border-radius: var(--r-pill);
+      font-size: 0.65rem;
+      font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Board header chip */
+    .board-cat-header {
+      background: #fff;
+      border-radius: var(--r-md);
+      padding: 6px 8px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-align: center;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.10);
+      line-height: 1.3;
+    }
+
+    /* ── Shimmer on challenge cell ────────────────── */
+    .shimmer-bg {
+      background: linear-gradient(90deg, #7C3AED 25%, #A855F7 50%, #7C3AED 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2s linear infinite;
+    }
+
+    /* ── Scrollbar styling ───────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     SCREEN 1 — HOME / SIGN-IN
+════════════════════════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="label font-en">Screen 1 — Home</div>
+  <div class="line"></div>
+</div>
+
+<div class="screen-bg-home" style="position:relative; overflow:hidden;">
+  <!-- Decorative blobs -->
+  <div class="bg-blob" style="width:280px;height:280px;background:var(--sky);top:-60px;right:-80px;"></div>
+  <div class="bg-blob" style="width:220px;height:220px;background:var(--coral);bottom:40px;left:-60px;"></div>
+  <div class="bg-blob" style="width:180px;height:180px;background:var(--yellow);bottom:-40px;right:60px;"></div>
+
+  <!-- Floating sparkle stars -->
+  <div style="position:absolute;top:40px;left:30px;font-size:22px;opacity:0.6;" class="float-anim">✦</div>
+  <div style="position:absolute;top:120px;right:24px;font-size:16px;opacity:0.4;" class="float-anim" style="animation-delay:1s;">⭐</div>
+  <div style="position:absolute;bottom:120px;left:20px;font-size:18px;opacity:0.5;" class="float-anim">✨</div>
+
+  <div class="screen-wrap" style="position:relative; z-index:1;">
+
+    <!-- Mascot: pearl-diving dhow boat SVG -->
+    <div style="display:flex; justify-content:center; margin-bottom:8px;">
+      <div class="mascot-wiggle" style="display:inline-block;">
+        <svg width="160" height="140" viewBox="0 0 160 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Friendly dhow boat mascot">
+          <!-- Water base -->
+          <ellipse cx="80" cy="118" rx="70" ry="14" fill="#BAE6FD" opacity="0.6"/>
+          <!-- Waves -->
+          <path d="M20 118 Q35 112 50 118 Q65 124 80 118 Q95 112 110 118 Q125 124 140 118" stroke="#38BDF8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <!-- Hull -->
+          <path d="M30 100 Q34 118 80 120 Q126 118 130 100 Z" fill="#7C3AED"/>
+          <path d="M30 100 Q34 116 80 118 Q126 116 130 100" fill="#A855F7" opacity="0.5"/>
+          <!-- Hull highlight stripe -->
+          <path d="M42 107 Q80 110 118 107" stroke="#C4B5FD" stroke-width="2" stroke-linecap="round"/>
+          <!-- Deck -->
+          <rect x="36" y="95" width="88" height="8" rx="4" fill="#F59E0B"/>
+          <rect x="36" y="95" width="88" height="4" rx="2" fill="#FBBF24"/>
+          <!-- Mast -->
+          <rect x="78" y="30" width="4" height="68" rx="2" fill="#92400E"/>
+          <rect x="79" y="30" width="2" height="68" rx="1" fill="#B45309" opacity="0.5"/>
+          <!-- Sail -->
+          <path d="M82 32 Q118 50 112 88 L82 88 Z" fill="white" opacity="0.95"/>
+          <path d="M82 32 Q118 50 112 88 L82 88 Z" fill="#EFF6FF" opacity="0.5"/>
+          <!-- Sail stripes -->
+          <path d="M82 50 Q105 57 103 74" stroke="#38BDF8" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+          <path d="M82 62 Q102 68 101 80" stroke="#38BDF8" stroke-width="1.5" opacity="0.3" stroke-linecap="round"/>
+          <!-- Flag at top -->
+          <path d="M82 30 L98 22 L82 14 Z" fill="#FB7185"/>
+          <!-- Pearl hanging from sail -->
+          <circle cx="112" cy="93" r="7" fill="white" stroke="#E2E8F0" stroke-width="1.5"/>
+          <ellipse cx="110" cy="91" rx="2.5" ry="1.5" fill="white" opacity="0.8"/>
+          <!-- Pearl shine -->
+          <circle cx="110" cy="90" r="1.5" fill="white" opacity="0.6"/>
+          <!-- Cute face on pearl -->
+          <circle cx="111" cy="93" r="1" fill="#94A3B8"/>
+          <circle cx="114" cy="93" r="1" fill="#94A3B8"/>
+          <path d="M110.5 95.5 Q112.5 97 114.5 95.5" stroke="#94A3B8" stroke-width="1" fill="none" stroke-linecap="round"/>
+          <!-- Captain hat shape on mast top -->
+          <ellipse cx="80" cy="30" rx="8" ry="3" fill="#1E1B4B"/>
+          <rect x="74" y="24" width="12" height="6" rx="2" fill="#1E1B4B"/>
+          <!-- Stars around boat -->
+          <text x="15" y="68" font-size="14" opacity="0.7" fill="#FACC15">✦</text>
+          <text x="138" y="72" font-size="12" opacity="0.6" fill="#FB7185">✦</text>
+          <text x="22" y="90" font-size="10" opacity="0.5" fill="#34D399">●</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div style="text-align:center; margin-bottom:28px;">
+      <div style="display:inline-block; position:relative;">
+        <!-- Wavy decorative line above Arabic title -->
+        <div style="text-align:center; margin-bottom:6px;">
+          <svg width="120" height="10" viewBox="0 0 120 10" fill="none">
+            <path d="M0 5 Q15 0 30 5 Q45 10 60 5 Q75 0 90 5 Q105 10 120 5" stroke="#FACC15" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h1 class="font-ar" style="font-size:2.4rem; font-weight:900; line-height:1.1; color:var(--ink); margin:0 0 4px;">
+          مدينة أم الهيمان
+        </h1>
+        <p class="font-en" style="font-size:1.05rem; font-weight:700; color:var(--purple); letter-spacing:0.02em; margin:0 0 6px;">
+          Umm Al Hayman City
+        </p>
+        <div style="display:flex; justify-content:center; gap:6px; align-items:center;">
+          <span style="font-size:20px;">🎮</span>
+          <span class="font-ar" style="font-size:0.85rem; font-weight:500; color:#6B7280;">لعبة أسئلة عائلية</span>
+          <span style="font-size:20px;">🏆</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Auth buttons -->
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <button class="btn-chunky btn-sky" style="width:100%; font-size:1.1rem; padding:16px 28px; font-family:'Tajawal',sans-serif;">
+        <span style="font-size:22px;">🔑</span>
+        <span>تسجيل الدخول</span>
+        <span class="font-en" style="font-size:0.78rem; opacity:0.85; margin-right:auto;">Sign In</span>
+      </button>
+
+      <button class="btn-chunky btn-coral" style="width:100%; font-size:1.1rem; padding:16px 28px; font-family:'Tajawal',sans-serif;">
+        <span style="font-size:22px;">✨</span>
+        <span>إنشاء حساب</span>
+        <span class="font-en" style="font-size:0.78rem; opacity:0.85; margin-right:auto;">Sign Up</span>
+      </button>
+
+      <button class="btn-chunky btn-mint" style="width:100%; font-size:1.1rem; padding:16px 28px; font-family:'Tajawal',sans-serif;">
+        <span style="font-size:22px;">🚀</span>
+        <span>الاستمرار كضيف</span>
+        <span class="font-en" style="font-size:0.78rem; opacity:0.85; margin-right:auto;">Continue as Guest</span>
+      </button>
+    </div>
+
+    <!-- Footer note -->
+    <p class="font-ar" style="text-align:center; font-size:0.78rem; color:#9CA3AF; margin-top:24px; font-weight:500;">
+      مصنوع بحب في الكويت 🇰🇼
+    </p>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SCREEN 2 — SETUP
+════════════════════════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="label font-en">Screen 2 — Setup</div>
+  <div class="line"></div>
+</div>
+
+<div class="screen-bg-setup" style="position:relative; overflow:hidden;">
+  <div class="bg-blob" style="width:240px;height:240px;background:var(--mint);top:-40px;left:-60px;"></div>
+  <div class="bg-blob" style="width:200px;height:200px;background:var(--yellow);bottom:20px;right:-40px;"></div>
+
+  <div class="screen-wrap" style="position:relative; z-index:1;">
+
+    <!-- Header -->
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+      <button style="background:#fff; border:none; border-radius:var(--r-md); width:40px; height:40px; display:flex; align-items:center; justify-content:center; box-shadow:var(--sh-btn); cursor:pointer; font-size:18px;" class="btn-chunky" style="padding:0;">←</button>
+      <div>
+        <h2 class="font-ar" style="font-size:1.5rem; font-weight:900; margin:0; color:var(--ink);">إعداد اللعبة</h2>
+        <p class="font-en" style="font-size:0.75rem; font-weight:700; color:#6B7280; margin:0;">Game Setup</p>
+      </div>
+      <div style="margin-right:auto; font-size:28px;" class="bounce-anim">🎲</div>
+    </div>
+
+    <!-- SECTION: Choose Categories -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+        <span style="font-size:22px;">📚</span>
+        <div>
+          <h3 class="font-ar" style="font-size:1rem; font-weight:800; margin:0; color:var(--ink);">اختر الفئات</h3>
+          <p class="font-en" style="font-size:0.7rem; font-weight:600; color:#6B7280; margin:0;">Choose 6 categories</p>
+        </div>
+        <span class="font-en" style="margin-right:auto; font-size:0.75rem; font-weight:700; color:var(--purple); background:#F5F3FF; padding:3px 10px; border-radius:var(--r-pill);">4 / 6</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+        <!-- Cat tile 1 — selected -->
+        <div class="cat-chip selected" style="background:linear-gradient(135deg,#FEF9C3,#FEF08A); color:#78350F;">
+          <span style="font-size:28px;">🏛️</span>
+          <span class="font-ar" style="line-height:1.2;">التاريخ</span>
+          <span class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">History</span>
+        </div>
+        <!-- Cat tile 2 — selected -->
+        <div class="cat-chip selected" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0); color:#14532D;">
+          <span style="font-size:28px;">🌊</span>
+          <span class="font-ar" style="line-height:1.2;">البحر</span>
+          <span class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">The Sea</span>
+        </div>
+        <!-- Cat tile 3 — selected -->
+        <div class="cat-chip selected" style="background:linear-gradient(135deg,#DBEAFE,#BFDBFE); color:#1E3A5F;">
+          <span style="font-size:28px;">🕌</span>
+          <span class="font-ar" style="line-height:1.2;">الثقافة</span>
+          <span class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">Culture</span>
+        </div>
+        <!-- Cat tile 4 — selected -->
+        <div class="cat-chip selected" style="background:linear-gradient(135deg,#FCE7F3,#FBCFE8); color:#831843;">
+          <span style="font-size:28px;">🍽️</span>
+          <span class="font-ar" style="line-height:1.2;">الطعام</span>
+          <span class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">Food</span>
+        </div>
+        <!-- Cat tile 5 — unselected -->
+        <div class="cat-chip" style="background:#F3F4F6; color:#6B7280;">
+          <span style="font-size:28px;">⚽</span>
+          <span class="font-ar" style="line-height:1.2;">الرياضة</span>
+          <span class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">Sports</span>
+        </div>
+        <!-- Cat tile 6 — unselected -->
+        <div class="cat-chip" style="background:#F3F4F6; color:#6B7280;">
+          <span style="font-size:28px;">🌴</span>
+          <span class="font-ar" style="line-height:1.2;">الطبيعة</span>
+          <span class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">Nature</span>
+        </div>
+        <!-- Cat tile 7 — unselected -->
+        <div class="cat-chip" style="background:#F3F4F6; color:#6B7280;">
+          <span style="font-size:28px;">🔬</span>
+          <span class="font-ar" style="line-height:1.2;">العلوم</span>
+          <span class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">Science</span>
+        </div>
+        <!-- Cat tile 8 — unselected -->
+        <div class="cat-chip" style="background:#F3F4F6; color:#6B7280;">
+          <span style="font-size:28px;">🎭</span>
+          <span class="font-ar" style="line-height:1.2;">الفنون</span>
+          <span class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">Arts</span>
+        </div>
+        <!-- Cat tile 9 — unselected -->
+        <div class="cat-chip" style="background:#F3F4F6; color:#6B7280;">
+          <span style="font-size:28px;">🏙️</span>
+          <span class="font-ar" style="line-height:1.2;">المدن</span>
+          <span class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">Cities</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: Teams -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+        <span style="font-size:22px;">👥</span>
+        <div>
+          <h3 class="font-ar" style="font-size:1rem; font-weight:800; margin:0; color:var(--ink);">الفريقان</h3>
+          <p class="font-en" style="font-size:0.7rem; font-weight:600; color:#6B7280; margin:0;">Name your teams</p>
+        </div>
+      </div>
+
+      <!-- Team 1 -->
+      <div style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE); border-radius:var(--r-lg); padding:14px; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+          <div style="width:44px;height:44px;border-radius:var(--r-pill);background:var(--sky);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 3px 0 rgba(0,0,0,0.15);">⚡</div>
+          <div style="flex:1;">
+            <input type="text" value="الصواريخ" dir="rtl" class="font-ar" style="width:100%;border:2.5px solid #BFDBFE;border-radius:var(--r-md);padding:8px 12px;font-size:1rem;font-weight:700;background:#fff;color:var(--ink);outline:none;font-family:'Tajawal',sans-serif;" />
+          </div>
+        </div>
+        <div>
+          <p class="font-en" style="font-size:0.7rem; font-weight:700; color:#3B82F6; margin:0 0 8px; text-align:right;">Team Color</p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+            <div class="color-dot selected" style="background:#38BDF8;"></div>
+            <div class="color-dot" style="background:#34D399;"></div>
+            <div class="color-dot" style="background:#FACC15;"></div>
+            <div class="color-dot" style="background:#FB7185;"></div>
+            <div class="color-dot" style="background:#7C3AED;"></div>
+            <div class="color-dot" style="background:#F97316;"></div>
+            <div class="color-dot" style="background:#EC4899;"></div>
+            <div class="color-dot" style="background:#14B8A6;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team 2 -->
+      <div style="background:linear-gradient(135deg,#FFF0F3,#FFE4E6); border-radius:var(--r-lg); padding:14px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+          <div style="width:44px;height:44px;border-radius:var(--r-pill);background:var(--coral);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 3px 0 rgba(0,0,0,0.15);">🔥</div>
+          <div style="flex:1;">
+            <input type="text" value="الأسود" dir="rtl" class="font-ar" style="width:100%;border:2.5px solid #FECDD3;border-radius:var(--r-md);padding:8px 12px;font-size:1rem;font-weight:700;background:#fff;color:var(--ink);outline:none;font-family:'Tajawal',sans-serif;" />
+          </div>
+        </div>
+        <div>
+          <p class="font-en" style="font-size:0.7rem; font-weight:700; color:#F43F5E; margin:0 0 8px; text-align:right;">Team Color</p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+            <div class="color-dot" style="background:#38BDF8;"></div>
+            <div class="color-dot" style="background:#34D399;"></div>
+            <div class="color-dot" style="background:#FACC15;"></div>
+            <div class="color-dot selected" style="background:#FB7185;"></div>
+            <div class="color-dot" style="background:#7C3AED;"></div>
+            <div class="color-dot" style="background:#F97316;"></div>
+            <div class="color-dot" style="background:#EC4899;"></div>
+            <div class="color-dot" style="background:#14B8A6;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: Difficulty -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+        <span style="font-size:22px;">🎯</span>
+        <div>
+          <h3 class="font-ar" style="font-size:1rem; font-weight:800; margin:0; color:var(--ink);">مستوى الصعوبة</h3>
+          <p class="font-en" style="font-size:0.7rem; font-weight:600; color:#6B7280; margin:0;">Difficulty</p>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div class="diff-chip selected" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0); color:#14532D;">
+          <div style="font-size:22px; margin-bottom:4px;">😊</div>
+          <div class="font-ar" style="font-size:0.9rem; font-weight:800;">سهل</div>
+          <div class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">Easy</div>
+        </div>
+        <div class="diff-chip" style="background:linear-gradient(135deg,#FEF9C3,#FDE68A); color:#78350F;">
+          <div style="font-size:22px; margin-bottom:4px;">🤔</div>
+          <div class="font-ar" style="font-size:0.9rem; font-weight:800;">متنوع</div>
+          <div class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">Mixed</div>
+        </div>
+        <div class="diff-chip" style="background:linear-gradient(135deg,#FFE4E6,#FECDD3); color:#881337;">
+          <div style="font-size:22px; margin-bottom:4px;">🔥</div>
+          <div class="font-ar" style="font-size:0.9rem; font-weight:800;">صعب</div>
+          <div class="font-en" style="font-size:0.65rem; font-weight:600; opacity:0.7;" lang="en">Hard</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: Timer -->
+    <div class="card" style="margin-bottom:28px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+        <span style="font-size:22px;">⏱️</span>
+        <div>
+          <h3 class="font-ar" style="font-size:1rem; font-weight:800; margin:0; color:var(--ink);">وقت الإجابة</h3>
+          <p class="font-en" style="font-size:0.7rem; font-weight:600; color:#6B7280; margin:0;">Answer timer</p>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div class="timer-chip">
+          <div style="font-size:1.3rem; font-weight:900; font-family:'Nunito',sans-serif; color:var(--ink);">20s</div>
+          <div class="font-ar" style="font-size:0.7rem; color:#6B7280;">سريع</div>
+        </div>
+        <div class="timer-chip selected">
+          <div style="font-size:1.3rem; font-weight:900; font-family:'Nunito',sans-serif; color:var(--sky-dark);">30s</div>
+          <div class="font-ar" style="font-size:0.7rem; color:#3B82F6;">عادي</div>
+        </div>
+        <div class="timer-chip">
+          <div style="font-size:1.3rem; font-weight:900; font-family:'Nunito',sans-serif; color:var(--ink);">45s</div>
+          <div class="font-ar" style="font-size:0.7rem; color:#6B7280;">هادئ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start Button -->
+    <button class="btn-chunky" style="width:100%; background:linear-gradient(135deg,var(--purple),#A855F7); color:#fff; font-size:1.2rem; padding:18px 28px; font-family:'Tajawal',sans-serif; border-radius:var(--r-xl); box-shadow:0 6px 0 #5B21B6, 0 4px 20px rgba(124,58,237,0.35);">
+      <span style="font-size:26px;">🚀</span>
+      <span style="font-weight:900;">ابدأ اللعبة</span>
+      <span class="font-en" style="font-size:0.9rem; opacity:0.9; margin-right:auto;" lang="en">Start Game!</span>
+    </button>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SCREEN 3 — GAME BOARD
+════════════════════════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="label font-en">Screen 3 — Game Board</div>
+  <div class="line"></div>
+</div>
+
+<div class="screen-bg-board" style="position:relative; overflow:hidden;">
+  <div class="bg-blob" style="width:220px;height:220px;background:var(--sky);top:-40px;right:-40px;opacity:0.2;"></div>
+  <div class="bg-blob" style="width:180px;height:180px;background:var(--purple);bottom:-20px;left:-40px;opacity:0.15;"></div>
+
+  <div class="screen-wrap" style="position:relative; z-index:1; padding-top:20px;">
+
+    <!-- Top bar with scoreboard -->
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:20px; gap:8px;">
+
+      <!-- Team 1 bubble -->
+      <div class="team-bubble pop-in-anim">
+        <div class="avatar" style="background:linear-gradient(135deg,var(--sky),#60A5FA);">⚡</div>
+        <div class="score-badge" style="background:var(--sky); color:#fff;">800</div>
+        <div class="team-name font-ar" style="color:var(--ink);">الصواريخ</div>
+      </div>
+
+      <!-- VS / Round indicator -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; padding-bottom:4px;">
+        <div style="font-size:0.65rem; font-weight:700; color:#9CA3AF; font-family:'Nunito',sans-serif; letter-spacing:0.08em;">ROUND</div>
+        <div style="background:var(--yellow); color:var(--ink); border-radius:var(--r-pill); padding:4px 14px; font-weight:900; font-family:'Nunito',sans-serif; font-size:1.2rem; box-shadow:0 3px 0 rgba(0,0,0,0.15);">2</div>
+        <div class="font-ar" style="font-size:0.72rem; font-weight:700; color:var(--purple);">دور الصواريخ</div>
+      </div>
+
+      <!-- Team 2 bubble -->
+      <div class="team-bubble pop-in-anim">
+        <div class="avatar" style="background:linear-gradient(135deg,var(--coral),#F472B6);">🔥</div>
+        <div class="score-badge" style="background:var(--coral); color:#fff;">400</div>
+        <div class="team-name font-ar" style="color:var(--ink);">الأسود</div>
+      </div>
+    </div>
+
+    <!-- Board grid -->
+    <div style="background:white; border-radius:var(--r-xl); padding:14px; box-shadow:var(--sh-card);">
+
+      <!-- Category headers row -->
+      <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:8px;">
+        <div class="board-cat-header" style="background:linear-gradient(135deg,#FEF9C3,#FDE68A); color:#78350F;">
+          <div style="font-size:14px;">🏛️</div>
+          <div class="font-ar" style="font-size:0.62rem;">التاريخ</div>
+        </div>
+        <div class="board-cat-header" style="background:linear-gradient(135deg,#DBEAFE,#BFDBFE); color:#1E3A5F;">
+          <div style="font-size:14px;">🌊</div>
+          <div class="font-ar" style="font-size:0.62rem;">البحر</div>
+        </div>
+        <div class="board-cat-header" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0); color:#14532D;">
+          <div style="font-size:14px;">🕌</div>
+          <div class="font-ar" style="font-size:0.62rem;">الثقافة</div>
+        </div>
+        <div class="board-cat-header" style="background:linear-gradient(135deg,#FCE7F3,#FBCFE8); color:#831843;">
+          <div style="font-size:14px;">🍽️</div>
+          <div class="font-ar" style="font-size:0.62rem;">الطعام</div>
+        </div>
+        <div class="board-cat-header" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE); color:#4C1D95;">
+          <div style="font-size:14px;">⚽</div>
+          <div class="font-ar" style="font-size:0.62rem;">الرياضة</div>
+        </div>
+        <div class="board-cat-header" style="background:linear-gradient(135deg,#FFEDD5,#FED7AA); color:#7C2D12;">
+          <div style="font-size:14px;">🌴</div>
+          <div class="font-ar" style="font-size:0.62rem;">الطبيعة</div>
+        </div>
+      </div>
+
+      <!-- Row 200 — mint/teal -->
+      <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:6px;">
+        <div class="board-cell played" style="font-size:0.75rem; color:#9CA3AF;">
+          <span style="font-size:18px;">✓</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#34D399,#10B981); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">200</span>
+        </div>
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#34D399,#10B981); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">200</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#34D399,#10B981); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">200</span>
+        </div>
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+      </div>
+
+      <!-- Row 200 b — sky -->
+      <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:6px;">
+        <div class="board-cell" style="background:linear-gradient(135deg,#38BDF8,#0EA5E9); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">200</span>
+        </div>
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#38BDF8,#0EA5E9); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">200</span>
+        </div>
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#38BDF8,#0EA5E9); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">200</span>
+        </div>
+      </div>
+
+      <!-- Row 400 — yellow/amber -->
+      <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:6px;">
+        <div class="board-cell" style="background:linear-gradient(135deg,#FBBF24,#F59E0B); color:#1C1917;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">400</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#FBBF24,#F59E0B); color:#1C1917;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">400</span>
+        </div>
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#FBBF24,#F59E0B); color:#1C1917;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">400</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#FBBF24,#F59E0B); color:#1C1917;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">400</span>
+        </div>
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+      </div>
+
+      <!-- Row 400 b — coral -->
+      <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:6px;">
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#FB7185,#F43F5E); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">400</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#FB7185,#F43F5E); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">400</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#FB7185,#F43F5E); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">400</span>
+        </div>
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#FB7185,#F43F5E); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">400</span>
+        </div>
+      </div>
+
+      <!-- Row 600 — purple/deep -->
+      <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:6px;">
+        <div class="board-cell" style="background:linear-gradient(135deg,#7C3AED,#A855F7); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">600</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#7C3AED,#A855F7); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">600</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#7C3AED,#A855F7); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">600</span>
+        </div>
+        <!-- Challenge cell -->
+        <div class="board-cell shimmer-bg" style="color:white; grid-column: span 2; font-size:0.72rem; flex-direction:column; gap:2px; padding:6px;">
+          <span style="font-size:20px; animation: spin-slow 4s linear infinite; display:inline-block;">🌟</span>
+          <span style="font-family:'Nunito',sans-serif; font-weight:900; font-size:0.8rem;">CHALLENGE!</span>
+          <span class="font-ar" style="font-size:0.65rem;">تحدي</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#7C3AED,#A855F7); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">600</span>
+        </div>
+      </div>
+
+      <!-- Row 600 b -->
+      <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px;">
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#6D28D9,#7C3AED); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">600</span>
+        </div>
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#6D28D9,#7C3AED); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">600</span>
+        </div>
+        <div class="board-cell" style="background:linear-gradient(135deg,#6D28D9,#7C3AED); color:white;">
+          <span style="font-family:'Nunito',sans-serif; font-size:1rem; font-weight:900;">600</span>
+        </div>
+        <div class="board-cell played">
+          <span style="font-size:18px;">✓</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom utility bar -->
+    <div style="display:flex; gap:10px; margin-top:18px;">
+      <button class="btn-chunky" style="flex:1; background:#fff; color:var(--ink); font-size:0.85rem; padding:10px; font-family:'Tajawal',sans-serif; border:2px solid #E5E7EB;">
+        <span>⚙️</span>
+        <span class="font-ar">الإعدادات</span>
+      </button>
+      <button class="btn-chunky" style="flex:2; background:linear-gradient(135deg,var(--sky),#60A5FA); color:#fff; font-size:0.9rem; padding:10px; font-family:'Tajawal',sans-serif;">
+        <span>✏️</span>
+        <span class="font-ar">تعديل النقاط</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SCREEN 4 — QUESTION
+════════════════════════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="label font-en">Screen 4 — Question</div>
+  <div class="line"></div>
+</div>
+
+<div class="screen-bg-q" style="position:relative; overflow:hidden;">
+  <div class="bg-blob" style="width:260px;height:260px;background:var(--coral);top:-60px;left:-60px;opacity:0.2;"></div>
+  <div class="bg-blob" style="width:200px;height:200px;background:var(--sky);bottom:60px;right:-40px;opacity:0.18;"></div>
+
+  <div class="screen-wrap" style="position:relative; z-index:1; padding-top:20px;">
+
+    <!-- Team status bar -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; gap:12px;">
+
+      <!-- Team 1 — ACTIVE (answering) -->
+      <div style="flex:1;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+          <div style="position:relative;">
+            <div style="width:60px;height:60px;border-radius:var(--r-pill);background:linear-gradient(135deg,var(--sky),#60A5FA);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 0 0 4px #38BDF8, 0 0 0 8px rgba(56,189,248,0.25), 0 4px 12px rgba(56,189,248,0.4);animation:pulse-ring 1.8s ease-out infinite;" class="timer-anim">⚡</div>
+            <div style="position:absolute;top:-6px;right:-6px;background:var(--yellow);border-radius:var(--r-pill);padding:2px 6px;font-size:0.6rem;font-weight:900;font-family:'Nunito',sans-serif;color:var(--ink);box-shadow:0 2px 4px rgba(0,0,0,0.15);">YOU</div>
+          </div>
+          <div style="background:var(--sky); color:#fff; border-radius:var(--r-pill); padding:4px 14px; font-weight:900; font-family:'Nunito',sans-serif; font-size:1.1rem; box-shadow:0 2px 0 rgba(0,0,0,0.15);">800</div>
+          <div class="font-ar" style="font-size:0.7rem; font-weight:700; color:var(--ink); opacity:0.7;">الصواريخ</div>
+          <div class="status-pill" style="background:#DCFCE7; color:#14532D;">تجيب ◉</div>
+        </div>
+      </div>
+
+      <!-- Center: category + points chip -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+        <div style="background:linear-gradient(135deg,#DBEAFE,#BFDBFE); border-radius:var(--r-md); padding:6px 12px; font-size:0.72rem; font-weight:800; color:#1E3A5F; text-align:center; box-shadow:0 2px 0 rgba(0,0,0,0.08);">
+          <div style="font-size:16px;">🌊</div>
+          <div class="font-ar">البحر</div>
+        </div>
+        <div style="background:var(--purple); color:#fff; border-radius:var(--r-pill); padding:4px 16px; font-weight:900; font-family:'Nunito',sans-serif; font-size:1.3rem; box-shadow:0 3px 0 rgba(109,40,217,0.5);">600</div>
+      </div>
+
+      <!-- Team 2 — waiting -->
+      <div style="flex:1;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+          <div style="width:60px;height:60px;border-radius:var(--r-pill);background:linear-gradient(135deg,var(--coral),#F472B6);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 4px 0 rgba(0,0,0,0.15), 0 2px 10px rgba(0,0,0,0.1); opacity:0.65;">🔥</div>
+          <div style="background:var(--coral); color:#fff; border-radius:var(--r-pill); padding:4px 14px; font-weight:900; font-family:'Nunito',sans-serif; font-size:1.1rem; box-shadow:0 2px 0 rgba(0,0,0,0.15); opacity:0.65;">400</div>
+          <div class="font-ar" style="font-size:0.7rem; font-weight:700; color:var(--ink); opacity:0.5;">الأسود</div>
+          <div class="status-pill" style="background:#F3F4F6; color:#6B7280;">ينتظر ○</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BIG TIMER -->
+    <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin-bottom:20px;">
+      <div class="timer-anim" style="background:linear-gradient(135deg,#FBBF24,#F59E0B); border-radius:var(--r-xl); padding:14px 32px; box-shadow:0 6px 0 rgba(217,119,6,0.4), 0 4px 20px rgba(251,191,36,0.35); display:flex; flex-direction:column; align-items:center;">
+        <div style="font-family:'Nunito',sans-serif; font-size:3.5rem; font-weight:900; color:#1C1917; line-height:1; letter-spacing:-2px;">23</div>
+        <div class="font-en" style="font-size:0.65rem; font-weight:700; color:rgba(28,25,23,0.6); letter-spacing:0.1em; text-transform:uppercase;">seconds</div>
+      </div>
+
+      <!-- Mini companion timer (progress ring) -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <svg width="52" height="52" viewBox="0 0 52 52">
+          <circle cx="26" cy="26" r="22" fill="none" stroke="#E5E7EB" stroke-width="5"/>
+          <circle cx="26" cy="26" r="22" fill="none" stroke="#FB7185" stroke-width="5"
+            stroke-dasharray="138.2" stroke-dashoffset="55" stroke-linecap="round"
+            transform="rotate(-90 26 26)"/>
+          <text x="26" y="31" text-anchor="middle" font-family="Nunito,sans-serif" font-size="14" font-weight="900" fill="#1E1B4B">23</text>
+        </svg>
+        <div class="font-ar" style="font-size:0.62rem; font-weight:700; color:#6B7280;">مؤقت</div>
+      </div>
+    </div>
+
+    <!-- Question card -->
+    <div class="card" style="margin-bottom:20px; background:linear-gradient(160deg,#EFF6FF,#fff); border:2.5px solid #BFDBFE; padding:0; overflow:hidden;">
+      <!-- Image placeholder -->
+      <div style="background:linear-gradient(135deg,#DBEAFE,#BFDBFE); height:120px; display:flex; align-items:center; justify-content:center; position:relative;">
+        <svg width="60" height="50" viewBox="0 0 60 50" fill="none" opacity="0.5">
+          <rect x="5" y="8" width="50" height="34" rx="6" fill="#93C5FD"/>
+          <circle cx="22" cy="22" r="6" fill="#60A5FA"/>
+          <path d="M5 35 L18 24 L28 32 L38 20 L55 35" fill="#60A5FA" opacity="0.6"/>
+        </svg>
+        <div class="font-en" style="position:absolute;bottom:8px;right:10px;font-size:0.6rem;font-weight:700;color:#93C5FD;letter-spacing:0.08em;">IMAGE</div>
+      </div>
+
+      <div style="padding:20px 20px 24px;">
+        <!-- Arabic question -->
+        <p class="font-ar" style="font-size:1.4rem; font-weight:800; color:var(--ink); line-height:1.5; margin:0 0 10px; text-align:right;">
+          ما هو الاسم القديم لمدينة الكويت قبل أن يُبنى السور الأول؟
+        </p>
+        <!-- English subtitle -->
+        <p class="font-en" style="font-size:0.85rem; font-weight:600; color:#6B7280; line-height:1.6; margin:0; text-align:left;" lang="en" dir="ltr">
+          What was the old name of Kuwait City before the first wall was built?
+        </p>
+      </div>
+    </div>
+
+    <!-- Power-up row -->
+    <div style="display:flex; gap:8px; margin-bottom:20px;">
+      <!-- Extra time -->
+      <button class="powerup-btn" style="border-color:#FBBF24;">
+        <div class="sparkle">✨</div>
+        <div style="font-size:22px; margin-bottom:4px;">⏰</div>
+        <div class="font-ar" style="font-size:0.78rem; font-weight:800; color:var(--ink); line-height:1.2;">+15 ثانية</div>
+        <div class="font-en" style="font-size:0.62rem; font-weight:600; color:#9CA3AF;" lang="en">Extra Time</div>
+      </button>
+      <!-- Hint -->
+      <button class="powerup-btn" style="border-color:#34D399;">
+        <div class="sparkle">⭐</div>
+        <div style="font-size:22px; margin-bottom:4px;">💡</div>
+        <div class="font-ar" style="font-size:0.78rem; font-weight:800; color:var(--ink); line-height:1.2;">تلميح</div>
+        <div class="font-en" style="font-size:0.62rem; font-weight:600; color:#9CA3AF;" lang="en">Hint</div>
+      </button>
+      <!-- Steal -->
+      <button class="powerup-btn" style="border-color:#7C3AED;">
+        <div class="sparkle">🌟</div>
+        <div style="font-size:22px; margin-bottom:4px;">🔄</div>
+        <div class="font-ar" style="font-size:0.78rem; font-weight:800; color:var(--ink); line-height:1.2;">سرقة</div>
+        <div class="font-en" style="font-size:0.62rem; font-weight:600; color:#9CA3AF;" lang="en">Steal</div>
+      </button>
+    </div>
+
+    <!-- Award buttons -->
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:10px;">
+        <button class="btn-chunky btn-sky" style="flex:1; font-family:'Tajawal',sans-serif; font-size:0.95rem; padding:14px 12px;">
+          <span>⚡</span>
+          <span class="font-ar">الصواريخ</span>
+          <span class="font-en" style="font-size:0.7rem; opacity:0.85;" lang="en">+600</span>
+        </button>
+        <button class="btn-chunky btn-coral" style="flex:1; font-family:'Tajawal',sans-serif; font-size:0.95rem; padding:14px 12px;">
+          <span>🔥</span>
+          <span class="font-ar">الأسود</span>
+          <span class="font-en" style="font-size:0.7rem; opacity:0.85;" lang="en">+600</span>
+        </button>
+      </div>
+      <button class="btn-chunky" style="width:100%; background:#F3F4F6; color:#6B7280; font-family:'Tajawal',sans-serif; font-size:0.9rem; padding:12px; box-shadow:0 3px 0 rgba(0,0,0,0.08);">
+        <span>🚫</span>
+        <span class="font-ar">لم يجب أحد</span>
+        <span class="font-en" style="font-size:0.75rem; opacity:0.8;" lang="en">No one answered</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SCREEN 5 — RESULTS
+════════════════════════════════════════════════════════════ -->
+<div class="section-divider">
+  <div class="label font-en">Screen 5 — Results</div>
+  <div class="line"></div>
+</div>
+
+<div class="screen-bg-result" style="position:relative; overflow:hidden; min-height:600px;">
+
+  <!-- Confetti layer -->
+  <div id="confetti-container" style="position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:0;">
+    <!-- JS-generated confetti -->
+  </div>
+
+  <!-- Decorative blobs -->
+  <div class="bg-blob" style="width:300px;height:300px;background:var(--yellow);top:-80px;left:-80px;opacity:0.3;"></div>
+  <div class="bg-blob" style="width:250px;height:250px;background:var(--coral);top:-40px;right:-60px;opacity:0.25;"></div>
+  <div class="bg-blob" style="width:200px;height:200px;background:var(--mint);bottom:60px;left:-40px;opacity:0.2;"></div>
+
+  <div class="screen-wrap" style="position:relative; z-index:1; text-align:center; padding-top:32px;">
+
+    <!-- Winner announcement -->
+    <div style="margin-bottom:24px;">
+      <div style="font-size:48px; display:block; margin-bottom:8px;" class="bounce-anim">🏆</div>
+      <h1 class="font-ar" style="font-size:2rem; font-weight:900; color:var(--ink); margin:0 0 4px; line-height:1.2;">الصواريخ يفوزون!</h1>
+      <p class="font-en" style="font-size:1rem; font-weight:700; color:var(--purple); margin:0;" lang="en">Al-Sawareekh Win!</p>
+    </div>
+
+    <!-- Winner avatar — big, crowned, bouncing -->
+    <div style="display:flex; justify-content:center; margin-bottom:28px;">
+      <div class="bounce-anim" style="position:relative; display:inline-block;">
+        <!-- Crown -->
+        <div style="position:absolute; top:-28px; left:50%; transform:translateX(-50%); font-size:38px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15));">👑</div>
+        <!-- Big avatar -->
+        <div style="width:110px; height:110px; border-radius:var(--r-pill); background:linear-gradient(135deg,var(--sky),#60A5FA); display:flex; align-items:center; justify-content:center; font-size:52px; box-shadow:0 8px 0 rgba(14,165,233,0.4), 0 4px 30px rgba(56,189,248,0.5), 0 0 0 6px #fff, 0 0 0 10px rgba(56,189,248,0.3);">⚡</div>
+        <!-- Sparkles -->
+        <div style="position:absolute; top:-8px; right:-12px; font-size:20px; animation:spin-slow 3s linear infinite;">✨</div>
+        <div style="position:absolute; bottom:0px; left:-14px; font-size:16px; animation:spin-slow 5s linear infinite reverse;">⭐</div>
+      </div>
+    </div>
+
+    <!-- Final scores -->
+    <div style="display:flex; gap:16px; margin-bottom:28px; align-items:stretch;">
+      <!-- Winner score -->
+      <div style="flex:1; background:linear-gradient(135deg,#EFF6FF,#DBEAFE); border-radius:var(--r-xl); padding:20px 16px; box-shadow:var(--sh-card); border:2.5px solid #38BDF8;">
+        <div style="font-size:28px; margin-bottom:6px;">⚡</div>
+        <div class="font-ar" style="font-size:1rem; font-weight:800; color:var(--ink); margin-bottom:8px;">الصواريخ</div>
+        <div style="font-family:'Nunito',sans-serif; font-size:2.8rem; font-weight:900; color:var(--sky-dark); line-height:1;">1400</div>
+        <div class="font-en" style="font-size:0.7rem; font-weight:700; color:#3B82F6; margin-top:4px;" lang="en">pts</div>
+        <div style="background:var(--sky); color:#fff; border-radius:var(--r-pill); padding:3px 12px; font-size:0.7rem; font-weight:800; font-family:'Nunito',sans-serif; margin-top:8px; display:inline-block;">🥇 WINNER</div>
+      </div>
+      <!-- Runner up score -->
+      <div style="flex:1; background:#F9FAFB; border-radius:var(--r-xl); padding:20px 16px; box-shadow:var(--sh-card); border:2.5px solid #E5E7EB; opacity:0.8;">
+        <div style="font-size:28px; margin-bottom:6px;">🔥</div>
+        <div class="font-ar" style="font-size:1rem; font-weight:800; color:var(--ink); margin-bottom:8px;">الأسود</div>
+        <div style="font-family:'Nunito',sans-serif; font-size:2.8rem; font-weight:900; color:#6B7280; line-height:1;">800</div>
+        <div class="font-en" style="font-size:0.7rem; font-weight:700; color:#9CA3AF; margin-top:4px;" lang="en">pts</div>
+        <div style="background:#E5E7EB; color:#6B7280; border-radius:var(--r-pill); padding:3px 12px; font-size:0.7rem; font-weight:800; font-family:'Nunito',sans-serif; margin-top:8px; display:inline-block;">🥈 Runner Up</div>
+      </div>
+    </div>
+
+    <!-- Stats badges row -->
+    <div style="margin-bottom:28px;">
+      <h3 class="font-ar" style="font-size:0.9rem; font-weight:800; color:#6B7280; margin:0 0 14px; text-align:center;">إحصائيات اللعبة</h3>
+      <div style="display:flex; gap:10px;">
+        <div class="stat-badge">
+          <div style="font-size:28px;">🎯</div>
+          <div style="font-family:'Nunito',sans-serif; font-size:1.6rem; font-weight:900; color:var(--sky-dark);">14</div>
+          <div class="font-ar" style="font-size:0.65rem; font-weight:700; color:#6B7280; line-height:1.3; text-align:center;">أسئلة أُجيبت</div>
+          <div class="font-en" style="font-size:0.58rem; font-weight:600; color:#9CA3AF;" lang="en">answered</div>
+        </div>
+        <div class="stat-badge">
+          <div style="font-size:28px;">✨</div>
+          <div style="font-family:'Nunito',sans-serif; font-size:1.6rem; font-weight:900; color:var(--purple);">5</div>
+          <div class="font-ar" style="font-size:0.65rem; font-weight:700; color:#6B7280; line-height:1.3; text-align:center;">قدرات مستخدمة</div>
+          <div class="font-en" style="font-size:0.58rem; font-weight:600; color:#9CA3AF;" lang="en">lifelines</div>
+        </div>
+        <div class="stat-badge">
+          <div style="font-size:28px;">🔥</div>
+          <div style="font-family:'Nunito',sans-serif; font-size:1.6rem; font-weight:900; color:var(--coral);">4</div>
+          <div class="font-ar" style="font-size:0.65rem; font-weight:700; color:#6B7280; line-height:1.3; text-align:center;">أطول سلسلة</div>
+          <div class="font-en" style="font-size:0.58rem; font-weight:600; color:#9CA3AF;" lang="en">streak</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Play again button -->
+    <button class="btn-chunky" style="width:100%; background:linear-gradient(135deg,var(--yellow),#FBBF24); color:var(--ink); font-size:1.25rem; padding:20px 28px; font-family:'Tajawal',sans-serif; border-radius:var(--r-xl); box-shadow:0 6px 0 #D97706, 0 4px 24px rgba(250,204,21,0.45); font-weight:900; margin-bottom:12px;">
+      <span style="font-size:28px;">🔄</span>
+      <span>العب مجدداً!</span>
+      <span class="font-en" style="font-size:1rem; font-weight:900;" lang="en">PLAY AGAIN</span>
+    </button>
+
+    <button class="btn-chunky" style="width:100%; background:#fff; color:#6B7280; font-size:0.95rem; padding:14px 28px; font-family:'Tajawal',sans-serif; border-radius:var(--r-xl); box-shadow:0 3px 0 rgba(0,0,0,0.08); border:2px solid #E5E7EB;">
+      <span>🏠</span>
+      <span class="font-ar">القائمة الرئيسية</span>
+      <span class="font-en" style="font-size:0.78rem;" lang="en">Main Menu</span>
+    </button>
+
+  </div>
+</div>
+
+
+<!-- ════════ JS: Generate confetti ════════ -->
+<script>
+  (function() {
+    var colors = ['#38BDF8','#FB7185','#34D399','#FACC15','#7C3AED','#F97316','#EC4899'];
+    var shapes = ['square','circle','rect'];
+    var container = document.getElementById('confetti-container');
+    if (!container) return;
+    for (var i = 0; i < 45; i++) {
+      var el = document.createElement('div');
+      el.className = 'confetti-piece';
+      var c = colors[Math.floor(Math.random() * colors.length)];
+      var shape = shapes[Math.floor(Math.random() * shapes.length)];
+      var size = 6 + Math.floor(Math.random() * 10);
+      var left = Math.random() * 100;
+      var delay = Math.random() * 3;
+      var dur = 2.5 + Math.random() * 3;
+      el.style.cssText =
+        'left:' + left + '%;' +
+        'top:-20px;' +
+        'width:' + size + 'px;' +
+        'height:' + (shape === 'rect' ? size * 2 : size) + 'px;' +
+        'background:' + c + ';' +
+        'border-radius:' + (shape === 'circle' ? '50%' : shape === 'square' ? '2px' : '2px') + ';' +
+        'animation-duration:' + dur + 's;' +
+        'animation-delay:' + delay + 's;' +
+        'opacity:0.9;';
+      container.appendChild(el);
+    }
+  })();
+</script>
+
+</body>
+</html>
