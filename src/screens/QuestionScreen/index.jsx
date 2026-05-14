@@ -1,19 +1,16 @@
-import { useEffect, useRef, useMemo, useReducer } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Timer, Lightbulb, Swords, Sparkles, ArrowRight, Eye, X as XIcon,
 } from 'lucide-react';
-import { ICON_MAP, getCategoryBySlug } from '../data/categories';
-import { useGame } from '../contexts/GameContext';
-import { useQuestion } from '../lib/queries';
-import ExitGameButton from '../components/ExitGameButton';
-
-function formatTime(s) {
-  const m = Math.floor(s / 60);
-  const r = s % 60;
-  return `${m}:${String(Math.max(0, r)).padStart(2, '0')}`;
-}
+import { ICON_MAP, getCategoryBySlug } from '../../data/categories';
+import { useGame } from '../../contexts/GameContext';
+import { useQuestion } from '../../lib/queries';
+import ExitGameButton from '../../components/ExitGameButton';
+import TeamCell from './TeamCell';
+import DualTimer from './DualTimer';
+import { useQuestionFlow } from './useQuestionFlow';
 
 /**
  * Determine which TeamCell status to show for a given team index.
@@ -27,176 +24,6 @@ function getTeamStatus(teamIdx, activeTeamIdx, phase) {
   if (phase === 'active-answering') return isPicker ? 'answering' : 'waiting';
   if (phase === 'opposing-answering') return isPicker ? 'done' : 'answering';
   return 'done';
-}
-
-/* ─── TEAM CELL (top tracker) ─────────────────────────────────────────── */
-
-function TeamCell({ team, status, secondaryTimer, answeredText }) {
-  // status: 'answering' | 'waiting' | 'done'
-  const isAnswering = status === 'answering';
-  const isWaiting = status === 'waiting';
-  const isDone = status === 'done';
-
-  const bg = isAnswering
-    ? `linear-gradient(135deg, ${team.color}30, var(--color-ink-50))`
-    : 'var(--color-ink-50)';
-
-  const border = isAnswering
-    ? 'var(--color-gold)'
-    : isDone
-    ? `${team.color}aa`
-    : 'var(--color-gold-faint)';
-
-  const opacity = isWaiting ? 0.55 : 1;
-
-  return (
-    <div
-      className="flex flex-col gap-1.5 px-3.5 py-3 rounded-lg border transition-all"
-      style={{
-        background: bg,
-        borderColor: border,
-        opacity,
-        boxShadow: isAnswering
-          ? 'var(--chip-active-shadow)'
-          : 'none',
-      }}
-    >
-      <div className="flex items-center gap-2.5">
-        <span className="text-2xl leading-none">{team.emoji}</span>
-        <div className="min-w-0">
-          <div className="font-ar-body font-bold text-cream text-base leading-tight truncate">
-            {team.name}
-          </div>
-          <div className="font-en-body text-cream-45 text-sm leading-tight truncate" lang="en">
-            {team.nameEn}
-            {answeredText && ` · said: "${answeredText}"`}
-          </div>
-        </div>
-      </div>
-      <div
-        className="font-ar-ui text-xs flex items-center gap-1.5"
-        style={{ color: isAnswering ? 'var(--color-gold-light)' : 'var(--color-cream-60)' }}
-      >
-        <span
-          className={`w-1.5 h-1.5 rounded-full ${
-            isAnswering ? 'bg-gold animate-pulse-dot' : isDone ? 'bg-gold-light' : 'bg-cream-30'
-          }`}
-        />
-        {isAnswering && (
-          <>
-            <span>يجيب الآن</span>
-            <span className="opacity-70" lang="en">· Answering</span>
-          </>
-        )}
-        {isWaiting && (
-          <>
-            <span>التالي · {formatTime(secondaryTimer)}</span>
-            <span className="opacity-70" lang="en">· Up next</span>
-          </>
-        )}
-        {isDone && (
-          <>
-            <span>أجاب</span>
-            <span className="opacity-70" lang="en">· Done</span>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── DUAL TIMER ──────────────────────────────────────────────────────── */
-
-function DualTimer({ primary, secondary, opposingTeamNameEn }) {
-  const urgent = primary <= 5 && primary > 0;
-  return (
-    <div
-      className="flex items-center gap-4 md:gap-5 px-4 py-3 rounded-lg border"
-      style={{
-        background: 'var(--color-ink-50)',
-        borderColor: 'var(--color-gold-faint)',
-      }}
-    >
-      <div className="flex flex-col">
-        <span className="font-ar-ui text-sm text-gold-light tracking-wider uppercase">
-          الوقت الأساسي · <span lang="en">Primary</span>
-        </span>
-        <motion.span
-          key={Math.floor(primary)}
-          initial={urgent ? { scale: 1.15 } : { scale: 1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.25 }}
-          className="font-en-display font-bold leading-none"
-          style={{
-            fontSize: '36px',
-            color: urgent ? '#C44150' : 'var(--color-gold)',
-            textShadow: urgent
-              ? 'var(--glow-text-crimson)'
-              : 'var(--glow-text-gold)',
-          }}
-        >
-          {formatTime(primary)}
-        </motion.span>
-      </div>
-      <div className="w-px self-stretch bg-gold-faint mx-1" />
-      <div className="flex flex-col opacity-60">
-        <span className="font-ar-ui text-sm text-cream-60 tracking-wider uppercase">
-          للفريق الآخر · <span lang="en">{opposingTeamNameEn} gets</span>
-        </span>
-        <span className="font-en-display font-semibold text-cream-60 text-xl leading-none">
-          {formatTime(secondary)}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ─── MAIN COMPONENT ──────────────────────────────────────────────────── */
-
-// Local phase-machine reducer: atomic tick + phase advance.
-// Keeps the dual-answer state out of the global GameContext (it's transient UI state).
-function phaseReducer(state, action) {
-  switch (action.type) {
-    case 'TICK': {
-      if (state.phase === 'reveal') return state;
-      if (state.timeLeft > 1) {
-        return { ...state, timeLeft: state.timeLeft - 1 };
-      }
-      // Hit zero — advance phase atomically with the same tick
-      if (state.phase === 'active-answering') {
-        return { ...state, phase: 'opposing-answering', timeLeft: state.secondaryTimer };
-      }
-      return { ...state, phase: 'reveal', timeLeft: 0 };
-    }
-    case 'END_TURN': {
-      if (state.phase === 'active-answering') {
-        return { ...state, phase: 'opposing-answering', timeLeft: state.secondaryTimer };
-      }
-      if (state.phase === 'opposing-answering') {
-        return { ...state, phase: 'reveal', timeLeft: 0 };
-      }
-      return state;
-    }
-    case 'REVEAL_NOW': {
-      return { ...state, phase: 'reveal', timeLeft: 0 };
-    }
-    case 'EXTEND_TIME': {
-      return { ...state, timeLeft: state.timeLeft + action.seconds };
-    }
-    case 'SHOW_HINT': {
-      return { ...state, hintShown: true };
-    }
-    case 'RESET_FOR_CELL': {
-      return {
-        phase: 'active-answering',
-        timeLeft: action.primaryTimer,
-        secondaryTimer: action.secondaryTimer,
-        hintShown: false,
-      };
-    }
-    default:
-      return state;
-  }
 }
 
 export default function QuestionScreen() {
@@ -228,34 +55,15 @@ export default function QuestionScreen() {
   const { data: Q } = useQuestion(category, cellValue, currentCell?.rowIdx ?? 0);
   const CategoryIcon = category ? ICON_MAP[category.icon] : null;
 
-  // Local phase machine — useReducer so tick + phase advance are atomic
-  const [phaseState, phaseDispatch] = useReducer(phaseReducer, undefined, () => ({
-    phase: 'active-answering',
-    timeLeft: PRIMARY_TIMER,
+  const { phaseState, phaseDispatch, intervalRef } = useQuestionFlow({
+    currentCell,
+    primaryTimer: PRIMARY_TIMER,
     secondaryTimer: SECONDARY_TIMER,
-    hintShown: false,
-  }));
+  });
   const { phase, timeLeft, hintShown } = phaseState;
-  const intervalRef = useRef(null);
-
-  // Reset local state whenever we land on a new cell
-  useEffect(() => {
-    phaseDispatch({
-      type: 'RESET_FOR_CELL',
-      primaryTimer: PRIMARY_TIMER,
-      secondaryTimer: SECONDARY_TIMER,
-    });
-  }, [currentCell?.categorySlug, currentCell?.value, currentCell?.rowIdx, PRIMARY_TIMER, SECONDARY_TIMER]);
 
   const extraUsed = lifelinesUsed[activeTeamIdx]?.extraTime;
   const hintUsed = lifelinesUsed[activeTeamIdx]?.hint;
-
-  // Countdown — single tick action, reducer handles phase advance atomically
-  useEffect(() => {
-    if (phase === 'reveal') return;
-    intervalRef.current = setInterval(() => phaseDispatch({ type: 'TICK' }), 1000);
-    return () => clearInterval(intervalRef.current);
-  }, [phase]);
 
   const endTurn = () => phaseDispatch({ type: 'END_TURN' });
 
