@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Volume2, Pause, X, Pencil } from 'lucide-react';
 import { ICON_MAP } from '../data/categories';
 import { useGame } from '../contexts/GameContext';
+import { cellKey } from '../lib/gameReducer';
 import { pickRandomPrompt } from '../data/challengePrompts';
 import { usePrefetchQuestions } from '../lib/queries';
 import ExitGameButton from '../components/ExitGameButton';
@@ -230,7 +231,7 @@ export default function BoardScreen() {
   }, [state.currentCell, navigate]);
 
   const handlePick = (cat, value, rowIdx) => {
-    const key = `${cat.slug}|${value}|${rowIdx}`;
+    const key = cellKey(cat.slug, value, rowIdx);
     if (challengeCells?.has(key)) {
       // Surprise! Open the Challenge Round modal in-place; no nav.
       // Accept → naming round; Decline → fall through via CANCEL_CHALLENGE → normal Q.
@@ -311,7 +312,7 @@ export default function BoardScreen() {
         {/* Body rows: 6 difficulty tiers × 6 categories */}
         {rowValues.map((value, rowIdx) =>
           categories.map((cat) => {
-            const key = `${cat.slug}|${value}|${rowIdx}`;
+            const key = cellKey(cat.slug, value, rowIdx);
             const isPicked = picked.has(key);
             return (
               <BoardCell

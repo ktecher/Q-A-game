@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useGame } from '../../contexts/GameContext';
+import { cellKey } from '../../lib/gameReducer';
 import AcceptDialog from './AcceptDialog';
 import NamingPhase from './NamingPhase';
 import ResultDialog from './ResultDialog';
@@ -75,6 +76,6 @@ export default function ChallengeRound() {
   if (!ch) return null;
   // Key on the cell triple — when a NEW challenge starts, force a remount
   // so phase resets to 'accept' without needing a setState-in-effect.
-  const cellKey = `${ch.categorySlug}|${ch.value}|${ch.rowIdx}`;
-  return <ChallengeInner key={cellKey} />;
+  const key = cellKey(ch.categorySlug, ch.value, ch.rowIdx);
+  return <ChallengeInner key={key} />;
 }

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { formatTime } from './utils';
+import { formatTime } from '../../lib/format';
 
 export default function DualTimer({ primary, secondary, opposingTeamNameEn }) {
   const urgent = primary <= 5 && primary > 0;

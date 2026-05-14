@@ -1,4 +1,4 @@
-import { formatTime } from './utils';
+import { formatTime } from '../../lib/format';
 
 export default function TeamCell({ team, status, secondaryTimer, answeredText }) {
   // status: 'answering' | 'waiting' | 'done'

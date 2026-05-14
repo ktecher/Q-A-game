@@ -23,6 +23,11 @@ import { getCategoryBySlug, pickRandomSix } from '../data/categories';
  */
 
 export const ROW_VALUES = [200, 200, 400, 400, 600, 600];
+
+export function cellKey(slug, value, rowIdx) {
+  return `${slug}|${value}|${rowIdx}`;
+}
+
 const CHALLENGE_CELLS_PER_GAME = 2;
 
 // Pick N random cell keys ("slug|value|rowIdx") to be marked as Challenge cells.
@@ -32,7 +37,7 @@ function pickChallengeCells(categories, n = CHALLENGE_CELLS_PER_GAME) {
   const allKeys = [];
   for (let rowIdx = 0; rowIdx < ROW_VALUES.length; rowIdx++) {
     for (const cat of categories) {
-      allKeys.push(`${cat.slug}|${ROW_VALUES[rowIdx]}|${rowIdx}`);
+      allKeys.push(cellKey(cat.slug, ROW_VALUES[rowIdx], rowIdx));
     }
   }
   // Fisher-Yates shuffle, take first n
@@ -112,7 +117,7 @@ export function reducer(state, action) {
       const { categorySlug, value, rowIdx } = action.payload;
       const category = state.categories.find((c) => c.slug === categorySlug);
       if (!category) return state;
-      const key = `${categorySlug}|${value}|${rowIdx}`;
+      const key = cellKey(categorySlug, value, rowIdx);
       // Guard against duplicate picks (e.g., stale tab)
       if (state.picked.has(key)) return state;
       return {
@@ -149,7 +154,7 @@ export function reducer(state, action) {
       const { teamId } = action.payload;
       if (!state.currentChallenge) return state;
       const ch = state.currentChallenge;
-      const pickedKey = `${ch.categorySlug}|${ch.value}|${ch.rowIdx}`;
+      const pickedKey = cellKey(ch.categorySlug, ch.value, ch.rowIdx);
       const newPicked = new Set(state.picked);
       newPicked.add(pickedKey);
 
@@ -187,9 +192,9 @@ export function reducer(state, action) {
       // and set currentCell so the BoardScreen routes to /play/question for a normal Q.
       if (!state.currentChallenge) return state;
       const ch = state.currentChallenge;
-      const cellKey = `${ch.categorySlug}|${ch.value}|${ch.rowIdx}`;
+      const key = cellKey(ch.categorySlug, ch.value, ch.rowIdx);
       const newChallengeCells = new Set(state.challengeCells);
-      newChallengeCells.delete(cellKey);
+      newChallengeCells.delete(key);
       return {
         ...state,
         currentChallenge: null,
@@ -230,7 +235,7 @@ export function reducer(state, action) {
       const { teamId } = action.payload;
       if (!state.currentCell) return state;
       const cell = state.currentCell;
-      const pickedKey = `${cell.categorySlug}|${cell.value}|${cell.rowIdx}`;
+      const pickedKey = cellKey(cell.categorySlug, cell.value, cell.rowIdx);
       const newPicked = new Set(state.picked);
       newPicked.add(pickedKey);
 
