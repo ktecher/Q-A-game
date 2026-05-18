@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { X as XIcon, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
+import AwardButtons from '../AwardButtons';
 
 /* ─── PHASE-3 RESULT · host picks winner (or auto-pick on choke) ─────── */
 
@@ -66,46 +67,8 @@ export default function ResultDialog({ teams, counts, chokeTeamIdx, cellValue, o
       )}
 
       {/* Award buttons */}
-      <div className="mt-5 grid grid-cols-[1fr_auto_1fr] gap-2">
-        <button
-          type="button"
-          onClick={() => onAward(teams[0].id)}
-          className="flex flex-col items-center gap-0.5 px-3 py-3 rounded-lg border-2 transition-colors duration-150 hover:-translate-y-0.5"
-          style={{
-            background: 'var(--award-team-bg)',
-            borderColor: `${teams[0].color}b3`,
-          }}
-        >
-          <span className="text-xl leading-none">{teams[0].emoji}</span>
-          <span className="font-ar-ui text-xs font-bold text-cream">منح {teams[0].name}</span>
-          <span className="font-en-display font-bold text-base" style={{ color: teams[0].color }}>
-            +{award}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onAward(null)}
-          className="flex flex-col items-center justify-center gap-0.5 px-3 py-3 rounded-lg border bg-ink-80 border-gold-faint text-cream-60 hover:text-cream transition-colors duration-150"
-        >
-          <XIcon size={14} />
-          <span className="font-ar-ui text-xs font-semibold">بلا منح</span>
-          <span className="font-en-body text-[11px]" lang="en">No win</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onAward(teams[1].id)}
-          className="flex flex-col items-center gap-0.5 px-3 py-3 rounded-lg border-2 transition-colors duration-150 hover:-translate-y-0.5"
-          style={{
-            background: 'var(--award-team-bg)',
-            borderColor: `${teams[1].color}b3`,
-          }}
-        >
-          <span className="text-xl leading-none">{teams[1].emoji}</span>
-          <span className="font-ar-ui text-xs font-bold text-cream">منح {teams[1].name}</span>
-          <span className="font-en-display font-bold text-base" style={{ color: teams[1].color }}>
-            +{award}
-          </span>
-        </button>
+      <div className="mt-5">
+        <AwardButtons teams={teams} value={award} onAward={onAward} variant="compact" />
       </div>
     </motion.div>
   );

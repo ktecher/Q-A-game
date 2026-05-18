@@ -1,6 +1,8 @@
 import { useState, useEffect, useReducer, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, X as XIcon, Check, ChevronsRight, Hand, Play } from 'lucide-react';
+import { formatTime } from '../../lib/format';
+import TeamIdentity from '../TeamIdentity';
 
 const TOTAL_TIME = 30; // seconds for the whole round, alternating word-by-word
 
@@ -114,7 +116,7 @@ export default function NamingPhase({ prompt, teams, startingTeamIdx, cellValue,
             : 'var(--glow-text-gold-deep)',
         }}
       >
-        0:{String(s.timeLeft).padStart(2, '0')}
+        {formatTime(s.timeLeft)}
       </motion.div>
 
       {/* Whose turn — chips active only after Start */}
@@ -221,13 +223,7 @@ function TeamTurnChip({ team, isActive, count }) {
       }`}
       style={isActive ? { boxShadow: 'var(--chip-active-shadow-soft)' } : undefined}
     >
-      <span className="text-lg leading-none">{team.emoji}</span>
-      <div className="text-start">
-        <div className="font-ar-body font-bold text-cream text-sm leading-tight">{team.name}</div>
-        <div className="font-en-body text-xs text-cream-45 leading-tight" lang="en">
-          {team.nameEn}
-        </div>
-      </div>
+      <TeamIdentity team={team} size="sm" />
       <div className="ms-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-ink-80 border border-gold-faint">
         <span className="font-en-display font-bold text-sm leading-none text-gold">{count}</span>
       </div>

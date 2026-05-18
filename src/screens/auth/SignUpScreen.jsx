@@ -1,23 +1,18 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, User, Loader2, CheckCircle2 } from 'lucide-react';
 import { z } from 'zod';
 import BrandHeader from '../../components/BrandHeader';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { emailField, passwordField } from './authSchemas';
+import AuthInput from './AuthInput';
+import MockBypassButton from './MockBypassButton';
+import SubmitAlert from './SubmitAlert';
 
 const signUpSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(1, { message: 'البريد مطلوب · Email required' })
-    .email({ message: 'بريد إلكتروني غير صالح · Invalid email' })
-    .max(254),
-  password: z
-    .string()
-    .min(8, { message: 'كلمة المرور قصيرة · Password too short (8+ chars)' })
-    .max(72, { message: 'كلمة المرور طويلة جدًا · Password too long' }),
+  email: emailField,
+  password: passwordField({ min: 8 }),
   displayName: z
     .string()
     .trim()
@@ -130,128 +125,49 @@ export default function SignUpScreen() {
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4" noValidate>
-          {/* Display name */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="signup-name" className="font-ar-ui text-sm text-cream-60 flex items-center gap-1">
-              الاسم المعروض <span className="opacity-60" lang="en">· Display name</span>
-            </label>
-            <div className="relative">
-              <User
-                size={16}
-                className="absolute start-3 top-1/2 -translate-y-1/2 text-cream-45 pointer-events-none"
-                aria-hidden="true"
-              />
-              <input
-                id="signup-name"
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="أبو علي"
-                aria-invalid={!!errors.displayName}
-                aria-describedby={errors.displayName ? 'signup-name-error' : undefined}
-                className={`w-full ps-10 pe-3 py-2.5 rounded-lg bg-ink-80 border ${
-                  errors.displayName ? 'border-crimson' : 'border-gold-faint'
-                } text-cream font-ar-body text-base focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/40 transition`}
-                autoComplete="name"
-              />
-            </div>
-            {errors.displayName && (
-              <span
-                id="signup-name-error"
-                role="alert"
-                className="text-crimson text-xs font-ar-ui flex items-center gap-1"
-              >
-                <AlertCircle size={12} aria-hidden="true" /> {errors.displayName}
-              </span>
-            )}
-          </div>
+          <AuthInput
+            id="signup-name"
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="أبو علي"
+            labelAr="الاسم المعروض"
+            labelEn="Display name"
+            icon={User}
+            error={errors.displayName}
+            autoComplete="name"
+            inputFontClass="font-ar-body text-base"
+          />
+          <AuthInput
+            id="signup-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            labelAr="البريد الإلكتروني"
+            labelEn="Email"
+            icon={Mail}
+            error={errors.email}
+            dir="ltr"
+            lang="en"
+            autoComplete="email"
+          />
+          <AuthInput
+            id="signup-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            labelAr="كلمة المرور"
+            labelEn="Password (8+ chars)"
+            icon={Lock}
+            error={errors.password}
+            dir="ltr"
+            autoComplete="new-password"
+          />
 
-          {/* Email */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="signup-email" className="font-ar-ui text-sm text-cream-60 flex items-center gap-1">
-              البريد الإلكتروني <span className="opacity-60" lang="en">· Email</span>
-            </label>
-            <div className="relative">
-              <Mail
-                size={16}
-                className="absolute start-3 top-1/2 -translate-y-1/2 text-cream-45 pointer-events-none"
-                aria-hidden="true"
-              />
-              <input
-                id="signup-email"
-                type="email"
-                dir="ltr"
-                lang="en"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? 'signup-email-error' : undefined}
-                className={`w-full ps-10 pe-3 py-2.5 rounded-lg bg-ink-80 border ${
-                  errors.email ? 'border-crimson' : 'border-gold-faint'
-                } text-cream font-en-body text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/40 transition`}
-                autoComplete="email"
-              />
-            </div>
-            {errors.email && (
-              <span
-                id="signup-email-error"
-                role="alert"
-                className="text-crimson text-xs font-ar-ui flex items-center gap-1"
-              >
-                <AlertCircle size={12} aria-hidden="true" /> {errors.email}
-              </span>
-            )}
-          </div>
+          <SubmitAlert message={submitError} />
 
-          {/* Password */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="signup-password" className="font-ar-ui text-sm text-cream-60 flex items-center gap-1">
-              كلمة المرور <span className="opacity-60" lang="en">· Password (8+ chars)</span>
-            </label>
-            <div className="relative">
-              <Lock
-                size={16}
-                className="absolute start-3 top-1/2 -translate-y-1/2 text-cream-45 pointer-events-none"
-                aria-hidden="true"
-              />
-              <input
-                id="signup-password"
-                type="password"
-                dir="ltr"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                aria-invalid={!!errors.password}
-                aria-describedby={errors.password ? 'signup-password-error' : undefined}
-                className={`w-full ps-10 pe-3 py-2.5 rounded-lg bg-ink-80 border ${
-                  errors.password ? 'border-crimson' : 'border-gold-faint'
-                } text-cream font-en-body text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/40 transition`}
-                autoComplete="new-password"
-              />
-            </div>
-            {errors.password && (
-              <span
-                id="signup-password-error"
-                role="alert"
-                className="text-crimson text-xs font-ar-ui flex items-center gap-1"
-              >
-                <AlertCircle size={12} aria-hidden="true" /> {errors.password}
-              </span>
-            )}
-          </div>
-
-          {/* Submit error */}
-          {submitError && (
-            <div role="alert" className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-2.5 text-xs">
-              <p className="text-crimson font-ar-ui flex items-start gap-2">
-                <AlertCircle size={14} className="flex-shrink-0 mt-0.5" aria-hidden="true" />
-                <span>{submitError}</span>
-              </p>
-            </div>
-          )}
-
-          {/* Submit */}
           <button
             type="submit"
             disabled={submitting}
@@ -273,22 +189,14 @@ export default function SignUpScreen() {
             )}
           </button>
 
-          {/* Dev-only mock bypass */}
           {IS_DEV_MOCK && (
-            <button
-              type="button"
+            <MockBypassButton
+              labelEn="Skip · Mock sign-up (DEV only)"
               onClick={handleMockSignUp}
-              className="btn-outline px-4 py-2 rounded-lg text-xs flex flex-col items-center gap-0.5 mt-1"
-            >
-              <span>تخطي · وضع تجريبي</span>
-              <span className="font-en-body opacity-70" lang="en">
-                Skip · Mock sign-up (DEV only)
-              </span>
-            </button>
+            />
           )}
         </form>
 
-        {/* Helper links */}
         <div className="mt-6 flex flex-col items-center gap-2 text-sm">
           <p className="text-cream-45 font-en-body" lang="en">
             Already have an account?{' '}

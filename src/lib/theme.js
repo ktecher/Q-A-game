@@ -2,7 +2,9 @@
 // Theme is applied via `data-theme` attribute on <html>.
 // Supported values: 'dark' | 'light' (default).
 
-const STORAGE_KEY = 'uah.theme';
+import { STORAGE_KEYS } from './storageKeys';
+
+const STORAGE_KEY = STORAGE_KEYS.THEME;
 
 export function readTheme() {
   try {

@@ -4,10 +4,13 @@ import { Check, Search } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGame } from '../../contexts/GameContext';
 import { useCategories } from '../../lib/queries';
+import { pickN } from '../../lib/random';
+import { makeSetupTeams } from '../../lib/teams';
+import { GUEST_PRESET, CATEGORIES_PER_GAME } from '../../lib/gameDefaults';
 import CategoryTile from './CategoryTile';
 import Section from './Section';
 import TeamCard from './TeamCard';
-import { GUEST_PRESET, DIFFICULTIES } from './constants';
+import { DIFFICULTIES } from './constants';
 
 export default function SetupScreen() {
   const navigate = useNavigate();
@@ -22,10 +25,7 @@ export default function SetupScreen() {
   const [difficulty, setDifficulty] = useState('mixed');
 
   // Section C — teams
-  const [teams, setTeams] = useState([
-    { name: 'الفريق الأول', defaultNameAr: 'الفريق الأول', defaultNameEn: 'Team Alpha', color: '#3A7BC8', emoji: '🦅', players: [] },
-    { name: 'الفريق الثاني', defaultNameAr: 'الفريق الثاني', defaultNameEn: 'Team Beta',  color: '#9B2D3A', emoji: '🌙', players: [] },
-  ]);
+  const [teams, setTeams] = useState(makeSetupTeams);
 
   // Section D — timer
   const [timerSecs, setTimerSecs] = useState(30);
@@ -39,7 +39,7 @@ export default function SetupScreen() {
   const displayName = user?.email?.split('@')[0] ?? guestProfile?.name ?? 'ضيف';
   const guestSelected = GUEST_PRESET;
   const effectiveSelected = isGuest ? guestSelected : selected;
-  const selectionReady = effectiveSelected.length === 6;
+  const selectionReady = effectiveSelected.length === CATEGORIES_PER_GAME;
 
   const filteredCats = CATEGORIES.filter(
     (c) =>
@@ -53,7 +53,7 @@ export default function SetupScreen() {
     setSelected((prev) => {
       if (prev.includes(slug)) return prev.filter((s) => s !== slug);
       // Max 6: replace the oldest (first) selection to stay at 6
-      if (prev.length >= 6) return [...prev.slice(1), slug];
+      if (prev.length >= CATEGORIES_PER_GAME) return [...prev.slice(1), slug];
       return [...prev, slug];
     });
   };
@@ -61,8 +61,7 @@ export default function SetupScreen() {
   const handleModeSelect = (val) => {
     setMode(val);
     if (val === 'quick' || val === 'surprise') {
-      const shuffled = [...CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 6);
-      setSelected(shuffled.map((c) => c.slug));
+      setSelected(pickN(CATEGORIES, CATEGORIES_PER_GAME).map((c) => c.slug));
     } else {
       setSelected([]);
     }

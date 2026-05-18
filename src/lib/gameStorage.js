@@ -1,6 +1,7 @@
 // Bump when the persisted state shape changes in a non-backwards-compatible
 // way — old localStorage entries are then ignored on load.
-export const STORAGE_KEY = 'uah.game_state';
+import { STORAGE_KEYS } from './storageKeys';
+export const STORAGE_KEY = STORAGE_KEYS.GAME;
 const STORAGE_VERSION = 1;
 
 export function serializeState(state) {

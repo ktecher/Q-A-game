@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useGame } from '../../contexts/GameContext';
-import { cellKey } from '../../lib/gameReducer';
+import { cellKey } from '../../lib/cellKey';
 import AcceptDialog from './AcceptDialog';
 import NamingPhase from './NamingPhase';
 import ResultDialog from './ResultDialog';

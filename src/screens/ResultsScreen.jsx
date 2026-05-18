@@ -4,12 +4,10 @@ import { motion } from 'framer-motion';
 import { RotateCcw, Settings, Save, Home } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
+import { makeDemoTeams } from '../lib/teams';
 
 // Demo state for direct-URL access (when no game has been played)
-const DEMO_TEAMS = [
-  { id: 1, name: 'الفريق الأول', nameEn: 'Team Alpha', color: '#3A7BC8', emoji: '🦅', score: 1800 },
-  { id: 2, name: 'الفريق الثاني', nameEn: 'Team Beta',  color: '#9B2D3A', emoji: '🌙', score: 1400 },
-];
+const DEMO_TEAMS = makeDemoTeams([1800, 1400]);
 const DEMO_STATS = {
   questionsAnswered: 12,
   lifelinesUsed: 3,

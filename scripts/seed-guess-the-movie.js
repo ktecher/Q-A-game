@@ -16,43 +16,13 @@
  *   3. node scripts/seed-guess-the-movie.js
  */
 
-import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { PROJECT_ROOT } from './_lib/env.js';
+import { getSupabaseAdmin } from './_lib/supabase-admin.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const projectRoot = resolve(__dirname, '..');
-
-function loadDotEnv() {
-  try {
-    const raw = readFileSync(resolve(projectRoot, '.env.local'), 'utf8');
-    for (const line of raw.split('\n')) {
-      const t = line.trim();
-      if (!t || t.startsWith('#')) continue;
-      const eq = t.indexOf('=');
-      if (eq < 1) continue;
-      const k = t.slice(0, eq).trim();
-      const v = t.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
-      if (!process.env[k]) process.env[k] = v;
-    }
-  } catch {
-    // .env.local missing — fall back to existing process.env
-  }
-}
-loadDotEnv();
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  console.error('❌ Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
-  process.exit(1);
-}
-
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+const projectRoot = PROJECT_ROOT;
+const supabase = getSupabaseAdmin();
 
 // Minimal CSV parser that respects quoted fields. Sufficient for our
 // well-formed file (no embedded newlines, only commas + quotes to escape).

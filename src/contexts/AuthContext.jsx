@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { getDeviceId } from '../lib/deviceId';
+import { STORAGE_KEYS } from '../lib/storageKeys';
 
 const AuthContext = createContext(null);
 
 function readStoredGuestProfile() {
   try {
-    const stored = localStorage.getItem('uah.guest_profile');
+    const stored = localStorage.getItem(STORAGE_KEYS.GUEST_PROFILE);
     return stored ? JSON.parse(stored) : null;
   } catch {
     return null;
@@ -41,13 +42,13 @@ export function AuthProvider({ children }) {
 
   const continueAsGuest = (profile = { name: 'ضيف', emoji: '🎲' }) => {
     const full = { ...profile, deviceId: getDeviceId() };
-    localStorage.setItem('uah.guest_profile', JSON.stringify(full));
+    localStorage.setItem(STORAGE_KEYS.GUEST_PROFILE, JSON.stringify(full));
     setGuestProfile(full);
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem('uah.guest_profile');
+    localStorage.removeItem(STORAGE_KEYS.GUEST_PROFILE);
     setGuestProfile(null);
   };
 

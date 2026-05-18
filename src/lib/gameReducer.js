@@ -1,4 +1,10 @@
 import { getCategoryBySlug, pickRandomSix } from '../data/categories';
+import { pickN } from './random';
+import { cellKey } from './cellKey';
+import { makeReducerTeams } from './teams';
+import { CATEGORIES_PER_GAME } from './gameDefaults';
+
+export { cellKey };
 
 /**
  * GameContext — single source of truth for an in-progress game.
@@ -24,10 +30,6 @@ import { getCategoryBySlug, pickRandomSix } from '../data/categories';
 
 export const ROW_VALUES = [200, 200, 400, 400, 600, 600];
 
-export function cellKey(slug, value, rowIdx) {
-  return `${slug}|${value}|${rowIdx}`;
-}
-
 const CHALLENGE_CELLS_PER_GAME = 2;
 
 // Pick N random cell keys ("slug|value|rowIdx") to be marked as Challenge cells.
@@ -40,12 +42,7 @@ function pickChallengeCells(categories, n = CHALLENGE_CELLS_PER_GAME) {
       allKeys.push(cellKey(cat.slug, ROW_VALUES[rowIdx], rowIdx));
     }
   }
-  // Fisher-Yates shuffle, take first n
-  for (let i = allKeys.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [allKeys[i], allKeys[j]] = [allKeys[j], allKeys[i]];
-  }
-  return new Set(allKeys.slice(0, n));
+  return new Set(pickN(allKeys, n));
 }
 
 // Default state used when GameProvider is mounted but no game has been started.
@@ -56,10 +53,7 @@ export function createInitialState() {
   return {
     started: false,
     categories,
-    teams: [
-      { id: 1, name: 'الفريق الأول', nameEn: 'Team Alpha', color: '#3A7BC8', emoji: '🦅', score: 0, players: [] },
-      { id: 2, name: 'الفريق الثاني', nameEn: 'Team Beta',  color: '#9B2D3A', emoji: '🌙', score: 0, players: [] },
-    ],
+    teams: makeReducerTeams(),
     activeTeamIdx: 0,
     timerSeconds: 30,
     difficulty: 'mixed',
@@ -90,13 +84,13 @@ export function reducer(state, action) {
     case 'START_GAME': {
       const { categorySlugs, teams, difficulty, timerSeconds } = action.payload;
       const categories = categorySlugs.map(getCategoryBySlug).filter(Boolean);
-      // Pad to 6 categories if fewer (shouldn't happen — Setup enforces 6)
-      while (categories.length < 6) {
+      // Pad to CATEGORIES_PER_GAME if fewer (shouldn't happen — Setup enforces it)
+      while (categories.length < CATEGORIES_PER_GAME) {
         const random = pickRandomSix().find((s) => !categories.some((c) => c.slug === s));
         if (random) categories.push(getCategoryBySlug(random));
         else break;
       }
-      const finalCategories = categories.slice(0, 6);
+      const finalCategories = categories.slice(0, CATEGORIES_PER_GAME);
       return {
         ...createInitialState(),
         started: true,

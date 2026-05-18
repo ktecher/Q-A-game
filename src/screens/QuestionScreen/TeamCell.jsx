@@ -1,4 +1,5 @@
 import { formatTime } from '../../lib/format';
+import TeamIdentity from '../../components/TeamIdentity';
 
 export default function TeamCell({ team, status, secondaryTimer, answeredText }) {
   // status: 'answering' | 'waiting' | 'done'
@@ -31,16 +32,12 @@ export default function TeamCell({ team, status, secondaryTimer, answeredText })
       }}
     >
       <div className="flex items-center gap-2.5">
-        <span className="text-2xl leading-none">{team.emoji}</span>
-        <div className="min-w-0">
-          <div className="font-ar-body font-bold text-cream text-base leading-tight truncate">
-            {team.name}
-          </div>
-          <div className="font-en-body text-cream-45 text-sm leading-tight truncate" lang="en">
-            {team.nameEn}
-            {answeredText && ` · said: "${answeredText}"`}
-          </div>
-        </div>
+        <TeamIdentity
+          team={team}
+          size="lg"
+          truncate
+          suffixEn={answeredText ? ` · said: "${answeredText}"` : undefined}
+        />
       </div>
       <div
         className="font-ar-ui text-xs flex items-center gap-1.5"

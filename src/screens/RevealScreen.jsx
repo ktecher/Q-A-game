@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORIES, ICON_MAP, pickRandomSix, getCategoryBySlug } from '../data/categories';
 import { useGame } from '../contexts/GameContext';
 import { usePrefetchQuestions } from '../lib/queries';
+import { CATEGORIES_PER_GAME } from '../lib/gameDefaults';
 
 const SETTLE_INTERVAL_MS = 550; // time between each card settling
 const POST_SETTLE_PAUSE_MS = 1400; // hold after the 6th card settles before auto-advance
@@ -102,7 +103,7 @@ export default function RevealScreen() {
   // Prefer game-state categories (from Setup); fall back to demo random pick
   // when /reveal is hit directly via URL.
   const categories = useMemo(() => {
-    if (state.started && state.categories.length === 6) return state.categories;
+    if (state.started && state.categories.length === CATEGORIES_PER_GAME) return state.categories;
     return pickRandomSix().map(getCategoryBySlug).filter(Boolean);
   }, [state.started, state.categories]);
 
@@ -117,25 +118,25 @@ export default function RevealScreen() {
   // Stagger settle: every SETTLE_INTERVAL_MS, increment until all 6 are settled
   useEffect(() => {
     if (skippedRef.current) return;
-    if (settledCount >= 6) return;
+    if (settledCount >= CATEGORIES_PER_GAME) return;
     const id = setTimeout(() => setSettledCount((n) => n + 1), SETTLE_INTERVAL_MS);
     return () => clearTimeout(id);
   }, [settledCount]);
 
   // Once all 6 are settled, hold briefly then auto-advance to /play
   useEffect(() => {
-    if (settledCount < 6) return;
+    if (settledCount < CATEGORIES_PER_GAME) return;
     const id = setTimeout(() => navigate('/play'), POST_SETTLE_PAUSE_MS);
     return () => clearTimeout(id);
   }, [settledCount, navigate]);
 
   const skip = () => {
-    if (settledCount >= 6) return;
+    if (settledCount >= CATEGORIES_PER_GAME) return;
     skippedRef.current = true;
-    setSettledCount(6);
+    setSettledCount(CATEGORIES_PER_GAME);
   };
 
-  const allSettled = settledCount >= 6;
+  const allSettled = settledCount >= CATEGORIES_PER_GAME;
 
   return (
     <div

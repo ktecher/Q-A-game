@@ -2,12 +2,13 @@ import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Timer, Lightbulb, Swords, Sparkles, ArrowRight, Eye, X as XIcon,
+  Timer, Lightbulb, Swords, Sparkles, ArrowRight, Eye,
 } from 'lucide-react';
 import { ICON_MAP, getCategoryBySlug } from '../../data/categories';
 import { useGame } from '../../contexts/GameContext';
 import { useQuestion } from '../../lib/queries';
 import ExitGameButton from '../../components/ExitGameButton';
+import AwardButtons from '../../components/AwardButtons';
 import TeamCell from './TeamCell';
 import DualTimer from './DualTimer';
 import { useQuestionFlow } from './useQuestionFlow';
@@ -392,67 +393,7 @@ export default function QuestionScreen() {
             </div>
 
             {/* Award buttons */}
-            <div className="grid grid-cols-[1fr_auto_1fr] gap-2.5">
-              <button
-                type="button"
-                onClick={() => handleAward(teams[0].id)}
-                className="flex flex-col items-center justify-center gap-1.5 px-4 py-4 rounded-lg border-2 transition-all hover:-translate-y-0.5"
-                style={{
-                  background: 'var(--award-team-bg)',
-                  borderColor: `${teams[0].color}b3`,
-                }}
-              >
-                <span className="text-2xl leading-none">{teams[0].emoji}</span>
-                <span className="font-ar-ui text-sm font-bold text-cream">
-                  منح {teams[0].name}
-                </span>
-                <span className="font-en-body text-sm text-cream-60 uppercase tracking-wide" lang="en">
-                  Award · {teams[0].nameEn}
-                </span>
-                <span
-                  className="font-en-display font-bold text-lg mt-0.5"
-                  style={{ color: teams[0].color }}
-                >
-                  +{cellValue}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleAward(null)}
-                className="flex flex-col items-center justify-center gap-1 px-4 py-4 rounded-lg border bg-ink-80 border-gold-faint text-cream-60 hover:border-cream-60 hover:text-cream transition min-w-[90px]"
-              >
-                <XIcon size={18} className="opacity-70" />
-                <span className="font-ar-ui text-xs font-semibold">بلا منح</span>
-                <span className="font-en-body text-xs uppercase tracking-wide" lang="en">
-                  No Award
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleAward(teams[1].id)}
-                className="flex flex-col items-center justify-center gap-1.5 px-4 py-4 rounded-lg border-2 transition-all hover:-translate-y-0.5"
-                style={{
-                  background: 'var(--award-team-bg)',
-                  borderColor: `${teams[1].color}b3`,
-                }}
-              >
-                <span className="text-2xl leading-none">{teams[1].emoji}</span>
-                <span className="font-ar-ui text-sm font-bold text-cream">
-                  منح {teams[1].name}
-                </span>
-                <span className="font-en-body text-sm text-cream-60 uppercase tracking-wide" lang="en">
-                  Award · {teams[1].nameEn}
-                </span>
-                <span
-                  className="font-en-display font-bold text-lg mt-0.5"
-                  style={{ color: teams[1].color }}
-                >
-                  +{cellValue}
-                </span>
-              </button>
-            </div>
+            <AwardButtons teams={teams} value={cellValue} onAward={handleAward} variant="full" />
           </motion.div>
         )}
       </AnimatePresence>

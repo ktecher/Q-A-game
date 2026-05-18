@@ -11,29 +11,11 @@
  */
 
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { basename, extname, join, resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { basename, extname, join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
+import { PROJECT_ROOT, loadDotEnv } from './_lib/env.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const projectRoot = resolve(__dirname, '..');
-
-function loadDotEnv() {
-  try {
-    const raw = readFileSync(resolve(projectRoot, '.env.local'), 'utf8');
-    for (const line of raw.split('\n')) {
-      const t = line.trim();
-      if (!t || t.startsWith('#')) continue;
-      const eq = t.indexOf('=');
-      if (eq < 1) continue;
-      const k = t.slice(0, eq).trim();
-      const v = t.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
-      if (!process.env[k]) process.env[k] = v;
-    }
-  } catch {
-    // .env.local missing — fall back to existing process.env
-  }
-}
+const projectRoot = PROJECT_ROOT;
 loadDotEnv();
 
 const CLOUD = process.env.CLOUDINARY_CLOUD_NAME;
@@ -110,6 +92,6 @@ for (const f of files) {
   }
 }
 
-const outPath = resolve(projectRoot, 'content/cloudinary-urls.json');
+const outPath = resolve(projectRoot, 'scripts/output/cloudinary-urls.json');
 writeFileSync(outPath, JSON.stringify(results, null, 2));
 console.log(`\n✅ ${ok} uploaded, ${fail} failed. Map written to ${outPath}`);

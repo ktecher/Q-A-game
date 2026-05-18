@@ -6,7 +6,22 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
 import { CATEGORIES as LOCAL_CATEGORIES, getCategoryBySlug } from '../data/categories';
-import { getQuestion as getStubQuestion } from '../data/questions';
+import { pickN } from './random';
+
+// Minimal placeholder returned only when Supabase errors AND the question cache
+// has no entry to fall back on (a rare double-failure path). The wording is
+// neutral and honest so users never see fake-but-plausible trivia.
+function getStubQuestion() {
+  return {
+    ar: 'تعذّر تحميل السؤال — حاول مرة أخرى',
+    en: 'Could not load this question — please try again',
+    answerAr: '—',
+    answerEn: '—',
+    hintAr: null,
+    hintEn: null,
+    imageUrl: null,
+  };
+}
 
 // Presentation fields (imageUrl, accent, icon) ALWAYS come from data/categories.js — the
 // single source of truth for category visuals. Supabase owns names + catalog metadata only.
@@ -24,18 +39,9 @@ function mapCategoryRow(row) {
   };
 }
 
-// Fisher–Yates shuffle, then return the first two elements. For pools of
-// size ≤ 2 this returns the input as-is (no behavior change for legacy
-// categories). For larger pools each call returns a fresh random pair.
-function pickTwoRandom(rows) {
-  if (!rows || rows.length <= 2) return rows ?? [];
-  const arr = [...rows];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr.slice(0, 2);
-}
+// For pools of size ≤ 2 returns the input as-is (no behavior change for
+// legacy categories). For larger pools each call returns a fresh random pair.
+const pickTwoRandom = (rows) => pickN(rows, 2);
 
 function mapQuestionRow(row) {
   return {
@@ -133,6 +139,30 @@ export function usePrefetchQuestions(categories) {
 }
 
 /**
+ * Fetch all active challenge prompts from Supabase, ordered by display_order.
+ * Returns [] on error so callers can detect and fall back gracefully.
+ */
+export function useChallengePrompts() {
+  const query = useQuery({
+    queryKey: ['challenge_prompts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('challenge_prompts')
+        .select('prompt_ar, prompt_en')
+        .eq('is_active', true)
+        .order('display_order');
+      if (error) throw error;
+      return data.map((row) => ({ ar: row.prompt_ar, en: row.prompt_en }));
+    },
+    staleTime: 60 * 60 * 1000, // 1 hour — prompts rarely change
+  });
+  return {
+    ...query,
+    data: query.data ?? [],
+  };
+}
+
+/**
  * Fetch a question for (category.slug, difficulty, rowIdx).
  * Each board has TWO rows per difficulty (row 0/1 = 200, row 2/3 = 400, row 4/5 = 600).
  * Within a tier, the slot is rowIdx % 2 (0 = first question, 1 = second question).
@@ -145,11 +175,10 @@ export function useQuestion(category, value, rowIdx = 0) {
     enabled: !!category?.slug && !!value,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      // Fetch ALL questions for (category, difficulty). For pools >2 this
-      // fallback path (used when prefetch hasn't run, e.g. direct-link to
-      // /play) picks the first two by id deterministically so slot 0 and
-      // slot 1 stay distinct on this code path. The real per-game random
-      // pick happens in usePrefetchQuestions when the game starts normally.
+      // Direct-link path (used when prefetch hasn't run, e.g. user lands
+      // straight on /play/question). Pulls just the first two by id so slot
+      // 0 and slot 1 stay distinct without fetching the whole pool. Random
+      // per-game rotation happens in usePrefetchQuestions during /reveal.
       const { data, error } = await supabase
         .from('questions')
         .select(
@@ -157,8 +186,9 @@ export function useQuestion(category, value, rowIdx = 0) {
         )
         .eq('categories.slug', category.slug)
         .eq('difficulty', value)
-        .order('id');
-      if (error || !data || data.length === 0) return getStubQuestion(category, value, slot);
+        .order('id')
+        .limit(2);
+      if (error || !data || data.length === 0) return getStubQuestion();
       const row = data[slot] ?? data[0];
       return mapQuestionRow(row);
     },

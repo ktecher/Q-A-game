@@ -10,6 +10,9 @@ import {
   Tv, Gamepad2, Hourglass, Castle, Lightbulb, Languages, MapPin, Medal,
   Goal, Flag, BookMarked, ScrollText, Quote, MessagesSquare,
 } from 'lucide-react';
+import { pickN } from '../lib/random';
+import { CATEGORIES_PER_GAME } from '../lib/gameDefaults';
+import { cloudinaryUrl } from '../lib/cloudinary';
 
 export const ICON_MAP = {
   Landmark, Globe, Trophy, Microscope, BookOpen, Puzzle, Star, Feather,
@@ -49,7 +52,7 @@ export const CATEGORIES = [
   { slug: 'hadith',         ar: 'حديث',        en: 'Hadith',          icon: 'ScrollText',      accent: '#A8853B', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Hadith_Books.jpg/500px-Hadith_Books.jpg' },
   { slug: 'proverbs',       ar: 'أمثال',       en: 'Proverbs',        icon: 'Quote',           accent: '#6E1F28', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Pieter_Brueghel_the_Elder_-_The_Dutch_Proverbs_-_Google_Art_Project.jpg/500px-Pieter_Brueghel_the_Elder_-_The_Dutch_Proverbs_-_Google_Art_Project.jpg' },
   { slug: 'dialects',       ar: 'لهجات',       en: 'Dialects',        icon: 'MessagesSquare',  accent: '#311548', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Ibn_al-Bawwab_-_Qur%CA%BEan_f._278v-279r.jpg/500px-Ibn_al-Bawwab_-_Qur%CA%BEan_f._278v-279r.jpg' },
-  { slug: 'guess-the-movie',ar: 'خمن الفيلم',  en: 'Guess the Movie', icon: 'Film',            accent: '#6E1F28', imageUrl: 'https://res.cloudinary.com/ds5th9gms/image/upload/v1779097844/guess-the-movie/samuel-jackson-pulp-fiction-700.jpg' },
+  { slug: 'guess-the-movie',ar: 'خمن الفيلم',  en: 'Guess the Movie', icon: 'Film',            accent: '#6E1F28', imageUrl: cloudinaryUrl('samuel-jackson-pulp-fiction-700.jpg', { version: 'v1779097844', folder: 'guess-the-movie' }) },
 ];
 
 export function getCategoryBySlug(slug) {
@@ -57,12 +60,6 @@ export function getCategoryBySlug(slug) {
 }
 
 // Fallback random pick used when /reveal or /play is hit directly (no game started).
-// Fisher–Yates for unbiased shuffling.
 export function pickRandomSix() {
-  const arr = [...CATEGORIES];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr.slice(0, 6).map((c) => c.slug);
+  return pickN(CATEGORIES, CATEGORIES_PER_GAME).map((c) => c.slug);
 }

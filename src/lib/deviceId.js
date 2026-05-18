@@ -1,4 +1,6 @@
-const KEY = 'uah.device_id';
+import { STORAGE_KEYS } from './storageKeys';
+
+const KEY = STORAGE_KEYS.DEVICE_ID;
 
 export function getDeviceId() {
   let id = localStorage.getItem(KEY);
