@@ -5,19 +5,36 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
-import { CATEGORIES as LOCAL_CATEGORIES } from '../data/categories';
+import { CATEGORIES as LOCAL_CATEGORIES, getCategoryBySlug } from '../data/categories';
 import { getQuestion as getStubQuestion } from '../data/questions';
 
+// Presentation fields (imageUrl, accent, icon) ALWAYS come from data/categories.js — the
+// single source of truth for category visuals. Supabase owns names + catalog metadata only.
+// Edit src/data/categories.js to change a category image; Setup, Reveal, and Board all update.
 function mapCategoryRow(row) {
+  const presentation = getCategoryBySlug(row.slug) ?? {};
   return {
     slug: row.slug,
-    ar: row.name_ar,
-    en: row.name_en,
-    icon: row.icon_name,
-    accent: row.accent_color,
-    imageUrl: row.image_url ?? null,
+    ar: row.name_ar ?? presentation.ar,
+    en: row.name_en ?? presentation.en,
+    icon: presentation.icon,
+    accent: presentation.accent,
+    imageUrl: presentation.imageUrl ?? null,
     isFeaturedForGuests: row.is_featured_for_guests,
   };
+}
+
+// Fisher–Yates shuffle, then return the first two elements. For pools of
+// size ≤ 2 this returns the input as-is (no behavior change for legacy
+// categories). For larger pools each call returns a fresh random pair.
+function pickTwoRandom(rows) {
+  if (!rows || rows.length <= 2) return rows ?? [];
+  const arr = [...rows];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, 2);
 }
 
 function mapQuestionRow(row) {
@@ -42,7 +59,7 @@ export function useCategories() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
-        .select('slug, name_ar, name_en, icon_name, accent_color, image_url, is_featured_for_guests, display_order')
+        .select('slug, name_ar, name_en, is_featured_for_guests, display_order')
         .order('display_order');
       if (error) throw error;
       return data.map(mapCategoryRow);
@@ -82,7 +99,10 @@ export function usePrefetchQuestions(categories) {
         .in('categories.slug', slugs)
         .order('id');
       if (cancelled || error || !data) return;
-      // Group by (slug, difficulty) — first row → slot 0, second row → slot 1
+      // Group by (slug, difficulty), then randomly pick 2 per cell. For
+      // categories with exactly 2 questions per tier, both are kept and the
+      // shuffle is a no-op (same behavior as before). For pools larger than 2
+      // (e.g. guess-the-movie has ~10 per tier), each game gets a fresh pair.
       const grouped = new Map();
       for (const row of data) {
         const slug = row.categories.slug;
@@ -90,12 +110,12 @@ export function usePrefetchQuestions(categories) {
         if (!grouped.has(key)) grouped.set(key, []);
         grouped.get(key).push(row);
       }
-      // Seed each per-cell cache key so useQuestion finds them synchronously
-      for (const [key, rows] of grouped.entries()) {
+      for (const [key, allRows] of grouped.entries()) {
         const [slug, diffStr] = key.split('|');
         const difficulty = parseInt(diffStr, 10);
+        const picked = pickTwoRandom(allRows);
         for (let slot = 0; slot < 2; slot++) {
-          const row = rows[slot] ?? rows[0];
+          const row = picked[slot] ?? picked[0];
           if (!row) continue;
           queryClient.setQueryData(
             ['question', slug, difficulty, slot],
@@ -125,8 +145,11 @@ export function useQuestion(category, value, rowIdx = 0) {
     enabled: !!category?.slug && !!value,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      // Fetch up to 2 questions for this (category, difficulty), then index by slot.
-      // Order by id (stable) so slot 0 and slot 1 always map to the same questions.
+      // Fetch ALL questions for (category, difficulty). For pools >2 this
+      // fallback path (used when prefetch hasn't run, e.g. direct-link to
+      // /play) picks the first two by id deterministically so slot 0 and
+      // slot 1 stay distinct on this code path. The real per-game random
+      // pick happens in usePrefetchQuestions when the game starts normally.
       const { data, error } = await supabase
         .from('questions')
         .select(
@@ -134,10 +157,8 @@ export function useQuestion(category, value, rowIdx = 0) {
         )
         .eq('categories.slug', category.slug)
         .eq('difficulty', value)
-        .order('id')
-        .limit(2);
+        .order('id');
       if (error || !data || data.length === 0) return getStubQuestion(category, value, slot);
-      // Use slot if a question exists at that index; otherwise wrap to the available one
       const row = data[slot] ?? data[0];
       return mapQuestionRow(row);
     },

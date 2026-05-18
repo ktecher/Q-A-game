@@ -198,9 +198,17 @@ export default function QuestionScreen() {
               />
             </div>
 
-            {/* Question card with ❖ corners */}
+            {/* Question card with ❖ corners.
+                Padding tightens when an image is present so the whole screen
+                still fits on a ~768-900px viewport without scroll. Text-only
+                cards keep the roomier padding so corner ornaments don't
+                collide with the question text. */}
             <div
-              className="relative rounded-xl px-6 py-8 md:px-10 md:py-10 mb-5 text-center"
+              className={`relative rounded-xl mb-4 text-center ${
+                Q.imageUrl
+                  ? 'px-5 py-5 md:px-7 md:py-6'
+                  : 'px-5 py-6 md:px-7 md:py-8'
+              }`}
               style={{
                 background: 'var(--card-sapphire-grad)',
                 border: '1.5px solid var(--color-gold-faint)',
@@ -212,20 +220,20 @@ export default function QuestionScreen() {
               <span className="absolute bottom-2 start-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
               <span className="absolute bottom-2 end-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
 
-              <div className="font-ar-body font-bold text-cream text-2xl md:text-3xl leading-snug">
+              <div className="font-ar-body font-bold text-cream text-xl md:text-2xl leading-snug">
                 {Q.ar}
               </div>
-              <div className="font-en-display italic text-cream-60 text-base md:text-lg mt-3 leading-snug" lang="en">
+              <div className="font-en-display italic text-cream-60 text-sm md:text-base mt-2 leading-snug" lang="en">
                 {Q.en}
               </div>
 
               {Q.imageUrl && (
-                <div className="mt-5 flex justify-center">
+                <div className="mt-3 flex justify-center">
                   <img
                     src={Q.imageUrl}
                     alt=""
                     loading="lazy"
-                    className="max-h-64 md:max-h-80 w-auto rounded-lg border border-gold-faint shadow-lg"
+                    className="max-h-[38vh] md:max-h-72 max-w-sm w-auto rounded-lg border border-gold-faint shadow-lg"
                   />
                 </div>
               )}
@@ -237,7 +245,7 @@ export default function QuestionScreen() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="mt-5 inline-block px-4 py-2 rounded-md border border-gold-faint bg-gold/10"
+                    className="mt-3 inline-block px-4 py-2 rounded-md border border-gold-faint bg-gold/10"
                   >
                     <div className="font-ar-ui text-sm text-gold-light flex items-center justify-center gap-1.5">
                       <Lightbulb size={14} /> تلميح: {Q.hintAr}

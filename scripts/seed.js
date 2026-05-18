@@ -102,8 +102,13 @@ const slugToId = new Map(insertedCategories.map((c) => [c.slug, c.id]));
 // 3. For each category × difficulty (200/400/600), seed one question
 console.log(`📚 Seeding questions (${CATEGORIES.length} categories × 3 tiers = ${CATEGORIES.length * 3} rows)...`);
 
+// Categories seeded from external CSVs handle their own questions and must
+// be excluded here, or seed.js would overwrite them with stub data.
+const CSV_SEEDED_SLUGS = new Set(['guess-the-movie']);
+
 const questionRows = [];
 for (const cat of CATEGORIES) {
+  if (CSV_SEEDED_SLUGS.has(cat.slug)) continue;
   for (const value of [200, 400, 600]) {
     const q = getQuestion(cat, value);
     questionRows.push({

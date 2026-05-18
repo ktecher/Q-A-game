@@ -19,7 +19,7 @@ function tierClasses(value) {
       hoverShadow: 'var(--tier-easy-hover)',
       textColor: 'var(--tier-easy-text)',
       textShadow: 'var(--tier-easy-text-shadow)',
-      size: 24,
+      size: 20,
     };
   }
   if (value === 400) {
@@ -29,7 +29,7 @@ function tierClasses(value) {
       hoverShadow: 'var(--tier-mid-hover)',
       textColor: 'var(--tier-mid-text)',
       textShadow: 'var(--tier-mid-text-shadow)',
-      size: 28,
+      size: 24,
     };
   }
   // 600 — deepest, with crimson accent
@@ -39,7 +39,7 @@ function tierClasses(value) {
     hoverShadow: 'var(--tier-hard-hover)',
     textColor: 'var(--tier-hard-text)',
     textShadow: 'var(--tier-hard-text-shadow)',
-    size: 32,
+    size: 28,
     showSparkle: true,
   };
 }
@@ -157,7 +157,7 @@ function BoardCell({ category, value, isPicked, onPick }) {
     return (
       <div
         aria-label="Already played"
-        className="relative aspect-[5/3] rounded-lg flex items-center justify-center bg-ink-80 border border-gold-faint/40 opacity-30"
+        className="relative aspect-[5/2] rounded-lg flex items-center justify-center bg-ink-80 border border-gold-faint/40 opacity-30"
       >
         <X size={22} className="text-cream-60" strokeWidth={1.5} aria-hidden="true" />
       </div>
@@ -168,7 +168,7 @@ function BoardCell({ category, value, isPicked, onPick }) {
     <button
       type="button"
       onClick={() => onPick(category, value)}
-      className="relative aspect-[5/3] rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-ink [will-change:transform] transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.97]"
+      className="relative aspect-[5/2] rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-ink [will-change:transform] transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.97]"
       style={{
         background: tier.bg,
         boxShadow: tier.ring,
@@ -326,11 +326,6 @@ export default function BoardScreen() {
           })
         )}
       </div>
-
-      {/* Footer hint */}
-      <p className="mt-6 text-center font-en-body text-cream-45 text-sm" lang="en">
-        Tap a cell to open the question. Tap a team chip to adjust their score.
-      </p>
 
       {/* Score-adjust modal */}
       <ScoreAdjustDialog team={adjustingTeam} onClose={() => setAdjustingTeamId(null)} />

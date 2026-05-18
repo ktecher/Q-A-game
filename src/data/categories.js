@@ -1,6 +1,8 @@
-// Shared category data — used by Setup (picker), Reveal (slot machine),
-// Board (column headers), and (eventually) Question screens.
-// Will be replaced by a Supabase-backed query in task #17.
+// Single source of truth for category PRESENTATION (imageUrl, accent, icon).
+// Used directly by Reveal/Board (via gameReducer's getCategoryBySlug) and indirectly
+// by Setup (queries.js merges these fields into Supabase rows by slug).
+// Change an image here → it updates Setup, Reveal, and Board together.
+// Supabase owns catalog metadata only (Arabic/English names, ordering, featured flag).
 
 import {
   Landmark, Globe, Trophy, Microscope, BookOpen, Puzzle, Star, Feather,
@@ -47,6 +49,7 @@ export const CATEGORIES = [
   { slug: 'hadith',         ar: 'حديث',        en: 'Hadith',          icon: 'ScrollText',      accent: '#A8853B', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Hadith_Books.jpg/500px-Hadith_Books.jpg' },
   { slug: 'proverbs',       ar: 'أمثال',       en: 'Proverbs',        icon: 'Quote',           accent: '#6E1F28', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Pieter_Brueghel_the_Elder_-_The_Dutch_Proverbs_-_Google_Art_Project.jpg/500px-Pieter_Brueghel_the_Elder_-_The_Dutch_Proverbs_-_Google_Art_Project.jpg' },
   { slug: 'dialects',       ar: 'لهجات',       en: 'Dialects',        icon: 'MessagesSquare',  accent: '#311548', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Ibn_al-Bawwab_-_Qur%CA%BEan_f._278v-279r.jpg/500px-Ibn_al-Bawwab_-_Qur%CA%BEan_f._278v-279r.jpg' },
+  { slug: 'guess-the-movie',ar: 'خمن الفيلم',  en: 'Guess the Movie', icon: 'Film',            accent: '#6E1F28', imageUrl: 'https://res.cloudinary.com/ds5th9gms/image/upload/v1779097844/guess-the-movie/samuel-jackson-pulp-fiction-700.jpg' },
 ];
 
 export function getCategoryBySlug(slug) {

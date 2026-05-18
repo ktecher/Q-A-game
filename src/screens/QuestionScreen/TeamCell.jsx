@@ -7,14 +7,14 @@ export default function TeamCell({ team, status, secondaryTimer, answeredText })
   const isDone = status === 'done';
 
   const bg = isAnswering
-    ? `linear-gradient(135deg, ${team.color}30, var(--color-ink-50))`
+    ? `linear-gradient(135deg, ${team.color}99, var(--color-ink-50))`
     : 'var(--color-ink-50)';
 
   const border = isAnswering
     ? 'var(--color-gold)'
     : isDone
-    ? `${team.color}aa`
-    : 'var(--color-gold-faint)';
+      ? `${team.color}aa`
+      : 'var(--color-gold-faint)';
 
   const opacity = isWaiting ? 0.55 : 1;
 
@@ -47,9 +47,8 @@ export default function TeamCell({ team, status, secondaryTimer, answeredText })
         style={{ color: isAnswering ? 'var(--color-gold-light)' : 'var(--color-cream-60)' }}
       >
         <span
-          className={`w-1.5 h-1.5 rounded-full ${
-            isAnswering ? 'bg-gold animate-pulse-dot' : isDone ? 'bg-gold-light' : 'bg-cream-30'
-          }`}
+          className={`w-1.5 h-1.5 rounded-full ${isAnswering ? 'bg-gold animate-pulse-dot' : isDone ? 'bg-gold-light' : 'bg-cream-30'
+            }`}
         />
         {isAnswering && (
           <>

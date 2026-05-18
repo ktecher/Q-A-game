@@ -31,3 +31,4 @@ dist-ssr
 *.sw?
 ~$*
 CLEANUP_PLAN_FINAL.md
+content/guess-the-movie.csv
