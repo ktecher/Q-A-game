@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Timer, Lightbulb, Swords, Sparkles, ArrowRight, Eye,
+  Timer, Lightbulb, Swords, Sparkles, ArrowRight, Eye, Pause, Play,
 } from 'lucide-react';
 import { QRCode } from 'react-qr-code';
 import { ICON_MAP, getCategoryBySlug } from '../../data/categories';
@@ -62,12 +62,13 @@ export default function QuestionScreen() {
     primaryTimer: PRIMARY_TIMER,
     secondaryTimer: SECONDARY_TIMER,
   });
-  const { phase, timeLeft, hintShown } = phaseState;
+  const { phase, timeLeft, hintShown, paused } = phaseState;
 
   const extraUsed = lifelinesUsed[activeTeamIdx]?.extraTime;
   const hintUsed = lifelinesUsed[activeTeamIdx]?.hint;
 
   const endTurn = () => phaseDispatch({ type: 'END_TURN' });
+  const togglePause = () => phaseDispatch({ type: 'TOGGLE_PAUSE' });
 
   const handleReveal = () => {
     clearInterval(intervalRef.current);
@@ -324,6 +325,25 @@ export default function QuestionScreen() {
 
             {/* Bottom CTAs */}
             <div className="flex flex-wrap justify-center gap-2.5">
+              <button
+                type="button"
+                onClick={togglePause}
+                aria-pressed={paused}
+                title={paused ? 'استئناف · Resume timer' : 'إيقاف · Pause timer'}
+                className={`px-4 py-3 rounded-xl text-sm flex items-center gap-2 border transition ${
+                  paused
+                    ? 'border-gold bg-gold/10 text-gold'
+                    : 'border-gold-faint bg-ink-50 text-cream-60 hover:border-gold/60 hover:text-gold'
+                }`}
+              >
+                {paused ? <Play size={16} /> : <Pause size={16} />}
+                <div className="flex flex-col items-center gap-0">
+                  <span>{paused ? 'استئناف' : 'إيقاف'}</span>
+                  <span className="font-en-body text-xs opacity-70" lang="en">
+                    {paused ? 'Resume' : 'Pause'}
+                  </span>
+                </div>
+              </button>
               <button
                 type="button"
                 onClick={endTurn}

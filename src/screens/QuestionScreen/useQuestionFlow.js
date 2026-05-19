@@ -5,7 +5,7 @@ import { useReducer, useEffect, useRef } from 'react';
 function phaseReducer(state, action) {
   switch (action.type) {
     case 'TICK': {
-      if (state.phase === 'reveal') return state;
+      if (state.phase === 'reveal' || state.paused) return state;
       if (state.timeLeft > 1) {
         return { ...state, timeLeft: state.timeLeft - 1 };
       }
@@ -15,9 +15,13 @@ function phaseReducer(state, action) {
       }
       return { ...state, phase: 'reveal', timeLeft: 0 };
     }
+    case 'TOGGLE_PAUSE': {
+      if (state.phase === 'reveal') return state;
+      return { ...state, paused: !state.paused };
+    }
     case 'END_TURN': {
       if (state.phase === 'active-answering') {
-        return { ...state, phase: 'opposing-answering', timeLeft: state.secondaryTimer };
+        return { ...state, phase: 'opposing-answering', timeLeft: state.secondaryTimer, paused: false };
       }
       if (state.phase === 'opposing-answering') {
         return { ...state, phase: 'reveal', timeLeft: 0 };
@@ -39,6 +43,7 @@ function phaseReducer(state, action) {
         timeLeft: action.primaryTimer,
         secondaryTimer: action.secondaryTimer,
         hintShown: false,
+        paused: false,
       };
     }
     default:
@@ -53,6 +58,7 @@ export function useQuestionFlow({ currentCell, primaryTimer, secondaryTimer }) {
     timeLeft: primaryTimer,
     secondaryTimer: secondaryTimer,
     hintShown: false,
+    paused: false,
   }));
   const intervalRef = useRef(null);
 
@@ -65,12 +71,13 @@ export function useQuestionFlow({ currentCell, primaryTimer, secondaryTimer }) {
     });
   }, [currentCell?.categorySlug, currentCell?.value, currentCell?.rowIdx, primaryTimer, secondaryTimer]);
 
-  // Countdown — single tick action, reducer handles phase advance atomically
+  // Countdown — single tick action, reducer handles phase advance atomically.
+  // Skips entirely when paused so the interval doesn't even spin needlessly.
   useEffect(() => {
-    if (phaseState.phase === 'reveal') return;
+    if (phaseState.phase === 'reveal' || phaseState.paused) return;
     intervalRef.current = setInterval(() => phaseDispatch({ type: 'TICK' }), 1000);
     return () => clearInterval(intervalRef.current);
-  }, [phaseState.phase]);
+  }, [phaseState.phase, phaseState.paused]);
 
   return { phaseState, phaseDispatch, intervalRef };
 }
