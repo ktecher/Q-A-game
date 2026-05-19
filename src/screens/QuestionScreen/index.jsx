@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Timer, Lightbulb, Swords, Sparkles, ArrowRight, Eye,
 } from 'lucide-react';
+import { QRCode } from 'react-qr-code';
 import { ICON_MAP, getCategoryBySlug } from '../../data/categories';
 import { useGame } from '../../contexts/GameContext';
 import { useQuestion } from '../../lib/queries';
@@ -200,13 +201,13 @@ export default function QuestionScreen() {
             </div>
 
             {/* Question card with ❖ corners.
-                Padding tightens when an image is present so the whole screen
-                still fits on a ~768-900px viewport without scroll. Text-only
-                cards keep the roomier padding so corner ornaments don't
-                collide with the question text. */}
+                Padding tightens when an image or QR is present so the whole
+                screen still fits on a ~768-900px viewport. Text-only cards
+                keep the roomier padding so corner ornaments don't collide
+                with the question text. */}
             <div
               className={`relative rounded-xl mb-4 text-center ${
-                Q.imageUrl
+                Q.imageUrl || Q.qrUrl
                   ? 'px-5 py-5 md:px-7 md:py-6'
                   : 'px-5 py-6 md:px-7 md:py-8'
               }`}
@@ -227,6 +228,20 @@ export default function QuestionScreen() {
               <div className="font-en-display italic text-cream-60 text-sm md:text-base mt-2 leading-snug" lang="en">
                 {Q.en}
               </div>
+
+              {Q.qrUrl && (
+                <div className="mt-3 flex justify-center">
+                  <div className="bg-white rounded-xl p-3 inline-block">
+                    <QRCode
+                      value={Q.qrUrl}
+                      size={180}
+                      bgColor="#FFFFFF"
+                      fgColor="#0A0F1A"
+                      level="M"
+                    />
+                  </div>
+                </div>
+              )}
 
               {Q.imageUrl && (
                 <div className="mt-3 flex justify-center">

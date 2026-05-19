@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#0A0F1A" />
+  <title>ولا كلمة · Wala Kalma</title>
+  <style>
+    /* Standalone styles — must NOT depend on the React app's CSS. */
+    :root {
+      --ink: #0A0F1A;
+      --cream: #F4ECD8;
+      --cream-60: rgba(244, 236, 216, 0.6);
+      --cream-45: rgba(244, 236, 216, 0.45);
+      --gold: #D4A24C;
+      --gold-40: rgba(212, 162, 76, 0.4);
+      --teal: #1A7A6E;
+      --teal-bg: rgba(26, 122, 110, 0.18);
+      --teal-border: rgba(26, 122, 110, 0.55);
+      --crimson: #C44150;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      background: var(--ink);
+      color: var(--cream);
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma,
+                   "Noto Sans Arabic", "Arabic UI Display", Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top) 1rem env(safe-area-inset-bottom);
+    }
+    .tag {
+      align-self: center;
+      margin-top: 1.25rem;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      background: var(--teal-bg);
+      border: 1px solid var(--teal-border);
+      color: var(--teal);
+      border-radius: 9999px;
+    }
+    .body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 250ms ease 100ms;
+      user-select: none;
+    }
+    .body.revealed {
+      opacity: 1;
+      user-select: auto;
+    }
+    .title-primary {
+      font-size: clamp(2rem, 9vw, 4rem);
+      line-height: 1.4;
+      font-weight: 700;
+      margin: 0;
+      padding: 0 0.5rem;
+      text-wrap: balance;
+    }
+    .title-secondary {
+      font-size: clamp(1rem, 4vw, 1.5rem);
+      line-height: 1.4;
+      color: var(--cream-60);
+      font-style: italic;
+      margin: 0;
+      padding: 0 0.5rem;
+      direction: ltr;
+      unicode-bidi: isolate;
+    }
+    .done {
+      margin: 1rem 0;
+      padding: 1rem;
+      min-height: 56px;
+      background: transparent;
+      color: var(--cream);
+      border: 1.5px solid var(--gold-40);
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+    .done:active { background: rgba(212, 162, 76, 0.12); border-color: var(--gold); }
+
+    /* Anti-spoiler gate */
+    .gate {
+      position: fixed;
+      inset: 0;
+      background: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 150ms ease;
+      z-index: 10;
+    }
+    .gate.gone {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .gate-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      text-align: center;
+    }
+    .gate-ar {
+      font-size: clamp(1.5rem, 6vw, 2rem);
+      color: var(--gold);
+    }
+    .gate-en {
+      font-size: clamp(0.875rem, 3vw, 1rem);
+      color: var(--cream-60);
+      font-weight: 400;
+      font-style: italic;
+      direction: ltr;
+    }
+    .err {
+      color: var(--crimson);
+      font-size: 1rem;
+      text-align: center;
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <span class="tag">ولا كلمة · Wala Kalma</span>
+
+  <div class="body" id="body">
+    <h1 class="title-primary" id="t-primary">—</h1>
+    <p class="title-secondary" id="t-secondary"></p>
+  </div>
+
+  <button class="done" id="done" type="button">تم · Done</button>
+
+  <div class="gate" id="gate" role="button" tabindex="0" aria-label="Tap to reveal">
+    <div class="gate-inner">
+      <span class="gate-ar">اضغط للكشف</span>
+      <span class="gate-en">Tap to reveal</span>
+    </div>
+  </div>
+
+  <script>
+    // base64url decode — duplicated from src/lib/charadesEncoding.js because
+    // this page must stay standalone (no SPA bundle import).
+    function decode(s) {
+      if (!s) return null;
+      if (s.startsWith('#')) s = s.slice(1);
+      if (s.startsWith('d=')) s = s.slice(2);
+      s = s.replace(/-/g, '+').replace(/_/g, '/');
+      while (s.length % 4) s += '=';
+      try {
+        const bin = atob(s);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const json = new TextDecoder().decode(bytes);
+        const payload = JSON.parse(json);
+        if (payload.v !== 1) return null;
+        return payload;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    const payload = decode(location.hash);
+    const $primary = document.getElementById('t-primary');
+    const $secondary = document.getElementById('t-secondary');
+    const $gate = document.getElementById('gate');
+    const $body = document.getElementById('body');
+    const $done = document.getElementById('done');
+
+    if (!payload) {
+      document.querySelector('.body').innerHTML =
+        '<p class="err">رابط غير صالح<br><span style="font-style:italic;opacity:0.7">Invalid link</span></p>';
+      $gate.style.display = 'none';
+      $body.classList.add('revealed');
+    } else {
+      const isAr = payload.l === 'ar';
+      if (isAr) {
+        document.documentElement.dir = 'rtl';
+        document.documentElement.lang = 'ar';
+        $primary.textContent = payload.ar || '';
+        $primary.setAttribute('dir', 'rtl');
+        $secondary.textContent = payload.en || '';
+      } else {
+        document.documentElement.dir = 'ltr';
+        document.documentElement.lang = 'en';
+        $primary.textContent = payload.en || '';
+        $primary.setAttribute('dir', 'ltr');
+        // English-primary entries hide the secondary Arabic line for cleanliness
+        $secondary.textContent = '';
+      }
+    }
+
+    function dismissGate() {
+      $gate.classList.add('gone');
+      $body.classList.add('revealed');
+    }
+    $gate.addEventListener('click', dismissGate);
+    $gate.addEventListener('touchstart', dismissGate, { passive: true });
+    $gate.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') dismissGate();
+    });
+
+    $done.addEventListener('click', () => {
+      // Most browsers block window.close() for pages they didn't open.
+      // Fall back to dimming the page so the actor knows they're done.
+      window.close();
+      document.body.style.opacity = '0.25';
+      document.body.style.transition = 'opacity 250ms ease';
+    });
+  </script>
+</body>
+</html>

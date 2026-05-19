@@ -7,6 +7,38 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
 import { CATEGORIES as LOCAL_CATEGORIES, getCategoryBySlug } from '../data/categories';
 import { pickN } from './random';
+import { buildCharadeUrl } from './charadesEncoding';
+
+// Bilingual "Scan the QR code" prompt shown inside the question card for
+// Wala Kalma (charades) cells. Localized once here so both the runtime
+// fetch and the prefetch path produce identical question shapes.
+const WALA_KALMA_PROMPT_AR = 'امسح رمز QR لرؤية الاسم';
+const WALA_KALMA_PROMPT_EN = 'Scan the QR code to see the name';
+
+// Transform a wala_kalma_titles row into the same "question" shape that
+// QuestionScreen already renders. The actor sees a QR (built from the title
+// via charadesEncoding); the host sees the same QR plus a Reveal-Answer
+// button that flips to the title text. Same flow as a normal question.
+function mapWalaKalmaRow(row, categorySlug) {
+  const lang = categorySlug === 'wala-kalma-english' ? 'en' : 'ar';
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const qrUrl = buildCharadeUrl({
+    origin,
+    titleAr: row.title_ar,
+    titleEn: row.title_en,
+    lang,
+  });
+  return {
+    ar: WALA_KALMA_PROMPT_AR,
+    en: WALA_KALMA_PROMPT_EN,
+    answerAr: row.title_ar,
+    answerEn: row.title_en,
+    hintAr: null,
+    hintEn: null,
+    imageUrl: null,
+    qrUrl,
+  };
+}
 
 // Minimal placeholder returned only when Supabase errors AND the question cache
 // has no entry to fall back on (a rare double-failure path). The wording is
@@ -90,43 +122,80 @@ export function useCategories() {
  */
 export function usePrefetchQuestions(categories) {
   const queryClient = useQueryClient();
-  const slugs = (categories ?? []).map((c) => c.slug).filter(Boolean);
-  const cacheKey = slugs.slice().sort().join(',');
+  const cats = categories ?? [];
+  const normalSlugs = cats.filter((c) => c.kind !== 'wala-kalma').map((c) => c.slug).filter(Boolean);
+  const walaKalmaSlugs = cats.filter((c) => c.kind === 'wala-kalma').map((c) => c.slug).filter(Boolean);
+  const cacheKey = [...normalSlugs, ...walaKalmaSlugs].slice().sort().join(',');
 
   useEffect(() => {
-    if (slugs.length === 0) return;
+    if (normalSlugs.length === 0 && walaKalmaSlugs.length === 0) return;
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from('questions')
-        .select(
-          'id, difficulty, question_ar, question_en, answer_ar, answer_en, hint_ar, hint_en, image_url, categories!inner(slug)'
-        )
-        .in('categories.slug', slugs)
-        .order('id');
-      if (cancelled || error || !data) return;
-      // Group by (slug, difficulty), then randomly pick 2 per cell. For
-      // categories with exactly 2 questions per tier, both are kept and the
-      // shuffle is a no-op (same behavior as before). For pools larger than 2
-      // (e.g. guess-the-movie has ~10 per tier), each game gets a fresh pair.
-      const grouped = new Map();
-      for (const row of data) {
-        const slug = row.categories.slug;
-        const key = `${slug}|${row.difficulty}`;
-        if (!grouped.has(key)) grouped.set(key, []);
-        grouped.get(key).push(row);
+      // Normal Q&A categories — fetch from `questions` table.
+      if (normalSlugs.length > 0) {
+        const { data, error } = await supabase
+          .from('questions')
+          .select(
+            'id, difficulty, question_ar, question_en, answer_ar, answer_en, hint_ar, hint_en, image_url, categories!inner(slug)'
+          )
+          .in('categories.slug', normalSlugs)
+          .order('id');
+        if (cancelled) return;
+        if (!error && data) {
+          const grouped = new Map();
+          for (const row of data) {
+            const slug = row.categories.slug;
+            const key = `${slug}|${row.difficulty}`;
+            if (!grouped.has(key)) grouped.set(key, []);
+            grouped.get(key).push(row);
+          }
+          for (const [key, allRows] of grouped.entries()) {
+            const [slug, diffStr] = key.split('|');
+            const difficulty = parseInt(diffStr, 10);
+            const picked = pickTwoRandom(allRows);
+            for (let slot = 0; slot < 2; slot++) {
+              const row = picked[slot] ?? picked[0];
+              if (!row) continue;
+              queryClient.setQueryData(
+                ['question', slug, difficulty, slot],
+                mapQuestionRow(row)
+              );
+            }
+          }
+        }
       }
-      for (const [key, allRows] of grouped.entries()) {
-        const [slug, diffStr] = key.split('|');
-        const difficulty = parseInt(diffStr, 10);
-        const picked = pickTwoRandom(allRows);
-        for (let slot = 0; slot < 2; slot++) {
-          const row = picked[slot] ?? picked[0];
-          if (!row) continue;
-          queryClient.setQueryData(
-            ['question', slug, difficulty, slot],
-            mapQuestionRow(row)
-          );
+
+      // Wala Kalma (charades) categories — fetch from `wala_kalma_titles` and
+      // seed the SAME cache keys with a question-shaped row that carries a
+      // qrUrl instead of imageUrl. QuestionScreen renders the QR when present.
+      if (walaKalmaSlugs.length > 0) {
+        const { data, error } = await supabase
+          .from('wala_kalma_titles')
+          .select('category_slug, difficulty, title_ar, title_en')
+          .in('category_slug', walaKalmaSlugs)
+          .eq('is_active', true)
+          .order('display_order');
+        if (cancelled) return;
+        if (!error && data) {
+          const grouped = new Map();
+          for (const row of data) {
+            const key = `${row.category_slug}|${row.difficulty}`;
+            if (!grouped.has(key)) grouped.set(key, []);
+            grouped.get(key).push(row);
+          }
+          for (const [key, allRows] of grouped.entries()) {
+            const [slug, diffStr] = key.split('|');
+            const difficulty = parseInt(diffStr, 10);
+            const picked = pickTwoRandom(allRows);
+            for (let slot = 0; slot < 2; slot++) {
+              const row = picked[slot] ?? picked[0];
+              if (!row) continue;
+              queryClient.setQueryData(
+                ['question', slug, difficulty, slot],
+                mapWalaKalmaRow(row, slug)
+              );
+            }
+          }
         }
       }
     })();
@@ -175,6 +244,23 @@ export function useQuestion(category, value, rowIdx = 0) {
     enabled: !!category?.slug && !!value,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
+      // Wala Kalma (charades) categories use a different table; the returned
+      // shape carries a `qrUrl` instead of `imageUrl` so QuestionScreen can
+      // render a scannable QR. The actor scans → phone shows the title; team
+      // guesses; host reveals the title (the "answer") and awards points.
+      if (category.kind === 'wala-kalma') {
+        const { data, error } = await supabase
+          .from('wala_kalma_titles')
+          .select('title_ar, title_en')
+          .eq('category_slug', category.slug)
+          .eq('difficulty', value)
+          .eq('is_active', true)
+          .order('display_order')
+          .limit(2);
+        if (error || !data || data.length === 0) return getStubQuestion();
+        const row = data[slot] ?? data[0];
+        return mapWalaKalmaRow(row, category.slug);
+      }
       // Direct-link path (used when prefetch hasn't run, e.g. user lands
       // straight on /play/question). Pulls just the first two by id so slot
       // 0 and slot 1 stay distinct without fetching the whole pool. Random

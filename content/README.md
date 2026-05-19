@@ -9,6 +9,7 @@ because the two scripts have different philosophies:
 |---|---|---|
 | `questions-with-images.csv` | `scripts/seed.js` | Canonical question pool for the 30 standard categories (180 rows = 30 cats × 6). |
 | `challenge-prompts.csv` | `scripts/seed-challenge-prompts.js` | Canonical Challenge Round prompts (32 bilingual entries). Run the seeder after editing to push changes to Supabase. |
+| `wala-kalma-titles.csv` | `scripts/seed-wala-kalma-titles.js` | Canonical Wala Kalma (charades) titles — 90 entries × 3 categories (english / arabic / gulf), 10 per difficulty tier. Run the seeder after editing to push changes to Supabase. |
 | `questions-all.csv` | (legacy) | Older flat dump without image_url. Kept for reference. |
 | `category-images.csv`, `category-images-500.csv`, `category-images-blank.csv` | (author) | Reference grids of category cover images. |
 | `image-research/` | (author) | Chunked research output from when categories were curated. |

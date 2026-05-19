@@ -8,7 +8,7 @@ import {
   Landmark, Globe, Trophy, Microscope, BookOpen, Puzzle, Star, Feather,
   Film, Music, UtensilsCrossed, Cpu, PawPrint, Car, UserStar, Sparkles,
   Tv, Gamepad2, Hourglass, Castle, Lightbulb, Languages, MapPin, Medal,
-  Goal, Flag, BookMarked, ScrollText, Quote, MessagesSquare,
+  Goal, Flag, BookMarked, ScrollText, Quote, MessagesSquare, Drama,
 } from 'lucide-react';
 import { pickN } from '../lib/random';
 import { CATEGORIES_PER_GAME } from '../lib/gameDefaults';
@@ -18,7 +18,7 @@ export const ICON_MAP = {
   Landmark, Globe, Trophy, Microscope, BookOpen, Puzzle, Star, Feather,
   Film, Music, UtensilsCrossed, Cpu, PawPrint, Car, UserStar, Sparkles,
   Tv, Gamepad2, Hourglass, Castle, Lightbulb, Languages, MapPin, Medal,
-  Goal, Flag, BookMarked, ScrollText, Quote, MessagesSquare,
+  Goal, Flag, BookMarked, ScrollText, Quote, MessagesSquare, Drama,
 };
 
 export const CATEGORIES = [
@@ -53,6 +53,9 @@ export const CATEGORIES = [
   { slug: 'proverbs',       ar: 'أمثال',       en: 'Proverbs',        icon: 'Quote',           accent: '#6E1F28', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Pieter_Brueghel_the_Elder_-_The_Dutch_Proverbs_-_Google_Art_Project.jpg/500px-Pieter_Brueghel_the_Elder_-_The_Dutch_Proverbs_-_Google_Art_Project.jpg' },
   { slug: 'dialects',       ar: 'لهجات',       en: 'Dialects',        icon: 'MessagesSquare',  accent: '#311548', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Ibn_al-Bawwab_-_Qur%CA%BEan_f._278v-279r.jpg/500px-Ibn_al-Bawwab_-_Qur%CA%BEan_f._278v-279r.jpg' },
   { slug: 'guess-the-movie',ar: 'خمن الفيلم',  en: 'Guess the Movie', icon: 'Film',            accent: '#6E1F28', imageUrl: cloudinaryUrl('samuel-jackson-pulp-fiction-700.jpg', { version: 'v1779097844', folder: 'guess-the-movie' }) },
+  { slug: 'wala-kalma-english', ar: 'ولا كلمة · إنجليزي', en: 'Wala Kalma · English', icon: 'Drama', accent: '#1A7A6E', kind: 'wala-kalma', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Hollywood_Sign_%28cropped%29.jpg/640px-Hollywood_Sign_%28cropped%29.jpg' },
+  { slug: 'wala-kalma-arabic',  ar: 'ولا كلمة · عربي',    en: 'Wala Kalma · Arabic',  icon: 'Drama', accent: '#1A7A6E', kind: 'wala-kalma', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Cairo_Tower_-_2023.jpg/500px-Cairo_Tower_-_2023.jpg' },
+  { slug: 'wala-kalma-gulf',    ar: 'ولا كلمة · خليجي',   en: 'Wala Kalma · Gulf',    icon: 'Drama', accent: '#1A7A6E', kind: 'wala-kalma', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Souq_Al-Mubarakiya_Kuwait.jpg/640px-Souq_Al-Mubarakiya_Kuwait.jpg' },
 ];
 
 export function getCategoryBySlug(slug) {

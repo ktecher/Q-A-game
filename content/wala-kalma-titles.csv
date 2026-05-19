@@ -1,0 +1,91 @@
+category_slug,difficulty,title_ar,title_en,origin,kind,year,display_order
+wala-kalma-english,200,تايتانيك,Titanic,english,movie,1997,1
+wala-kalma-english,200,الأسد الملك,The Lion King,english,movie,1994,2
+wala-kalma-english,200,حرب النجوم,Star Wars,english,movie,1977,3
+wala-kalma-english,200,سبايدر مان,Spider-Man,english,movie,2002,4
+wala-kalma-english,200,هاري بوتر,Harry Potter,english,movie,2001,5
+wala-kalma-english,200,الأصدقاء,Friends,english,tv,1994,6
+wala-kalma-english,200,صراع العروش,Game of Thrones,english,tv,2011,7
+wala-kalma-english,200,بريكنغ باد,Breaking Bad,english,tv,2008,8
+wala-kalma-english,200,المكتب,The Office,english,tv,2005,9
+wala-kalma-english,200,حديقة الديناصورات,Jurassic Park,english,movie,1993,10
+wala-kalma-english,400,إنسيبشن,Inception,english,movie,2010,11
+wala-kalma-english,400,بالب فيكشن,Pulp Fiction,english,movie,1994,12
+wala-kalma-english,400,فورست غامب,Forrest Gump,english,movie,1994,13
+wala-kalma-english,400,العراب,The Godfather,english,movie,1972,14
+wala-kalma-english,400,المصفوفة,The Matrix,english,movie,1999,15
+wala-kalma-english,400,أشياء غريبة,Stranger Things,english,tv,2016,16
+wala-kalma-english,400,فارس الظلام,The Dark Knight,english,movie,2008,17
+wala-kalma-english,400,شيرلوك,Sherlock,english,tv,2010,18
+wala-kalma-english,400,المنتقمون: نهاية اللعبة,Avengers: Endgame,english,movie,2019,19
+wala-kalma-english,400,أفاتار,Avatar,english,movie,2009,20
+wala-kalma-english,600,مولهولاند درايف,Mulholland Drive,english,movie,2001,21
+wala-kalma-english,600,الإشراق الأبدي للعقل النقي,Eternal Sunshine of the Spotless Mind,english,movie,2004,22
+wala-kalma-english,600,توين بيكس,Twin Peaks,english,tv,1990,23
+wala-kalma-english,600,بيتر كول ساول,Better Call Saul,english,tv,2015,24
+wala-kalma-english,600,ذا واير,The Wire,english,tv,2002,25
+wala-kalma-english,600,ماد مين,Mad Men,english,tv,2007,26
+wala-kalma-english,600,متاهة بان,Pan's Labyrinth,english,movie,2006,27
+wala-kalma-english,600,2001: ملحمة الفضاء,2001: A Space Odyssey,english,movie,1968,28
+wala-kalma-english,600,مرآة سوداء,Black Mirror,english,tv,2011,29
+wala-kalma-english,600,فارغو,Fargo,english,movie,1996,30
+wala-kalma-arabic,200,باب الحارة,Bab al-Hara,syrian,tv,2006,1
+wala-kalma-arabic,200,عمارة يعقوبيان,The Yacoubian Building,egyptian,movie,2006,2
+wala-kalma-arabic,200,ليالينا,Layalina,egyptian,tv,2002,3
+wala-kalma-arabic,200,عسل أسود,Black Honey,egyptian,movie,2010,4
+wala-kalma-arabic,200,الإرهاب والكباب,Terrorism and Kebab,egyptian,movie,1992,5
+wala-kalma-arabic,200,الأستاذة فاطمة,Miss Fatma,egyptian,movie,1952,6
+wala-kalma-arabic,200,الأرض,The Land,egyptian,movie,1969,7
+wala-kalma-arabic,200,المومياء,The Mummy,egyptian,movie,1969,8
+wala-kalma-arabic,200,الحرام,The Sin,egyptian,movie,1965,9
+wala-kalma-arabic,200,رأفت الهجان,Raafat El-Haggan,egyptian,tv,1988,10
+wala-kalma-arabic,400,نسر الصعيد,Eagle of Upper Egypt,egyptian,tv,2018,11
+wala-kalma-arabic,400,الفيل الأزرق,The Blue Elephant,egyptian,movie,2014,12
+wala-kalma-arabic,400,إبراهيم الأبيض,Ibrahim al-Abyad,egyptian,movie,2009,13
+wala-kalma-arabic,400,مولد وصاحبه غايب,A Mawlid and Its Master is Absent,egyptian,movie,1979,14
+wala-kalma-arabic,400,الكيت كات,Kit Kat,egyptian,movie,1991,15
+wala-kalma-arabic,400,شيء من الخوف,A Bit of Fear,egyptian,movie,1969,16
+wala-kalma-arabic,400,البريء,The Innocent,egyptian,movie,1986,17
+wala-kalma-arabic,400,المهاجر,The Emigrant,egyptian,movie,1994,18
+wala-kalma-arabic,400,خلي بالك من زوزو,Watch Out for Zouzou,egyptian,movie,1972,19
+wala-kalma-arabic,400,الحفيد,The Grandchild,egyptian,movie,1974,20
+wala-kalma-arabic,600,الناصر صلاح الدين,Saladin,egyptian,movie,1963,21
+wala-kalma-arabic,600,العصفور,The Sparrow,egyptian,movie,1972,22
+wala-kalma-arabic,600,باب الحديد,Cairo Station,egyptian,movie,1958,23
+wala-kalma-arabic,600,إسكندرية ليه,"Alexandria, Why?",egyptian,movie,1979,24
+wala-kalma-arabic,600,المخدوعون,The Dupes,syrian,movie,1972,25
+wala-kalma-arabic,600,ميرامار,Miramar,egyptian,movie,1969,26
+wala-kalma-arabic,600,ليالي الحلمية,Layali el-Helmeya,egyptian,tv,1987,27
+wala-kalma-arabic,600,ضوء القمر,Moonlight,lebanese,movie,1996,28
+wala-kalma-arabic,600,الجوع,The Hunger,egyptian,movie,1986,29
+wala-kalma-arabic,600,الكرنك,Karnak Café,egyptian,movie,1975,30
+wala-kalma-gulf,200,درب الزلق,Darb al-Zalaq,kuwaiti,tv,1977,1
+wala-kalma-gulf,200,خالتي قماشة,Aunt Qmasha,kuwaiti,tv,1983,2
+wala-kalma-gulf,200,زوارة الخميس,Thursday Visitors,kuwaiti,tv,1979,3
+wala-kalma-gulf,200,شارع عبدالعزيز,Abdul Aziz Street,kuwaiti,tv,1985,4
+wala-kalma-gulf,200,إلى أبي وأمي مع التحية,To My Father and Mother With Greetings,kuwaiti,tv,1988,5
+wala-kalma-gulf,200,افتح يا سمسم,Iftah Ya Simsim,kuwaiti,tv,1979,6
+wala-kalma-gulf,200,رحلة العمر,Lifetime Journey,kuwaiti,tv,1990,7
+wala-kalma-gulf,200,دانة,Dana,kuwaiti,tv,1985,8
+wala-kalma-gulf,200,على الدنيا السلام,Farewell to the World,gulf,tv,1993,9
+wala-kalma-gulf,200,بنات آدم,Daughters of Adam,gulf,tv,1995,10
+wala-kalma-gulf,400,تكلم تكلم,Speak Speak,kuwaiti,tv,1986,11
+wala-kalma-gulf,400,فرسان المناخ,Knights of Al-Manakh,kuwaiti,tv,1980,12
+wala-kalma-gulf,400,خيوط,Threads,gulf,tv,1996,13
+wala-kalma-gulf,400,القاضي والمنطق,The Judge and Logic,gulf,tv,1992,14
+wala-kalma-gulf,400,زواج هند,Hind's Wedding,gulf,tv,1990,15
+wala-kalma-gulf,400,لقاء حب,A Love Meeting,gulf,tv,1988,16
+wala-kalma-gulf,400,ساق البامبو,The Bamboo Stalk,kuwaiti,tv,2016,17
+wala-kalma-gulf,400,زواج بدوي,A Bedouin Wedding,kuwaiti,tv,1985,18
+wala-kalma-gulf,400,الأقدار,Destinies,kuwaiti,tv,1986,19
+wala-kalma-gulf,400,صالة الانتظار,Waiting Room,gulf,tv,1991,20
+wala-kalma-gulf,600,جبران,Gibran,gulf,tv,1997,21
+wala-kalma-gulf,600,مرايا,Mirrors,saudi,tv,1984,22
+wala-kalma-gulf,600,يسقط الحاجز الزمني,The Time Barrier Falls,gulf,tv,1989,23
+wala-kalma-gulf,600,لو إنك ضنين,If You Were Hesitant,gulf,tv,1995,24
+wala-kalma-gulf,600,رفاق الدرب,Companions of the Path,kuwaiti,tv,1988,25
+wala-kalma-gulf,600,نواعير الهوى,Wheels of Love,kuwaiti,tv,1992,26
+wala-kalma-gulf,600,بكرا أحلى,Tomorrow is Sweeter,kuwaiti,tv,1996,27
+wala-kalma-gulf,600,على درب الزواج,On the Path of Marriage,kuwaiti,tv,1989,28
+wala-kalma-gulf,600,شارع الأعشى,Al-Aasha Street,saudi,tv,2008,29
+wala-kalma-gulf,600,طاش ما طاش,Tash Ma Tash,saudi,tv,1993,30
