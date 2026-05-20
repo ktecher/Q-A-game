@@ -6,6 +6,7 @@ import { useGame } from '../../contexts/GameContext';
 import { useCategories } from '../../lib/queries';
 import { pickN } from '../../lib/random';
 import { makeSetupTeams } from '../../lib/teams';
+import { readSettings, writeSettings } from '../../lib/settingsStorage';
 import { GUEST_PRESET, CATEGORIES_PER_GAME } from '../../lib/gameDefaults';
 import CategoryTile from './CategoryTile';
 import Section from './Section';
@@ -30,7 +31,12 @@ export default function SetupScreen() {
   // Section D — timer
   const [timerSecs, setTimerSecs] = useState(30);
 
-  // Section E — categories (last because it depends on the picked mode)
+  // Section E — challenge rounds (remembered between games via settingsStorage)
+  const [challengesEnabled, setChallengesEnabled] = useState(
+    () => readSettings().challengesEnabled
+  );
+
+  // Section F — categories (last because it depends on the picked mode)
   const [selected, setSelected] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -193,9 +199,40 @@ export default function SetupScreen() {
           </div>
         </Section>
 
-        {/* E — Categories (LAST step — depends on chosen mode) */}
+        {/* E — Challenge rounds */}
+        <Section badge="هـ · E" labelAr="جولات التحدّي" labelEn="Challenge Rounds">
+          <div className="flex flex-col gap-3">
+            <div className="flex rounded-xl overflow-hidden border border-gold-faint">
+              {[
+                { val: true,  ar: 'مُفعّلة', en: 'Enabled'  },
+                { val: false, ar: 'مُعطّلة', en: 'Disabled' },
+              ].map(({ val, ar, en }, idx) => (
+                <button
+                  key={String(val)}
+                  type="button"
+                  aria-pressed={challengesEnabled === val}
+                  onClick={() => setChallengesEnabled(val)}
+                  className={`flex-1 flex flex-col items-center py-3 transition-colors duration-150 ${
+                    challengesEnabled === val
+                      ? 'bg-gradient-to-br from-gold to-gold-dark text-ink'
+                      : 'bg-ink-80 text-cream-60 hover:bg-gold/8 hover:text-cream'
+                  } ${idx > 0 ? 'border-s border-gold-faint' : ''}`}
+                >
+                  <span className={`font-ar-ui font-semibold text-base ${challengesEnabled === val ? 'text-ink' : ''}`}>{ar}</span>
+                  <span className={`font-en-body text-sm mt-0.5 ${challengesEnabled === val ? 'text-ink/70' : 'text-cream-45'}`} lang="en">{en}</span>
+                </button>
+              ))}
+            </div>
+            <p className="font-ar-ui text-sm text-cream-45 text-center border border-gold-faint rounded-lg px-3 py-2 bg-ink-80">
+              خليّتان مخفيّتان تتحوّلان إلى تحدٍّ بنقاط مضاعفة ·{' '}
+              <span lang="en" className="font-en-body">2 hidden cells become double-point challenges</span>
+            </p>
+          </div>
+        </Section>
+
+        {/* F — Categories (LAST step — depends on chosen mode) */}
         <Section
-          badge="هـ · E"
+          badge="و · F"
           labelAr="اختر الفئات"
           labelEn="Pick Categories"
           trailing={
@@ -289,6 +326,8 @@ export default function SetupScreen() {
             type="button"
             disabled={!selectionReady}
             onClick={() => {
+              // Remember the challenge choice so it defaults the same next game.
+              writeSettings({ challengesEnabled });
               startGame({
                 categorySlugs: effectiveSelected,
                 teams: teams.map((t, i) => ({
@@ -301,6 +340,7 @@ export default function SetupScreen() {
                 })),
                 difficulty,
                 timerSeconds: timerSecs,
+                challengesEnabled,
               });
               navigate('/reveal');
             }}

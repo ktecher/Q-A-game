@@ -33,9 +33,12 @@ export const ROW_VALUES = [200, 200, 400, 400, 600, 600];
 const CHALLENGE_CELLS_PER_GAME = 2;
 
 // Pick N random cell keys ("slug|value|rowIdx") to be marked as Challenge cells.
-// Hidden until picked (Daily Double-style surprise).
-function pickChallengeCells(categories, n = CHALLENGE_CELLS_PER_GAME) {
-  if (!categories || categories.length === 0) return new Set();
+// Hidden until picked (Daily Double-style surprise). When `enabled` is false the
+// player turned challenge rounds off in Setup — return an empty Set so no cell
+// ever triggers the challenge flow (BoardScreen's `challengeCells.has()` check
+// then always falls through to a normal question).
+function pickChallengeCells(categories, enabled = true, n = CHALLENGE_CELLS_PER_GAME) {
+  if (!enabled || !categories || categories.length === 0) return new Set();
   const allKeys = [];
   for (let rowIdx = 0; rowIdx < ROW_VALUES.length; rowIdx++) {
     for (const cat of categories) {
@@ -82,7 +85,7 @@ const TOTAL_CELLS = 6 * ROW_VALUES.length; // 36
 export function reducer(state, action) {
   switch (action.type) {
     case 'START_GAME': {
-      const { categorySlugs, teams, difficulty, timerSeconds } = action.payload;
+      const { categorySlugs, teams, difficulty, timerSeconds, challengesEnabled = true } = action.payload;
       const categories = categorySlugs.map(getCategoryBySlug).filter(Boolean);
       // Pad to CATEGORIES_PER_GAME if fewer (shouldn't happen — Setup enforces it)
       while (categories.length < CATEGORIES_PER_GAME) {
@@ -103,7 +106,7 @@ export function reducer(state, action) {
         difficulty: difficulty ?? 'mixed',
         timerSeconds: timerSeconds ?? 30,
         picked: new Set(),
-        challengeCells: pickChallengeCells(finalCategories),
+        challengeCells: pickChallengeCells(finalCategories, challengesEnabled),
       };
     }
 

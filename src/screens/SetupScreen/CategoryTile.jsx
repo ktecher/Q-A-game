@@ -20,7 +20,7 @@ export default function CategoryTile({ cat, isSelected, asButton, onClick }) {
 
       {/* Image banner — falls back to icon-on-accent if no image yet */}
       <div
-        className="relative w-full h-14 sm:h-16 md:h-20 rounded-md overflow-hidden mb-1.5 mt-1.5"
+        className="relative w-full h-14 sm:h-16 md:h-40 rounded-md overflow-hidden mb-1.5 mt-1.5"
         style={{ background: cat.accent }}
       >
         {cat.imageUrl ? (
@@ -29,7 +29,8 @@ export default function CategoryTile({ cat, isSelected, asButton, onClick }) {
               src={cat.imageUrl}
               alt=""
               loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-fit"
+              
             />
             {/* Soft accent color tint over the image so it still reads as
                 "this category's color" — keeps the visual rhythm consistent. */}

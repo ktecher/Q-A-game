@@ -8,4 +8,5 @@ export const STORAGE_KEYS = {
   THEME: 'uah.theme',
   DEVICE_ID: 'uah.device_id',
   GUEST_PROFILE: 'uah.guest_profile',
+  SETTINGS: 'uah.settings',
 };
