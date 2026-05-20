@@ -279,7 +279,7 @@ export default function SwordIntro({ onComplete, duration = 2.0 }) {
         position: 'fixed',
         inset: 0,
         zIndex: 50,
-        background: 'rgba(14, 14, 15, 0.92)',
+        background: 'var(--color-ink-80)',
         backdropFilter: 'blur(6px)',
         display: 'flex',
         alignItems: 'center',

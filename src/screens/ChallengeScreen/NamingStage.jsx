@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Zap, X as XIcon, Check, Hand, Play } from 'lucide-react';
 import { formatTime } from '../../lib/format';
+import TeamIdentity from '../../components/TeamIdentity';
 import useNamingFlow from './useNamingFlow';
 
 /* ─── NAMING STAGE · full-screen face-off ──────────────────────────────
@@ -36,12 +37,8 @@ export default function NamingStage({ prompt, teams, startingTeamIdx, cellValue,
       {/* Header */}
       <header className="flex items-center justify-between mb-5">
         <div
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-ar-ui font-semibold uppercase tracking-wider"
-          style={{
-            background: 'rgba(212, 162, 76, 0.15)',
-            border: '1px solid rgba(212, 162, 76, 0.35)',
-            color: 'var(--color-gold)',
-          }}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-ar-ui font-semibold uppercase tracking-wider bg-gold/15 border border-gold-faint"
+          style={{ color: 'var(--color-gold)' }}
         >
           <Zap size={15} />
           جولة التحدي
@@ -127,6 +124,7 @@ export default function NamingStage({ prompt, teams, startingTeamIdx, cellValue,
 /* ─── Side team panel ─────────────────────────────────────────────── */
 
 function TeamPanel({ team, active, ended, count, choked }) {
+  const isActive = active && !ended;
   const status = ended
     ? choked
       ? 'CHOKED'
@@ -136,16 +134,17 @@ function TeamPanel({ team, active, ended, count, choked }) {
       : 'WAITING';
   return (
     <div
-      className="relative rounded-2xl px-4 py-5 md:px-6 md:py-7 flex flex-col items-center text-center border-2"
+      className="relative rounded-2xl px-4 py-5 md:px-6 md:py-7 flex flex-col items-center text-center border transition-all"
       style={{
-        borderColor: active && !ended ? 'var(--color-gold)' : `${team.color}88`,
-        background: 'linear-gradient(160deg, rgba(0,0,0,0.4) 0%, rgba(14,14,15,0.85) 100%)',
-        boxShadow: active && !ended ? '0 0 40px rgba(212,162,76,0.28)' : 'none',
+        borderColor: isActive ? 'var(--color-gold)' : `${team.color}aa`,
+        background: isActive
+          ? `linear-gradient(135deg, ${team.color}99, var(--color-ink-50))`
+          : 'var(--color-ink-50)',
+        boxShadow: isActive ? 'var(--chip-active-shadow)' : 'none',
         opacity: !active && !ended ? 0.6 : 1,
-        transition: 'all 0.2s ease',
       }}
     >
-      {active && !ended && (
+      {isActive && (
         <span
           className="absolute top-3 end-3 w-2.5 h-2.5 rounded-full animate-pulse-dot"
           style={{ background: 'var(--color-gold-light)', boxShadow: '0 0 10px var(--color-gold-light)' }}
@@ -153,30 +152,16 @@ function TeamPanel({ team, active, ended, count, choked }) {
         />
       )}
 
-      <div
-        className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-4xl md:text-5xl mb-3"
-        style={{
-          border: `3px solid ${team.color}`,
-          background: 'rgba(0,0,0,0.45)',
-          color: team.color,
-        }}
-        aria-hidden="true"
-      >
-        {team.emoji || team.name?.[0] || '⚔'}
-      </div>
-
-      <div className="font-ar-body font-bold text-cream text-xl md:text-2xl leading-tight">
-        {team.name}
-      </div>
-      <div className="font-en-body text-xs md:text-sm text-cream-60 italic mb-3" lang="en">
-        {team.nameEn}
+      <div className="mb-3 mt-1">
+        <TeamIdentity team={team} size="lg" />
       </div>
 
       <div
-        className="px-3 py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider mb-4"
+        className="px-3 py-1 rounded-full border text-[10px] md:text-xs font-bold uppercase tracking-wider mb-4"
         style={{
-          background: active && !ended ? 'var(--color-gold)' : 'rgba(245,236,215,0.1)',
-          color: active && !ended ? 'var(--color-ink)' : 'var(--color-cream-60)',
+          background: isActive ? 'var(--color-gold)' : 'var(--color-ink-80)',
+          borderColor: isActive ? 'var(--color-gold)' : 'var(--color-gold-faint)',
+          color: isActive ? 'var(--color-ink)' : 'var(--color-cream-60)',
         }}
       >
         {status}

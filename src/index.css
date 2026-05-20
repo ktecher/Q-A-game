@@ -258,7 +258,10 @@ html[data-theme='light'] {
     top: 0;
     left: 0;
     right: 0;
-    min-height: 100%;
+    /* 100vh floor so the pattern still covers the viewport on routes that
+       mount only a fixed-position overlay (e.g. /play/challenge), where the
+       body would otherwise collapse to near-zero height */
+    min-height: max(100%, 100vh);
     z-index: 0;
     pointer-events: none;
     opacity: var(--pattern-opacity);

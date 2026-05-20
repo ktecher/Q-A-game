@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Trophy, X as XIcon } from 'lucide-react';
+import TeamIdentity from '../../components/TeamIdentity';
 
 /* ─── RESULT STAGE · full-screen winner reveal ─────────────────────────
    Two big team cards side-by-side. Clicking a card awards that team.
@@ -65,7 +66,7 @@ export default function ResultStage({ teams, counts, chokeTeamIdx, cellValue, on
         <button
           type="button"
           onClick={() => onAward(null)}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-gold-faint bg-ink-80 text-cream-60 hover:text-cream hover:border-cream-60 transition-colors duration-150"
+          className="btn-outline inline-flex items-center gap-2 px-5 py-3 rounded-xl"
         >
           <XIcon size={16} />
           <span className="font-ar-ui text-sm font-semibold">بلا منح</span>
@@ -83,13 +84,13 @@ function TeamResultCard({ team, count, choked, isAutoWinner, award, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="relative rounded-3xl px-6 py-8 md:px-8 md:py-10 text-center border-[3px] flex flex-col items-center transition-all duration-200 hover:-translate-y-1"
+      className="relative rounded-3xl px-6 py-8 md:px-8 md:py-10 text-center border flex flex-col items-center transition-all duration-200 hover:-translate-y-1"
       style={{
-        borderColor: isAutoWinner ? 'var(--color-gold)' : `${team.color}99`,
-        background: 'linear-gradient(160deg, rgba(0,0,0,0.4) 0%, rgba(14,14,15,0.92) 100%)',
-        boxShadow: isAutoWinner
-          ? '0 0 60px rgba(212,162,76,0.45), inset 0 0 30px rgba(212,162,76,0.08)'
-          : '0 6px 20px rgba(0,0,0,0.3)',
+        borderColor: isAutoWinner ? 'var(--color-gold)' : `${team.color}aa`,
+        // Both result cards are interactive winner-choice buttons, so both stay
+        // fully tinted — unlike TeamCell, which tints only the active answerer.
+        background: `linear-gradient(135deg, ${team.color}99, var(--color-ink-50))`,
+        boxShadow: isAutoWinner ? 'var(--chip-active-shadow)' : 'none',
       }}
     >
       {isAutoWinner && (
@@ -102,23 +103,8 @@ function TeamResultCard({ team, count, choked, isAutoWinner, award, onClick }) {
         </span>
       )}
 
-      <div
-        className="w-28 h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center text-5xl md:text-6xl mb-4"
-        style={{
-          border: `4px solid ${team.color}`,
-          background: 'rgba(0,0,0,0.45)',
-          color: team.color,
-        }}
-        aria-hidden="true"
-      >
-        {team.emoji || team.name?.[0] || '⚔'}
-      </div>
-
-      <div className="font-ar-body font-bold text-cream text-2xl md:text-3xl leading-tight">
-        {team.name}
-      </div>
-      <div className="font-en-body text-sm md:text-base text-cream-60 italic mb-4" lang="en">
-        {team.nameEn}
+      <div className="mb-4 mt-1">
+        <TeamIdentity team={team} size="lg" />
       </div>
 
       <div
@@ -132,14 +118,7 @@ function TeamResultCard({ team, count, choked, isAutoWinner, award, onClick }) {
       </div>
 
       {choked && (
-        <div
-          className="mt-4 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider"
-          style={{
-            background: 'rgba(196,65,80,0.18)',
-            border: '1px solid var(--color-crimson)',
-            color: 'var(--color-crimson)',
-          }}
-        >
+        <div className="mt-4 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-crimson/20 border border-crimson text-crimson">
           ✕ عجز · choked
         </div>
       )}

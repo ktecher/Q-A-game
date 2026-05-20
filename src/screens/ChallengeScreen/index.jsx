@@ -50,7 +50,7 @@ export default function ChallengeScreen() {
   };
 
   return (
-    <div className="fixed inset-0 z-40 bg-ink overflow-y-auto">
+    <div className="fixed inset-0 z-40 overflow-y-auto bg-transparent">
       <AnimatePresence mode="wait">
         {phase === 'intro' && (
           <SwordIntro key="intro-phase" onComplete={() => setPhase('accept')} />
@@ -59,7 +59,7 @@ export default function ChallengeScreen() {
           <AcceptStage
             key="accept-phase"
             cellValue={cellValue}
-            teamName={activeTeam.name}
+            team={activeTeam}
             onAccept={handleAccept}
             onDecline={handleDecline}
           />

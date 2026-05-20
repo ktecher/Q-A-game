@@ -4,7 +4,7 @@ export default function CategoryHeader({ category }) {
   const Icon = ICON_MAP[category.icon];
   return (
     <div
-      className="accent-card relative flex flex-col items-center justify-end gap-0.5 px-1.5 py-2 rounded-t-lg text-center overflow-hidden min-h-[70px] sm:min-h-[84px]"
+      className="accent-card relative flex flex-col items-center justify-end gap-0.5 px-1.5 py-2 rounded-t-lg text-center overflow-hidden min-h-[70px] sm:min-h-[120px]"
       style={{
         background: `linear-gradient(180deg, ${category.accent} 0%, ${category.accent}cc 100%)`,
         boxShadow: 'var(--tier-category-header-shadow)',

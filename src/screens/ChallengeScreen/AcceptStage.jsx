@@ -3,7 +3,7 @@ import { Sparkles, Zap, AlertTriangle, Hourglass, Trophy } from 'lucide-react';
 
 /* ─── ACCEPT STAGE · full-screen redesign of the challenge offer ─────── */
 
-export default function AcceptStage({ cellValue, teamName, onAccept, onDecline }) {
+export default function AcceptStage({ cellValue, team, onAccept, onDecline }) {
   return (
     <motion.div
       key="accept"
@@ -30,13 +30,17 @@ export default function AcceptStage({ cellValue, teamName, onAccept, onDecline }
         </div>
 
         <div className="relative z-10">
-          {/* Big icon at top */}
+          {/* Big icon at top — tinted with the challenged team's color */}
           <motion.div
             initial={{ scale: 0, rotate: -20 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 280, damping: 14, delay: 0.15 }}
-            className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gold/20 border-2 border-gold mb-6"
-            style={{ boxShadow: '0 0 30px rgba(212,162,76,0.5)' }}
+            className="inline-flex items-center justify-center w-24 h-24 rounded-full border mb-6"
+            style={{
+              background: `linear-gradient(135deg, ${team.color}55, var(--color-ink-50))`,
+              borderColor: `${team.color}aa`,
+              boxShadow: 'var(--chip-active-shadow)',
+            }}
           >
             <Zap size={44} className="text-gold" strokeWidth={2.5} />
           </motion.div>
@@ -51,14 +55,22 @@ export default function AcceptStage({ cellValue, teamName, onAccept, onDecline }
             Challenge Round!
           </p>
 
-          {/* Team context */}
-          <div className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-ink-80 border border-gold-faint mb-7">
+          {/* Team context — bordered with the challenged team's color */}
+          <div
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-ink-80 border mb-7"
+            style={{ borderColor: `${team.color}aa` }}
+          >
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ background: team.color }}
+              aria-hidden="true"
+            />
             <p className="font-ar-ui text-base md:text-lg text-cream">
-              صندوق سحري · {teamName} وقع على تحدٍ خاص
+              صندوق سحري · {team.name} وقع على تحدٍ خاص
             </p>
           </div>
           <p className="font-en-body text-sm text-cream-60 -mt-5 mb-7" lang="en">
-            Mystery box · {teamName} landed on a challenge
+            Mystery box · {team.name} landed on a challenge
           </p>
 
           {/* Rules */}
@@ -90,7 +102,7 @@ export default function AcceptStage({ cellValue, teamName, onAccept, onDecline }
             <button
               type="button"
               onClick={onDecline}
-              className="px-4 py-4 md:py-5 rounded-2xl border border-gold-faint bg-ink-80 text-cream-60 hover:text-cream hover:border-cream-60 transition-colors duration-150"
+              className="btn-outline px-4 py-4 md:py-5 rounded-2xl"
             >
               <div className="font-ar-ui text-lg md:text-xl font-semibold">رفض</div>
               <div className="font-en-body text-xs md:text-sm opacity-70 mt-0.5" lang="en">
