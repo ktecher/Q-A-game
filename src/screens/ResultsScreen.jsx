@@ -225,15 +225,12 @@ export default function ResultsScreen() {
               boxShadow: 'var(--card-gold-winner-shadow)',
             }}
           >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="text-3xl leading-none">{winner.emoji}</span>
-              <div className="text-start">
-                <div className="font-ar-body font-bold text-cream text-base leading-tight">
-                  {winner.name}
-                </div>
-                <div className="font-en-body text-cream-60 text-xs leading-tight" lang="en">
-                  {winner.nameEn}
-                </div>
+            <div className="flex flex-col items-center mb-2 text-right">
+              <div className="font-ar-body font-bold text-cream text-base leading-tight">
+                {winner.name}
+              </div>
+              <div className="font-en-body text-cream-60 text-xs leading-tight" lang="en">
+                {winner.nameEn}
               </div>
             </div>
             <div className="font-ar-ui text-xs text-gold-light tracking-wider uppercase mt-2">
@@ -272,15 +269,12 @@ export default function ResultsScreen() {
               filter: 'saturate(0.55) opacity(0.78)',
             }}
           >
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl leading-none">{runnerUp.emoji}</span>
-              <div className="text-start">
-                <div className="font-ar-body font-bold text-cream text-sm leading-tight">
-                  {runnerUp.name}
-                </div>
-                <div className="font-en-body text-cream-60 text-xs leading-tight" lang="en">
-                  {runnerUp.nameEn}
-                </div>
+            <div className="flex flex-col items-center text-right">
+              <div className="font-ar-body font-bold text-cream text-sm leading-tight">
+                {runnerUp.name}
+              </div>
+              <div className="font-en-body text-cream-60 text-xs leading-tight" lang="en">
+                {runnerUp.nameEn}
               </div>
             </div>
             <div className="font-ar-ui text-xs text-cream-45 tracking-wider uppercase mt-2">

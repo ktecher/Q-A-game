@@ -1,9 +1,11 @@
 export const TEAM_COLORS = [
-  '#3A7BC8', '#9B2D3A', '#D4A24C', '#4A2070',
-  '#A8853B', '#6E1F28', '#0F2A4D', '#2A5A98',
+  '#D63A47', // red
+  '#E07A2B', // orange
+  '#E8B23A', // yellow
+  '#3FA968', // green
+  '#3A7BC8', // blue
+  '#7B3FB8', // purple
 ];
-
-export const TEAM_EMOJIS = ['🦅', '🌙', '🏆', '☕', '🎲', '⚔️', '🎯', '🐪', '🌴', '🕌', '⭐', '🔥', '💎', '🎭', '🎪'];
 
 export const DIFFICULTIES = [
   { value: 'easy',  ar: 'سهل',   en: 'Easy'  },

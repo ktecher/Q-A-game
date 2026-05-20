@@ -16,7 +16,6 @@ const VARIANTS = {
     btnGap: 'gap-1.5',
     noAwardPad: 'px-4 py-4',
     noAwardMinW: 'min-w-[90px]',
-    emoji: 'text-2xl',
     name: 'text-sm',
     nameEn: 'text-sm',
     delta: 'text-lg',
@@ -28,7 +27,6 @@ const VARIANTS = {
     btnGap: 'gap-0.5',
     noAwardPad: 'px-3 py-3',
     noAwardMinW: '',
-    emoji: 'text-xl',
     name: 'text-xs',
     nameEn: 'text-[11px]',
     delta: 'text-base',
@@ -68,11 +66,10 @@ function TeamAwardButton({ team, value, onAward, variant }) {
       onClick={() => onAward(team.id)}
       className={`flex flex-col items-center justify-center ${v.btnGap} ${v.btnPad} rounded-lg border-2 transition-all hover:-translate-y-0.5`}
       style={{
-        background: 'var(--award-team-bg)',
+        background: `linear-gradient(135deg, ${team.color}99, var(--color-ink-50))`,
         borderColor: `${team.color}b3`,
       }}
     >
-      <span className={`${v.emoji} leading-none`}>{team.emoji}</span>
       <span className={`font-ar-ui ${v.name} font-bold text-cream`}>
         منح {team.name}
       </span>

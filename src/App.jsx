@@ -11,6 +11,7 @@ import SetupScreen from './screens/SetupScreen';
 import RevealScreen from './screens/RevealScreen';
 import BoardScreen from './screens/BoardScreen';
 import QuestionScreen from './screens/QuestionScreen';
+import ChallengeScreen from './screens/ChallengeScreen';
 import ResultsScreen from './screens/ResultsScreen';
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/reveal" element={<RevealScreen />} />
             <Route path="/play" element={<BoardScreen />} />
             <Route path="/play/question" element={<QuestionScreen />} />
+            <Route path="/play/challenge" element={<ChallengeScreen />} />
             <Route path="/play/results" element={<ResultsScreen />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

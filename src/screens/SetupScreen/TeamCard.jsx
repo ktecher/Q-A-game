@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
-import { TEAM_COLORS, TEAM_EMOJIS } from './constants';
+import { TEAM_COLORS } from './constants';
 
 export default function TeamCard({ team, onChange }) {
   const [playersOpen, setPlayersOpen] = useState(false);
@@ -27,14 +27,18 @@ export default function TeamCard({ team, onChange }) {
   };
 
   return (
-    <div className="surface p-4 flex flex-col gap-4 rounded-xl" style={{ borderTopColor: team.color, borderTopWidth: '3px' }}>
+    <div
+      className="surface p-4 flex flex-col gap-4 rounded-xl"
+      style={{
+        background: `linear-gradient(135deg, ${team.color}99, var(--color-ink-50))`,
+        borderTopColor: team.color,
+        borderTopWidth: '3px',
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <span className="text-3xl leading-none">{team.emoji}</span>
-        <div>
-          <div className="font-ar-body font-bold text-cream text-lg">{team.name || team.defaultNameAr}</div>
-          <div className="font-en-body text-cream-45 text-sm" lang="en">{team.defaultNameEn}</div>
-        </div>
+      <div className="text-right">
+        <div className="font-ar-body font-bold text-cream text-lg">{team.name || team.defaultNameAr}</div>
+        <div className="font-en-body text-cream-45 text-sm" lang="en">{team.defaultNameEn}</div>
       </div>
 
       {/* Name input */}
@@ -74,30 +78,6 @@ export default function TeamCard({ team, onChange }) {
         </div>
       </div>
 
-      {/* Emoji picker */}
-      <div>
-        <div className="font-ar-ui text-sm text-gold mb-2">
-          الرمز · <span lang="en">Emoji</span>
-        </div>
-        <div className="grid grid-cols-5 gap-1.5">
-          {TEAM_EMOJIS.map((em) => (
-            <button
-              key={em}
-              type="button"
-              aria-label={`اختر ${em}`}
-              onClick={() => onChange({ emoji: em })}
-              className="w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-transform duration-150 hover:scale-110 focus:outline-none"
-              style={{
-                background: team.emoji === em ? 'rgba(212,162,76,0.15)' : 'var(--color-ink-80)',
-                border: team.emoji === em ? '2px solid var(--color-gold)' : '2px solid transparent',
-              }}
-            >
-              {em}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Player roster */}
       <div>
         <button
@@ -116,16 +96,16 @@ export default function TeamCard({ team, onChange }) {
         {playersOpen && (
           <div className="mt-3 flex flex-col gap-2">
             {team.players.map((p, i) => (
-              <div key={i} className="flex items-center gap-2 group">
+              <div key={i} className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: team.color }} />
                 <span className="font-ar-ui text-base text-cream flex-1">{p}</span>
                 <button
                   type="button"
                   onClick={() => removePlayer(i)}
                   aria-label="حذف اللاعب"
-                  className="opacity-0 group-hover:opacity-100 text-cream-45 hover:text-crimson transition-all"
+                  className="text-cream-45 hover:text-crimson transition-colors"
                 >
-                  <X size={13} />
+                  <X size={16} />
                 </button>
               </div>
             ))}

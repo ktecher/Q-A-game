@@ -7,7 +7,6 @@ import { pickN } from '../../lib/random';
 import { usePrefetchQuestions, useChallengePrompts } from '../../lib/queries';
 import ExitGameButton from '../../components/ExitGameButton';
 import ScoreAdjustDialog from '../../components/ScoreAdjustDialog';
-import ChallengeRound from '../../components/ChallengeRound';
 import ThemeToggle from '../../components/ThemeToggle';
 import TeamChip from './TeamChip';
 import CategoryHeader from './CategoryHeader';
@@ -16,7 +15,7 @@ import BoardCell from './BoardCell';
 export default function BoardScreen() {
   const navigate = useNavigate();
   const { state, pickCell, startChallenge, rowValues, totalCells } = useGame();
-  const { categories, teams, picked, challengeCells, currentChallenge, activeTeamIdx, gameOver } = state;
+  const { categories, teams, picked, challengeCells, activeTeamIdx, gameOver } = state;
   const [adjustingTeamId, setAdjustingTeamId] = useState(null);
   const adjustingTeam = teams.find((t) => t.id === adjustingTeamId) ?? null;
 
@@ -42,6 +41,11 @@ export default function BoardScreen() {
   useEffect(() => {
     if (state.currentCell) navigate('/play/question');
   }, [state.currentCell, navigate]);
+
+  // Whenever a challenge is started, route to the dedicated challenge screen.
+  useEffect(() => {
+    if (state.currentChallenge) navigate('/play/challenge');
+  }, [state.currentChallenge, navigate]);
 
   const handlePick = (cat, value, rowIdx) => {
     const key = cellKey(cat.slug, value, rowIdx);
@@ -148,9 +152,6 @@ export default function BoardScreen() {
 
       {/* Score-adjust modal */}
       <ScoreAdjustDialog team={adjustingTeam} onClose={() => setAdjustingTeamId(null)} />
-
-      {/* Challenge round modal — only mounts when currentChallenge is set */}
-      {currentChallenge && <ChallengeRound />}
     </div>
   );
 }

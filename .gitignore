@@ -44,3 +44,5 @@ scripts/output/
 # Author/working spreadsheets in content/. The .csv files are the canonical
 # seed sources and ARE tracked.
 content/*.xlsx
+preview-challenge-flow.html
+preview-sword-intro.html

@@ -46,15 +46,12 @@ export default function ScoreAdjustDialog({ team, onClose }) {
         <span id="adjust-score-title" className="font-ar-ui text-sm text-gold-light tracking-wider uppercase">
           تعديل النتيجة · <span lang="en">Adjust Score</span>
         </span>
-        <div className="flex items-center gap-3">
-          <span className="text-3xl leading-none">{team.emoji}</span>
-          <div className="text-start">
-            <div className="font-ar-body font-bold text-cream text-lg leading-tight">
-              {team.name}
-            </div>
-            <div className="font-en-body text-cream-45 text-sm leading-tight" lang="en">
-              {team.nameEn}
-            </div>
+        <div className="flex flex-col items-center text-right">
+          <div className="font-ar-body font-bold text-cream text-lg leading-tight">
+            {team.name}
+          </div>
+          <div className="font-en-body text-cream-45 text-sm leading-tight" lang="en">
+            {team.nameEn}
           </div>
         </div>
         <motion.div
