@@ -1,6 +1,7 @@
 // Bump when the persisted state shape changes in a non-backwards-compatible
 // way — old localStorage entries are then ignored on load.
 import { STORAGE_KEYS } from './storageKeys';
+import { makeGameSeed } from './gameReducer';
 export const STORAGE_KEY = STORAGE_KEYS.GAME;
 const STORAGE_VERSION = 1;
 
@@ -21,6 +22,9 @@ function deserializeState(payload) {
   if (!s || typeof s !== 'object') return null;
   return {
     ...s,
+    // Backfill for games saved before per-game seeding existed, so a resumed
+    // game still gets stable, randomised question picks.
+    gameSeed: s.gameSeed ?? makeGameSeed(),
     picked: new Set(s.picked ?? []),
     challengeCells: new Set(s.challengeCells ?? []),
   };

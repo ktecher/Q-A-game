@@ -17,6 +17,7 @@ export { cellKey };
  *   activeTeamIdx: 0 | 1,               // who picks the next cell
  *   timerSeconds: number,                // primary timer (e.g., 30)
  *   difficulty: 'easy' | 'mixed' | 'hard',
+ *   gameSeed: number,                    // per-game seed for stable random picks
  *   picked: Set<string>,                // composite keys "slug|value|rowIdx"
  *   currentCell: { categorySlug, value, rowIdx } | null,
  *   currentQuestion: Question | null,
@@ -48,6 +49,14 @@ function pickChallengeCells(categories, enabled = true, n = CHALLENGE_CELLS_PER_
   return new Set(pickN(allKeys, n));
 }
 
+// A fresh per-game seed. Every random question/challenge pick for the game is
+// derived from this one number, so the selection is decided once and stays
+// stable across component remounts — no duplicate questions. See lib/random.js.
+// Exported so gameStorage can backfill it onto a pre-seed saved game.
+export function makeGameSeed() {
+  return Math.floor(Math.random() * 0x100000000);
+}
+
 // Default state used when GameProvider is mounted but no game has been started.
 // Allows screens to render demo state when navigated directly via URL.
 export function createInitialState() {
@@ -60,6 +69,7 @@ export function createInitialState() {
     activeTeamIdx: 0,
     timerSeconds: 30,
     difficulty: 'mixed',
+    gameSeed: makeGameSeed(),
     picked: new Set(),
     currentCell: null,
     currentQuestion: null,

@@ -31,7 +31,7 @@ function getTeamStatus(teamIdx, activeTeamIdx, phase) {
 export default function QuestionScreen() {
   const navigate = useNavigate();
   const { state, consumeLifeline, award } = useGame();
-  const { currentCell, teams, activeTeamIdx, timerSeconds, lifelinesUsed } = state;
+  const { currentCell, teams, activeTeamIdx, timerSeconds, lifelinesUsed, gameSeed } = state;
 
   // Bounce back to /play if there's no current cell (e.g., direct URL hit)
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function QuestionScreen() {
     [currentCell, state.categories]
   );
   const cellValue = currentCell?.value ?? 0;
-  const { data: Q } = useQuestion(category, cellValue, currentCell?.rowIdx ?? 0);
+  const { data: Q } = useQuestion(category, cellValue, currentCell?.rowIdx ?? 0, gameSeed);
   const CategoryIcon = category ? (ICON_MAP[category.icon] ?? FALLBACK_ICON) : null;
 
   const { phaseState, phaseDispatch, intervalRef } = useQuestionFlow({

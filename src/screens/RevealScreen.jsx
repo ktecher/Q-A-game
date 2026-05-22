@@ -110,7 +110,8 @@ export default function RevealScreen() {
   // Kick off the bulk-fetch of all questions for the chosen categories now,
   // during the ~4-second reveal animation. By the time BoardScreen mounts
   // and the user picks a cell, the TanStack cache is hot — no stub flash.
-  usePrefetchQuestions(categories);
+  // gameSeed makes the per-cell pick identical to BoardScreen's prefetch.
+  usePrefetchQuestions(categories, state.gameSeed);
 
   const [settledCount, setSettledCount] = useState(0);
   const skippedRef = useRef(false);

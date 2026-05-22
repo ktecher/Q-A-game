@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
 import { CATEGORIES as LOCAL_CATEGORIES } from '../data/categories';
 import { DRAWING_WORDS } from '../data/drawingWords';
-import { pickN } from './random';
+import { seededPickN, seedFrom } from './random';
 import { buildCharadeUrl } from './charadesEncoding';
 
 // Bilingual "Scan the QR code" prompt shown inside the question card for
@@ -15,6 +15,11 @@ import { buildCharadeUrl } from './charadesEncoding';
 // fetch and the prefetch path produce identical question shapes.
 const WALA_KALMA_PROMPT_AR = 'امسح رمز QR لرؤية الاسم';
 const WALA_KALMA_PROMPT_EN = 'Scan the QR code to see the name';
+
+// Per-tier fetch cap for the direct-link path. Comfortably above the content's
+// ~18 questions per tier, so the direct path shuffles the same full pool the
+// prefetch does — keeping the two seeded picks identical.
+const MAX_TIER_QUESTIONS = 200;
 
 // Transform a wala_kalma_titles row into the same "question" shape that
 // QuestionScreen already renders. The actor sees a QR (built from the title
@@ -73,10 +78,6 @@ function mapCategoryRow(row) {
   };
 }
 
-// For pools of size ≤ 2 returns the input as-is (no behavior change for
-// legacy categories). For larger pools each call returns a fresh random pair.
-const pickTwoRandom = (rows) => pickN(rows, 2);
-
 function mapQuestionRow(row) {
   return {
     ar: row.question_ar,
@@ -120,14 +121,19 @@ export function useCategories() {
  * the user picks a cell, useQuestion finds the data instantly — no
  * stub-then-real flash on /play/question.
  *
- * Call this from BoardScreen with the 6 chosen categories.
+ * The per-cell pick is seeded by `gameSeed` (a per-game constant), so this
+ * runs identically on every RevealScreen / BoardScreen remount — the cell a
+ * question lands in never shifts mid-game, which is what caused duplicates.
+ *
+ * Call this from BoardScreen / RevealScreen with the chosen categories.
  */
-export function usePrefetchQuestions(categories) {
+export function usePrefetchQuestions(categories, gameSeed) {
   const queryClient = useQueryClient();
   const cats = categories ?? [];
   const normalSlugs = cats.filter((c) => c.kind !== 'wala-kalma').map((c) => c.slug).filter(Boolean);
   const walaKalmaSlugs = cats.filter((c) => c.kind === 'wala-kalma').map((c) => c.slug).filter(Boolean);
-  const cacheKey = [...normalSlugs, ...walaKalmaSlugs].slice().sort().join(',');
+  const slugsKey = [...normalSlugs, ...walaKalmaSlugs].slice().sort().join(',');
+  const cacheKey = `${gameSeed}|${slugsKey}`;
 
   useEffect(() => {
     if (normalSlugs.length === 0 && walaKalmaSlugs.length === 0) return;
@@ -154,12 +160,12 @@ export function usePrefetchQuestions(categories) {
           for (const [key, allRows] of grouped.entries()) {
             const [slug, diffStr] = key.split('|');
             const difficulty = parseInt(diffStr, 10);
-            const picked = pickTwoRandom(allRows);
+            const picked = seededPickN(allRows, 2, seedFrom(gameSeed, slug, difficulty));
             for (let slot = 0; slot < 2; slot++) {
               const row = picked[slot] ?? picked[0];
               if (!row) continue;
               queryClient.setQueryData(
-                ['question', slug, difficulty, slot],
+                ['question', slug, difficulty, slot, gameSeed],
                 mapQuestionRow(row)
               );
             }
@@ -192,12 +198,12 @@ export function usePrefetchQuestions(categories) {
           for (const [key, allRows] of grouped.entries()) {
             const [slug, diffStr] = key.split('|');
             const difficulty = parseInt(diffStr, 10);
-            const picked = pickTwoRandom(allRows);
+            const picked = seededPickN(allRows, 2, seedFrom(gameSeed, slug, difficulty));
             for (let slot = 0; slot < 2; slot++) {
               const row = picked[slot] ?? picked[0];
               if (!row) continue;
               queryClient.setQueryData(
-                ['question', slug, difficulty, slot],
+                ['question', slug, difficulty, slot, gameSeed],
                 mapWalaKalmaRow(row, slug)
               );
             }
@@ -303,12 +309,17 @@ export function useAppSettings() {
  * Fetch a question for (category.slug, difficulty, rowIdx).
  * Each board has TWO rows per difficulty (row 0/1 = 200, row 2/3 = 400, row 4/5 = 600).
  * Within a tier, the slot is rowIdx % 2 (0 = first question, 1 = second question).
- * Falls back to a stub variant (numbered by slot) if the cell has no real question seeded.
+ *
+ * The two questions for a tier are a seeded random pick from its pool — the
+ * same selection usePrefetchQuestions makes (identical pool order + identical
+ * `seedFrom(gameSeed, slug, value)` seed), so the prefetched cache hits and a
+ * direct-link cache miss both resolve to the exact same question. That keeps
+ * every cell distinct and prevents a question from reappearing in another cell.
  */
-export function useQuestion(category, value, rowIdx = 0) {
+export function useQuestion(category, value, rowIdx = 0, gameSeed) {
   const slot = (rowIdx ?? 0) % 2;
   const query = useQuery({
-    queryKey: ['question', category?.slug, value, slot],
+    queryKey: ['question', category?.slug, value, slot, gameSeed],
     enabled: !!category?.slug && !!value,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
@@ -323,19 +334,19 @@ export function useQuestion(category, value, rowIdx = 0) {
           .eq('category_slug', category.slug)
           .eq('difficulty', value)
           .eq('is_active', true)
-          // `id` tiebreaker keeps the two slot picks distinct + deterministic
-          // even when display_order values tie.
+          // Stable order so the seeded pick matches usePrefetchQuestions.
           .order('display_order')
           .order('id')
-          .limit(2);
+          .limit(MAX_TIER_QUESTIONS);
         if (error || !data || data.length === 0) return getStubQuestion();
-        const row = data[slot] ?? data[0];
+        const picked = seededPickN(data, 2, seedFrom(gameSeed, category.slug, value));
+        const row = picked[slot] ?? picked[0];
         return mapWalaKalmaRow(row, category.slug);
       }
       // Direct-link path (used when prefetch hasn't run, e.g. user lands
-      // straight on /play/question). Pulls just the first two by id so slot
-      // 0 and slot 1 stay distinct without fetching the whole pool. Random
-      // per-game rotation happens in usePrefetchQuestions during /reveal.
+      // straight on /play/question). Fetches the whole tier in a stable `id`
+      // order, then applies the SAME seeded pick usePrefetchQuestions uses, so
+      // the cell gets the identical question either way.
       const { data, error } = await supabase
         .from('questions')
         .select(
@@ -344,15 +355,15 @@ export function useQuestion(category, value, rowIdx = 0) {
         .eq('categories.slug', category.slug)
         .eq('difficulty', value)
         .order('id')
-        .limit(2);
+        .limit(MAX_TIER_QUESTIONS);
       if (error || !data || data.length === 0) return getStubQuestion();
-      const row = data[slot] ?? data[0];
+      const picked = seededPickN(data, 2, seedFrom(gameSeed, category.slug, value));
+      const row = picked[slot] ?? picked[0];
       return mapQuestionRow(row);
     },
   });
-  // While the fetch is in flight with no cached data, return null so callers
-  // can render a loading state instead of the misleading stub. The stub is
-  // still returned from the queryFn on actual error, so genuine failures
-  // (network down, RLS denial, …) still degrade gracefully.
+  // Returns the raw query: `query.data` is `undefined` while the fetch is in
+  // flight (callers render a loading state) and the stub object on a genuine
+  // error, so network / RLS failures still degrade gracefully.
   return query;
 }
