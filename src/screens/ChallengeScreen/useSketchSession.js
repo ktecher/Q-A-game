@@ -8,7 +8,7 @@ import { supabase } from '../../lib/supabase';
 
 const SKETCH_TIME = 60; // seconds
 const SKETCH_ASPECT = 3 / 4; // canvas width ÷ height — matches the phone surface
-const FALLBACK_INK = '#131313';
+const FALLBACK_INK = '#131313'; // light-theme fallback ink (dark theme uses white)
 // Caps on UNTRUSTED inbound broadcast. The phone self-limits, but a buggy or
 // hostile channel peer must not be able to grow host memory without bound.
 const MAX_STROKES = 400;
@@ -17,8 +17,9 @@ const MAX_PTS_PER_MSG = 150;
 
 // Paint received strokes onto the host canvas. Strokes carry normalised 0–1
 // coords; here they scale to the canvas's CSS-pixel size. Line width is
-// canvas-relative so a phone doodle reads well on a big screen.
-function paintStrokes(ctx, w, h, strokes) {
+// canvas-relative so a phone doodle reads well on a big screen. `fallbackInk`
+// colours any stroke that arrived without one (e.g. a dropped 's' message).
+function paintStrokes(ctx, w, h, strokes, fallbackInk) {
   ctx.clearRect(0, 0, w, h);
   const lineW = Math.max(2.5, w * 0.0075);
   ctx.lineCap = 'round';
@@ -26,8 +27,9 @@ function paintStrokes(ctx, w, h, strokes) {
   for (const stroke of strokes) {
     const pts = stroke.points;
     if (!pts || pts.length === 0) continue;
-    ctx.strokeStyle = stroke.color || FALLBACK_INK;
-    ctx.fillStyle = stroke.color || FALLBACK_INK;
+    const ink = stroke.color || fallbackInk;
+    ctx.strokeStyle = ink;
+    ctx.fillStyle = ink;
     ctx.lineWidth = lineW;
     if (pts.length === 1) {
       ctx.beginPath();
@@ -55,7 +57,7 @@ function paintStrokes(ctx, w, h, strokes) {
   }
 }
 
-export default function useSketchSession({ sessionId, onEnd }) {
+export default function useSketchSession({ sessionId, onEnd, isDark }) {
   const canvasRef = useRef(null);
   const boxRef = useRef(null);
   const [subscribed, setSubscribed] = useState(false);
@@ -72,11 +74,15 @@ export default function useSketchSession({ sessionId, onEnd }) {
   const endedRef = useRef(false);
   const skipRef = useRef(() => {});
   const onEndRef = useRef(onEnd);
-  // Keep the latest onEnd reachable from the channel effect without making the
-  // effect depend on it (which would re-subscribe the channel every render).
+  const isDarkRef = useRef(isDark);
+  // Keep the latest onEnd / isDark reachable from the channel + paint effects
+  // without adding them as deps (which would re-subscribe / re-init on change).
   useEffect(() => {
     onEndRef.current = onEnd;
   }, [onEnd]);
+  useEffect(() => {
+    isDarkRef.current = isDark;
+  }, [isDark]);
 
   // ── Channel lifecycle: subscribe, presence, incoming strokes, timer ──
   useEffect(() => {
@@ -125,7 +131,9 @@ export default function useSketchSession({ sessionId, onEnd }) {
         case 's': {
           if (strokeById.current.has(m.id)) break; // dedupe re-delivery
           if (strokesRef.current.length >= MAX_STROKES) break;
-          const stroke = { id: m.id, color: m.color || FALLBACK_INK, points: [] };
+          // Store the raw colour (may be undefined) — paintStrokes applies the
+          // theme-aware fallback so a colourless stroke still shows up.
+          const stroke = { id: m.id, color: m.color, points: [] };
           strokeById.current.set(m.id, stroke);
           strokesRef.current.push(stroke);
           break;
@@ -135,7 +143,7 @@ export default function useSketchSession({ sessionId, onEnd }) {
           if (!stroke) {
             // lazily create — guards against a missed/late 's' message
             if (strokesRef.current.length >= MAX_STROKES) break;
-            stroke = { id: m.id, color: FALLBACK_INK, points: [] };
+            stroke = { id: m.id, color: undefined, points: [] };
             strokeById.current.set(m.id, stroke);
             strokesRef.current.push(stroke);
           }
@@ -168,7 +176,7 @@ export default function useSketchSession({ sessionId, onEnd }) {
           const incoming = Array.isArray(m.strokes) ? m.strokes.slice(0, MAX_STROKES) : [];
           strokesRef.current = incoming.map((s) => ({
             id: s.id,
-            color: s.color || FALLBACK_INK,
+            color: s.color,
             points: Array.isArray(s.points) ? s.points.slice(0, MAX_POINTS_PER_STROKE) : [],
           }));
           strokeById.current.clear();
@@ -256,7 +264,13 @@ export default function useSketchSession({ sessionId, onEnd }) {
 
     function frame() {
       if (dirtyRef.current) {
-        paintStrokes(ctx, canvas.clientWidth, canvas.clientHeight, strokesRef.current);
+        paintStrokes(
+          ctx,
+          canvas.clientWidth,
+          canvas.clientHeight,
+          strokesRef.current,
+          isDarkRef.current ? '#ffffff' : FALLBACK_INK,
+        );
         dirtyRef.current = false;
       }
       raf = requestAnimationFrame(frame);

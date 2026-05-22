@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { QRCode } from 'react-qr-code';
 import { AlertTriangle, Zap, X as XIcon } from 'lucide-react';
 import { buildSketchUrl } from '../../lib/sketchEncoding';
+import { useTheme } from '../../contexts/ThemeContext';
+import { CANVAS_PAPER } from '../../lib/sketchTheme';
 import TeamIdentity from '../../components/TeamIdentity';
 import useSketchSession from './useSketchSession';
 
@@ -12,11 +14,16 @@ import useSketchSession from './useSketchSession';
    The host "Skip"/"End" button is the manual escape hatch. */
 
 export default function SketchStage({ team, otherTeam, challenge, onEnd }) {
+  const { isDark } = useTheme();
   const { canvasRef, boxRef, subscribed, started, connected, timeLeft, skip } = useSketchSession({
     sessionId: challenge.sessionId,
     onEnd,
+    isDark,
   });
 
+  // The host's theme drives the drawing surface on BOTH screens: it is encoded
+  // into the QR so the phone canvas + default pen match this big screen, and
+  // strokes stay legible whichever theme the host is running.
   const qrUrl = buildSketchUrl({
     origin: window.location.origin,
     titleAr: challenge.prompt.ar,
@@ -25,6 +32,7 @@ export default function SketchStage({ team, otherTeam, challenge, onEnd }) {
     sessionId: challenge.sessionId,
     catAr: challenge.catAr,
     catEn: challenge.catEn,
+    theme: isDark ? 'dark' : 'light',
   });
 
   /* ── Live drawing view ─────────────────────────────────────────────── */
@@ -70,8 +78,9 @@ export default function SketchStage({ team, otherTeam, challenge, onEnd }) {
         <div className="flex-1 flex items-center justify-center min-h-0">
           <div
             ref={boxRef}
-            className="bg-white rounded-2xl overflow-hidden"
+            className="rounded-2xl overflow-hidden"
             style={{
+              background: isDark ? CANVAS_PAPER.dark : CANVAS_PAPER.light,
               border: `2px solid ${team.color}aa`,
               boxShadow: '0 14px 44px rgba(0, 0, 0, 0.5)',
             }}

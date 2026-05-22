@@ -8,14 +8,36 @@
 
 import { decodeSketch } from '../lib/sketchEncoding';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { CANVAS_PAPER } from '../lib/sketchTheme';
 
-const INK = '#131313'; // single drawing colour — near-black on white
 const BRUSH = 3.2; // stroke width, CSS px
 const MAX_POINTS = 300; // per-stroke point cap (runaway-scribble guard)
 const CLEAR_UNDO_MS = 400; // window after Clear during which Undo restores
 const MIN_STEP_PX = 0.6; // skip points that moved less than this (payload trim)
 const FLUSH_MS = 50; // batched point-broadcast cadence → ≤20 messages/sec
 const CANVAS_ASPECT = 3 / 4; // drawing surface width ÷ height (portrait)
+
+// Pen palette, keyed by the theme the host put in the QR. The canvas is
+// "paper" (see CANVAS_PAPER): light = dark ink on white, dark = light ink on a
+// dark surface — so strokes stay legible on the phone AND the big screen.
+const PEN_COLORS = {
+  light: [
+    { hex: '#131313', name: 'Black' },
+    { hex: '#E2483D', name: 'Red' },
+    { hex: '#2F73D8', name: 'Blue' },
+    { hex: '#1FA055', name: 'Green' },
+    { hex: '#E0982A', name: 'Orange' },
+    { hex: '#A855C7', name: 'Purple' },
+  ],
+  dark: [
+    { hex: '#FFFFFF', name: 'White' },
+    { hex: '#FF6B5E', name: 'Red' },
+    { hex: '#5DA2FF', name: 'Blue' },
+    { hex: '#46C877', name: 'Green' },
+    { hex: '#F0B354', name: 'Orange' },
+    { hex: '#C98AE0', name: 'Purple' },
+  ],
+};
 
 // ─── DOM refs ────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
@@ -31,6 +53,7 @@ const timerEl = $('timer');
 const canvas = $('canvas');
 const canvasWrap = $('canvas-wrap');
 const canvasBox = $('canvas-box');
+const paletteEl = $('palette');
 const undoBtn = $('undo');
 const clearBtn = $('clear');
 const doneBtn = $('done');
@@ -39,6 +62,14 @@ const doneOverlay = $('done-overlay');
 
 // ─── Decode the word from the URL fragment ───────────────────────────
 const payload = decodeSketch(location.hash);
+
+// The theme the host encoded in the QR drives the drawing surface + the
+// default pen, so the phone canvas matches the big screen and strokes stay
+// legible. An absent/unknown theme falls back to 'light' (white paper).
+const themeMode = payload && payload.theme === 'dark' ? 'dark' : 'light';
+const palette = PEN_COLORS[themeMode];
+let currentColor = palette[0].hex; // default pen = the theme's contrast ink
+canvasBox.style.background = CANVAS_PAPER[themeMode];
 
 if (!payload) {
   reveal.style.display = 'none';
@@ -195,7 +226,30 @@ let clearBackup = null;
 let clearBackupTimer = 0;
 let toastTimer = 0;
 
+// Render the pen-colour swatches. The first swatch is the theme's default ink
+// (black on light paper, white on dark) and starts selected.
+function buildPalette() {
+  palette.forEach((color, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = i === 0 ? 'swatch selected' : 'swatch';
+    btn.style.background = color.hex;
+    btn.setAttribute('aria-label', `${color.name} pen`);
+    btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+    btn.addEventListener('click', () => {
+      currentColor = color.hex;
+      for (const el of paletteEl.children) {
+        const on = el === btn;
+        el.classList.toggle('selected', on);
+        el.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+    });
+    paletteEl.appendChild(btn);
+  });
+}
+
 function initCanvas() {
+  buildPalette();
   // The wrap gets a real size as soon as #draw is shown; the canvas box is
   // sized from it. A ResizeObserver covers the first layout pass plus every
   // viewport/orientation change (it fires once when observe() is called).
@@ -282,10 +336,10 @@ function onPointerDown(e) {
     /* capture unavailable — drawing still works without it */
   }
   refreshRect(); // fresh box → accurate coords for this stroke
-  current = { id: ++strokeSeq, color: INK, w: BRUSH, points: [], start: performance.now() };
+  current = { id: ++strokeSeq, color: currentColor, w: BRUSH, points: [], start: performance.now() };
   addPoint(current, e);
   strokes.push(current);
-  send('s', { id: current.id, color: INK, w: BRUSH });
+  send('s', { id: current.id, color: currentColor, w: BRUSH });
   const first = current.points[0];
   if (first) bufferPoint(current.id, first.x, first.y);
   updateButtons();

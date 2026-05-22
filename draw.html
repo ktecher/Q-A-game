@@ -10,6 +10,9 @@
     /* Standalone styles — must NOT depend on the React app's CSS.
        Palette mirrors public/c.html so the two phone pages feel related. */
     :root {
+      /* This page ships its own dark chrome — tell the browser so it does not
+         force-dark (which would invert the white drawing canvas). */
+      color-scheme: dark;
       --ink: #0A0F1A;
       --ink-80: #11182a;
       --cream: #F4ECD8;
@@ -203,6 +206,31 @@
     .tool.primary .sub { opacity: 0.75; }
     .tool:disabled { opacity: 0.4; cursor: default; }
 
+    /* ─── Pen-colour palette ────────────────────────────────────── */
+    .palette {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.6rem;
+      flex-shrink: 0;
+    }
+    .swatch {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border-radius: 50%;
+      border: 2px solid rgba(244, 236, 216, 0.3);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+    .swatch:active { transform: scale(0.9); }
+    .swatch.selected {
+      border-color: var(--gold);
+      transform: scale(1.14);
+      box-shadow: 0 0 0 2px var(--ink), 0 0 10px var(--gold-40);
+    }
+
     /* Toast (Clear feedback) */
     .toast {
       position: absolute;
@@ -317,6 +345,7 @@
         </div>
       </div>
     </div>
+    <div class="palette" id="palette" role="group" aria-label="لون القلم · Pen colour"></div>
     <div class="toolbar">
       <button class="tool" id="undo" type="button">
         <span>↩ تراجع</span><span class="sub">Undo</span>

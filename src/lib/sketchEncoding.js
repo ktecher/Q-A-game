@@ -44,11 +44,14 @@ export function makeSessionId() {
  * @param {string} input.sessionId — realtime channel id (see makeSessionId)
  * @param {string} [input.catAr] — Arabic category label (faint on-canvas hint)
  * @param {string} [input.catEn] — English category label
+ * @param {'dark' | 'light'} [input.theme] — host's theme; drives the phone
+ *   canvas paper + default pen colour so both screens stay legible
  */
-export function encodeSketch({ titleAr, titleEn, lang, sessionId, catAr, catEn }) {
+export function encodeSketch({ titleAr, titleEn, lang, sessionId, catAr, catEn, theme }) {
   const payload = { v: PAYLOAD_VERSION, ar: titleAr, en: titleEn, l: lang, s: sessionId };
   if (catAr) payload.ca = catAr;
   if (catEn) payload.ce = catEn;
+  if (theme === 'dark' || theme === 'light') payload.t = theme;
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   let bin = '';
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
@@ -82,6 +85,9 @@ export function decodeSketch(fragment) {
       sessionId: payload.s,
       catAr: payload.ca,
       catEn: payload.ce,
+      // 'dark' | 'light' | undefined — the phone defaults a missing/unknown
+      // value to 'light' (the classic white-paper drawing surface).
+      theme: payload.t === 'dark' ? 'dark' : payload.t === 'light' ? 'light' : undefined,
     };
   } catch {
     return null;
@@ -92,7 +98,7 @@ export function decodeSketch(fragment) {
  * Convenience: build the full sketch URL for a host page rendering a QR.
  * `origin` should be `window.location.origin` from the host context.
  */
-export function buildSketchUrl({ origin, titleAr, titleEn, lang, sessionId, catAr, catEn }) {
-  const token = encodeSketch({ titleAr, titleEn, lang, sessionId, catAr, catEn });
+export function buildSketchUrl({ origin, titleAr, titleEn, lang, sessionId, catAr, catEn, theme }) {
+  const token = encodeSketch({ titleAr, titleEn, lang, sessionId, catAr, catEn, theme });
   return `${origin}/draw.html#d=${token}`;
 }

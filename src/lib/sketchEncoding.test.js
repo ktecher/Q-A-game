@@ -51,6 +51,19 @@ describe('sketchEncoding', () => {
     expect(decoded.catEn).toBeUndefined();
   });
 
+  it('round-trips the theme field both ways', () => {
+    const dark = { ...sample, theme: 'dark' };
+    expect(decodeSketch(encodeSketch(dark))).toEqual(dark);
+    const light = { ...sample, theme: 'light' };
+    expect(decodeSketch(encodeSketch(light))).toEqual(light);
+  });
+
+  it('omits theme when not given and ignores an unknown theme value', () => {
+    expect(decodeSketch(encodeSketch(sample)).theme).toBeUndefined();
+    const weird = rawToken({ v: 1, ar: 'x', en: 'y', l: 'ar', s: 'sid', t: 'weird' });
+    expect(decodeSketch(weird).theme).toBeUndefined();
+  });
+
   it('returns null for empty, null, or non-base64 input', () => {
     expect(decodeSketch('')).toBeNull();
     expect(decodeSketch(null)).toBeNull();
