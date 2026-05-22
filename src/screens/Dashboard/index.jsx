@@ -1,7 +1,9 @@
 // Admin dashboard root. Reachable only by typing /dashboard (no nav links to
 // it anywhere in the app). Provides the isolated admin auth context and gates
-// the whole area: loading → spinner, not an admin → login, admin → layout.
+// the whole area: loading → spinner, no session → login, signed-in non-admin
+// → /signin, admin → layout.
 import { Loader2 } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 import { AdminAuthProvider, useAdminAuth } from '../../lib/admin/auth';
 import DashboardLogin from './DashboardLogin';
 import DashboardLayout from './DashboardLayout';
@@ -16,7 +18,10 @@ function DashboardGate() {
       </div>
     );
   }
-  if (!session || !isAdmin) return <DashboardLogin />;
+  // Not signed in → the dashboard's own login form.
+  if (!session) return <DashboardLogin />;
+  // Signed in but not a registered admin → bounce to the game's sign-in page.
+  if (!isAdmin) return <Navigate to="/signin" replace />;
   return <DashboardLayout />;
 }
 

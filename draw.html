@@ -143,14 +143,16 @@
     .canvas-wrap {
       flex: 1;
       display: flex;
+      align-items: center;
+      justify-content: center;
       min-height: 0;
     }
+    /* The box's 3:4 size is set in JS by sizeCanvas() — a CSS aspect-ratio
+       box whose only children are absolutely positioned has no in-flow
+       content to size from and collapses to 0×0, so the dimensions must be
+       computed from the wrap instead. */
     .canvas-box {
       position: relative;
-      aspect-ratio: 3 / 4;
-      max-width: 100%;
-      max-height: 100%;
-      margin: auto;
       background: #fff;
       border-radius: 14px;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
@@ -305,7 +307,7 @@
       <span class="cat-hint" id="cat-hint"></span>
       <span class="timer" id="timer"></span>
     </div>
-    <div class="canvas-wrap">
+    <div class="canvas-wrap" id="canvas-wrap">
       <div class="canvas-box" id="canvas-box">
         <canvas id="canvas"></canvas>
         <div class="toast" id="toast"></div>

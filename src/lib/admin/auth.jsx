@@ -13,35 +13,63 @@ const AdminAuthContext = createContext(null);
 export function AdminAuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // `booted` flips true the first time we reach a definitive verdict (either
+  // no session, or the is_admin check finished). `loading` is derived from
+  // it, so a later token refresh never bounces the dashboard to a spinner.
+  const [booted, setBooted] = useState(false);
 
+  // Track the session ONLY. This callback stays synchronous — it must never
+  // await a Supabase call. On refresh, Supabase recovers the stored session
+  // while holding its internal auth lock and fires this callback inside that
+  // lock; awaiting another Supabase call here would re-enter the lock and
+  // deadlock (the dashboard would hang forever on the spinner).
   useEffect(() => {
     let active = true;
 
-    async function resolve(nextSession) {
+    supabaseAdmin.auth.getSession().then(({ data }) => {
       if (!active) return;
-      setLoading(true);
-      setSession(nextSession ?? null);
-      let admin = false;
-      if (nextSession) {
-        const { data, error } = await supabaseAdmin.rpc('is_admin');
-        admin = !error && data === true;
+      const s = data.session ?? null;
+      setSession(s);
+      // No session → the verdict is already final (show the login form).
+      if (!s) {
+        setIsAdmin(false);
+        setBooted(true);
       }
-      if (!active) return;
-      setIsAdmin(admin);
-      setLoading(false);
-    }
+    });
 
-    supabaseAdmin.auth.getSession().then(({ data }) => resolve(data.session));
-    const { data: sub } = supabaseAdmin.auth.onAuthStateChange((_event, s) =>
-      resolve(s)
-    );
+    const { data: sub } = supabaseAdmin.auth.onAuthStateChange((_event, next) => {
+      if (!active) return;
+      const s = next ?? null;
+      setSession(s);
+      if (!s) {
+        setIsAdmin(false);
+        setBooted(true);
+      }
+    });
 
     return () => {
       active = false;
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  // The is_admin check runs in its own effect — OUTSIDE the auth lock —
+  // reacting to session changes. It re-runs on token refresh to keep
+  // `isAdmin` current, but never flips `loading` back on.
+  useEffect(() => {
+    if (!session) return undefined;
+    let active = true;
+
+    supabaseAdmin.rpc('is_admin').then(({ data, error }) => {
+      if (!active) return;
+      setIsAdmin(!error && data === true);
+      setBooted(true);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [session]);
 
   const signIn = useCallback(async (username, password) => {
     if (String(username).trim().toLowerCase() !== ADMIN_USERNAME) {
@@ -58,6 +86,8 @@ export function AdminAuthProvider({ children }) {
   const signOut = useCallback(async () => {
     await supabaseAdmin.auth.signOut();
   }, []);
+
+  const loading = !booted;
 
   return (
     <AdminAuthContext.Provider value={{ session, isAdmin, loading, signIn, signOut }}>

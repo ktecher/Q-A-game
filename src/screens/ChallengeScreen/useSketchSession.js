@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase';
    runs the 60-second round timer. See PICTIONARY_PLAN.md §4, §8. */
 
 const SKETCH_TIME = 60; // seconds
+const SKETCH_ASPECT = 3 / 4; // canvas width ÷ height — matches the phone surface
 const FALLBACK_INK = '#131313';
 // Caps on UNTRUSTED inbound broadcast. The phone self-limits, but a buggy or
 // hostile channel peer must not be able to grow host memory without bound.
@@ -56,6 +57,7 @@ function paintStrokes(ctx, w, h, strokes) {
 
 export default function useSketchSession({ sessionId, onEnd }) {
   const canvasRef = useRef(null);
+  const boxRef = useRef(null);
   const [subscribed, setSubscribed] = useState(false);
   const [started, setStarted] = useState(false);
   const [connected, setConnected] = useState(false);
@@ -210,11 +212,29 @@ export default function useSketchSession({ sessionId, onEnd }) {
   useEffect(() => {
     if (!started) return undefined;
     const canvas = canvasRef.current;
-    if (!canvas) return undefined;
+    const box = boxRef.current;
+    if (!canvas || !box) return undefined;
     const ctx = canvas.getContext('2d');
     let raf = 0;
 
+    // Fit the largest 3:4 box inside its wrap, then match the canvas backing
+    // store to it. The box carries no intrinsic size (a CSS aspect-ratio box
+    // would collapse), so the dimensions are computed here from the wrap.
     function size() {
+      const wrap = box.parentElement;
+      if (!wrap) return;
+      const availW = wrap.clientWidth;
+      const availH = wrap.clientHeight;
+      if (availW === 0 || availH === 0) return; // not laid out yet
+      let boxW = availW;
+      let boxH = boxW / SKETCH_ASPECT;
+      if (boxH > availH) {
+        boxH = availH;
+        boxW = boxH * SKETCH_ASPECT;
+      }
+      box.style.width = `${Math.round(boxW)}px`;
+      box.style.height = `${Math.round(boxH)}px`;
+
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
       canvas.width = Math.round(rect.width * dpr);
@@ -223,8 +243,16 @@ export default function useSketchSession({ sessionId, onEnd }) {
       dirtyRef.current = true;
     }
     size();
-    window.addEventListener('resize', size);
-    window.addEventListener('orientationchange', size);
+
+    // ResizeObserver covers the first layout pass plus every viewport change.
+    let observer = null;
+    if (window.ResizeObserver) {
+      observer = new ResizeObserver(size);
+      observer.observe(box.parentElement);
+    } else {
+      window.addEventListener('resize', size);
+      window.addEventListener('orientationchange', size);
+    }
 
     function frame() {
       if (dirtyRef.current) {
@@ -237,12 +265,16 @@ export default function useSketchSession({ sessionId, onEnd }) {
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener('resize', size);
-      window.removeEventListener('orientationchange', size);
+      if (observer) {
+        observer.disconnect();
+      } else {
+        window.removeEventListener('resize', size);
+        window.removeEventListener('orientationchange', size);
+      }
     };
   }, [started]);
 
   const skip = useCallback(() => skipRef.current(), []);
 
-  return { canvasRef, subscribed, started, connected, timeLeft, skip };
+  return { canvasRef, boxRef, subscribed, started, connected, timeLeft, skip };
 }

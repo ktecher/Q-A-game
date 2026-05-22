@@ -15,6 +15,7 @@ const MAX_POINTS = 300; // per-stroke point cap (runaway-scribble guard)
 const CLEAR_UNDO_MS = 400; // window after Clear during which Undo restores
 const MIN_STEP_PX = 0.6; // skip points that moved less than this (payload trim)
 const FLUSH_MS = 50; // batched point-broadcast cadence → ≤20 messages/sec
+const CANVAS_ASPECT = 3 / 4; // drawing surface width ÷ height (portrait)
 
 // ─── DOM refs ────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
@@ -28,6 +29,8 @@ const readyBtn = $('ready');
 const catHint = $('cat-hint');
 const timerEl = $('timer');
 const canvas = $('canvas');
+const canvasWrap = $('canvas-wrap');
+const canvasBox = $('canvas-box');
 const undoBtn = $('undo');
 const clearBtn = $('clear');
 const doneBtn = $('done');
@@ -193,9 +196,16 @@ let clearBackupTimer = 0;
 let toastTimer = 0;
 
 function initCanvas() {
+  // The wrap gets a real size as soon as #draw is shown; the canvas box is
+  // sized from it. A ResizeObserver covers the first layout pass plus every
+  // viewport/orientation change (it fires once when observe() is called).
+  if (window.ResizeObserver) {
+    new ResizeObserver(sizeCanvas).observe(canvasWrap);
+  } else {
+    window.addEventListener('resize', sizeCanvas);
+    window.addEventListener('orientationchange', sizeCanvas);
+  }
   sizeCanvas();
-  window.addEventListener('resize', sizeCanvas);
-  window.addEventListener('orientationchange', sizeCanvas);
 
   canvas.addEventListener('pointerdown', onPointerDown);
   canvas.addEventListener('pointermove', onPointerMove);
@@ -218,6 +228,21 @@ function refreshRect() {
 }
 
 function sizeCanvas() {
+  // Fit the largest 3:4 box inside the available wrap area, then match the
+  // canvas backing store to it. The box has no intrinsic size of its own
+  // (its children are absolutely positioned), so JS owns the dimensions.
+  const availW = canvasWrap.clientWidth;
+  const availH = canvasWrap.clientHeight;
+  if (availW === 0 || availH === 0) return; // not laid out yet — observer re-fires
+  let boxW = availW;
+  let boxH = boxW / CANVAS_ASPECT;
+  if (boxH > availH) {
+    boxH = availH;
+    boxW = boxH * CANVAS_ASPECT;
+  }
+  canvasBox.style.width = `${Math.round(boxW)}px`;
+  canvasBox.style.height = `${Math.round(boxH)}px`;
+
   const dpr = window.devicePixelRatio || 1;
   refreshRect();
   canvas.width = Math.round(cssW * dpr);

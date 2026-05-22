@@ -12,7 +12,7 @@ import useSketchSession from './useSketchSession';
    The host "Skip"/"End" button is the manual escape hatch. */
 
 export default function SketchStage({ team, otherTeam, challenge, onEnd }) {
-  const { canvasRef, subscribed, started, connected, timeLeft, skip } = useSketchSession({
+  const { canvasRef, boxRef, subscribed, started, connected, timeLeft, skip } = useSketchSession({
     sessionId: challenge.sessionId,
     onEnd,
   });
@@ -66,14 +66,12 @@ export default function SketchStage({ team, otherTeam, challenge, onEnd }) {
           </div>
         </header>
 
-        {/* Live canvas — fixed 3:4 box matching the phone's drawing surface */}
-        <div className="flex-1 flex min-h-0">
+        {/* Live canvas — 3:4 box (sized in JS) matching the phone's surface */}
+        <div className="flex-1 flex items-center justify-center min-h-0">
           <div
-            className="m-auto bg-white rounded-2xl overflow-hidden"
+            ref={boxRef}
+            className="bg-white rounded-2xl overflow-hidden"
             style={{
-              aspectRatio: '3 / 4',
-              maxHeight: '100%',
-              maxWidth: '100%',
               border: `2px solid ${team.color}aa`,
               boxShadow: '0 14px 44px rgba(0, 0, 0, 0.5)',
             }}
