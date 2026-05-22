@@ -1,221 +1,334 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { QRCode } from 'react-qr-code';
-import { AlertTriangle, Zap, X as XIcon } from 'lucide-react';
+import { Zap, X as XIcon, Play } from 'lucide-react';
 import { buildSketchUrl } from '../../lib/sketchEncoding';
 import { useTheme } from '../../contexts/ThemeContext';
 import { CANVAS_PAPER } from '../../lib/sketchTheme';
-import TeamIdentity from '../../components/TeamIdentity';
 import useSketchSession from './useSketchSession';
 
-/* ─── SKETCH STAGE · host/big-screen side of the Pictionary challenge ──────
-   Two views, driven by useSketchSession:
-   • before the drawer connects → QR + spoiler-blocker + waiting state
-   • once the drawer joins      → the live canvas + round timer
-   The host "Skip"/"End" button is the manual escape hatch. */
+const SKETCH_TIME = 60; // seconds — one shared clock both teams race against
+const POLL_MS = 250; // clock granularity (sub-second so the round starts crisply)
+const END_HOLD_MS = 900; // hold on the ended screen so the 'end' broadcast lands
 
-export default function SketchStage({ team, otherTeam, challenge, onEnd }) {
+/* ─── SKETCH STAGE · head-to-head Pictionary ───────────────────────────────
+   Both teams draw at the same time on a split screen. Each team gets its own
+   QR + word; once both drawers connect, a shared 60s clock starts. The host
+   watches both canvases — the team whose word their group guesses first wins
+   (the host awards on the result screen). */
+
+export default function SketchStage({ teams, challenge, onEnd }) {
   const { isDark } = useTheme();
-  const { canvasRef, boxRef, subscribed, started, connected, timeLeft, skip } = useSketchSession({
-    sessionId: challenge.sessionId,
-    onEnd,
+  const sketch = challenge.sketch ?? [];
+
+  const [running, setRunning] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(SKETCH_TIME);
+  // Derived — no stored "phase", so no setState transition is needed for it.
+  const phase = ended ? 'ended' : running ? 'running' : 'waiting';
+
+  const startedRef = useRef(false);
+  const endedRef = useRef(false);
+  const startAtRef = useRef(0);
+
+  // One realtime session per team (index 0 = teams[0], 1 = teams[1]). The
+  // returns are destructured straight away so refs and state stay distinct.
+  const {
+    canvasRef: canvasRefA,
+    boxRef: boxRefA,
+    subscribed: subscribedA,
+    connected: connectedA,
+  } = useSketchSession({
+    sessionId: sketch[0]?.sessionId,
     isDark,
+    timeLeft: phase === 'running' ? timeLeft : null,
+    ended,
+  });
+  const {
+    canvasRef: canvasRefB,
+    boxRef: boxRefB,
+    subscribed: subscribedB,
+    connected: connectedB,
+  } = useSketchSession({
+    sessionId: sketch[1]?.sessionId,
+    isDark,
+    timeLeft: phase === 'running' ? timeLeft : null,
+    ended,
   });
 
-  // The host's theme drives the drawing surface on BOTH screens: it is encoded
-  // into the QR so the phone canvas + default pen match this big screen, and
-  // strokes stay legible whichever theme the host is running.
-  const qrUrl = buildSketchUrl({
-    origin: window.location.origin,
-    titleAr: challenge.prompt.ar,
-    titleEn: challenge.prompt.en,
-    lang: 'ar',
-    sessionId: challenge.sessionId,
-    catAr: challenge.catAr,
-    catEn: challenge.catEn,
-    theme: isDark ? 'dark' : 'light',
-  });
+  // Both drawers are on — the host may now press Start. The round never
+  // auto-starts; the host always controls the kickoff.
+  const bothConnected = connectedA && connectedB;
 
-  /* ── Live drawing view ─────────────────────────────────────────────── */
-  if (started) {
-    const urgent = timeLeft <= 10;
-    return (
-      <motion.div
-        key="sketch-draw"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        className="min-h-screen flex flex-col px-4 py-4 md:px-8 md:py-6"
-      >
-        <header className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <span
-              className="w-3 h-3 rounded-full shrink-0"
-              style={{ background: team.color }}
-              aria-hidden="true"
-            />
-            <span className="font-ar-ui text-lg text-cream truncate">{team.name} يرسم</span>
-            <span className="font-en-body text-sm text-cream-60 italic truncate" lang="en">
-              · {team.nameEn} draws
-            </span>
-          </div>
-          <div
-            className="font-en-display font-bold leading-none shrink-0"
-            style={{
-              fontSize: 'clamp(40px, 7vw, 76px)',
-              letterSpacing: '-0.04em',
-              color: urgent ? '#C44150' : 'var(--color-gold)',
-              textShadow: urgent
-                ? 'var(--glow-text-crimson-wide)'
-                : 'var(--glow-text-gold-deep)',
-            }}
-          >
-            {timeLeft}
-          </div>
-        </header>
+  // Begin / end the shared round. The setState calls here only ever run from
+  // an event handler or the poll callback below — never synchronously inside
+  // an effect body — which is what react-hooks/set-state-in-effect requires.
+  const beginRound = useCallback(() => {
+    if (startedRef.current || endedRef.current) return;
+    startedRef.current = true;
+    startAtRef.current = Date.now();
+    setRunning(true);
+  }, []);
+  const endRound = useCallback(() => {
+    if (endedRef.current) return;
+    endedRef.current = true;
+    setEnded(true);
+  }, []);
 
-        {/* Live canvas — 3:4 box (sized in JS) matching the phone's surface */}
-        <div className="flex-1 flex items-center justify-center min-h-0">
-          <div
-            ref={boxRef}
-            className="rounded-2xl overflow-hidden"
-            style={{
-              background: isDark ? CANVAS_PAPER.dark : CANVAS_PAPER.light,
-              border: `2px solid ${team.color}aa`,
-              boxShadow: '0 14px 44px rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            <canvas ref={canvasRef} className="block w-full h-full" />
-          </div>
-        </div>
+  // A polling clock — once the host presses Start it counts the round down off
+  // a timestamp (set in beginRound) so the shared timer can't drift.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (endedRef.current || !startedRef.current) return;
+      const left = Math.max(
+        0,
+        SKETCH_TIME - Math.floor((Date.now() - startAtRef.current) / 1000),
+      );
+      setTimeLeft(left);
+      if (left <= 0) endRound();
+    }, POLL_MS);
+    return () => clearInterval(id);
+  }, [endRound]);
 
-        <footer className="mt-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-ar-ui text-base text-cream">ماذا يُرسم؟ خمّنوا بصوت عالٍ!</p>
-            <p className="font-en-body text-xs text-cream-60 italic" lang="en">
-              What's being drawn? Shout your guesses!
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {!connected && (
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-crimson/20 border border-crimson text-crimson">
-                ⚠ انقطع الرسّام · drawer offline
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={skip}
-              className="btn-outline inline-flex items-center gap-2 px-4 py-2.5 rounded-xl"
-            >
-              <XIcon size={15} />
-              <span className="font-ar-ui text-sm font-semibold">إنهاء الجولة</span>
-              <span className="font-en-body text-xs opacity-70" lang="en">
-                · End
-              </span>
-            </button>
-          </div>
-        </footer>
-      </motion.div>
-    );
-  }
+  // Once ended, hand back to ChallengeScreen → ResultStage. The short delay
+  // lets the final 'end' broadcast reach the phones before this unmounts.
+  useEffect(() => {
+    if (!ended) return undefined;
+    const id = setTimeout(onEnd, END_HOLD_MS);
+    return () => clearTimeout(id);
+  }, [ended, onEnd]);
 
-  /* ── QR / waiting view ─────────────────────────────────────────────── */
+  const urgent = phase === 'running' && timeLeft <= 10;
+
   return (
     <motion.div
-      key="sketch-qr"
+      key="sketch"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen flex flex-col items-center justify-center px-4 py-8"
+      className="min-h-screen flex flex-col px-3 py-3 md:px-6 md:py-5"
     >
-      <div
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-ar-ui font-semibold uppercase tracking-wider bg-gold/15 border border-gold-faint mb-6"
-        style={{ color: 'var(--color-gold)' }}
-      >
-        <Zap size={15} />
-        تحدي الرسم
-        <span className="font-en-body normal-case tracking-normal opacity-80" lang="en">
-          · Sketch Challenge
-        </span>
-      </div>
-
-      <div
-        className="relative w-full max-w-md px-6 py-7 text-center rounded-3xl"
-        style={{
-          background: `linear-gradient(135deg, ${team.color}40, var(--color-ink-50))`,
-          border: `2px solid ${team.color}aa`,
-          boxShadow: 'var(--chip-active-shadow)',
-        }}
-      >
-        <div className="mb-5">
-          <TeamIdentity team={team} size="lg" />
-        </div>
-
-        {/* QR appears only once the channel is live (no scan-before-ready race) */}
-        {subscribed ? (
-          <div className="bg-white rounded-2xl p-4 inline-block mb-4">
-            <QRCode value={qrUrl} size={196} bgColor="#FFFFFF" fgColor="#0A0F1A" level="M" />
-          </div>
-        ) : (
-          <div className="w-[228px] h-[228px] mx-auto mb-4 rounded-2xl bg-ink-80 border border-gold-faint flex items-center justify-center">
-            <span className="font-ar-ui text-sm text-cream-45">جارٍ التحضير…</span>
-          </div>
-        )}
-
-        <p className="font-ar-ui text-lg text-cream mb-0.5">امسح الرمز وابدأ الرسم</p>
-        <p className="font-en-body text-sm text-cream-60 mb-5" lang="en">
-          Scan the QR · one player draws
-        </p>
-
-        <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-crimson/10 border border-crimson/50 text-start mb-5">
-          <AlertTriangle size={18} className="text-crimson shrink-0 mt-0.5" />
-          <div>
-            <div className="font-ar-ui text-sm font-semibold text-crimson">
-              الرسّام فقط يمسح الرمز
-            </div>
-            <div className="font-en-body text-xs text-crimson/80 italic" lang="en">
-              Only the drawer scans — everyone else, look away!
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-center gap-2 text-cream-60">
-          <span
-            className="w-2.5 h-2.5 rounded-full animate-pulse-dot"
-            style={{
-              background: 'var(--color-gold-light)',
-              boxShadow: '0 0 10px var(--color-gold-light)',
-            }}
-            aria-hidden="true"
-          />
-          <span className="font-ar-ui text-sm">في انتظار الرسّام…</span>
-          <span className="font-en-body text-xs italic opacity-75" lang="en">
-            Waiting for drawer…
+      {/* Header — title + the shared timer */}
+      <header className="flex items-center justify-between gap-3 mb-3">
+        <div
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-ar-ui font-semibold bg-gold/15 border border-gold-faint"
+          style={{ color: 'var(--color-gold)' }}
+        >
+          <Zap size={15} />
+          تحدي الرسم
+          <span className="font-en-body normal-case opacity-80" lang="en">
+            · Sketch Duel
           </span>
         </div>
+        {phase === 'running' ? (
+          <div
+            className="font-en-display font-bold leading-none shrink-0"
+            style={{
+              fontSize: 'clamp(36px, 6vw, 68px)',
+              letterSpacing: '-0.04em',
+              color: urgent ? '#C44150' : 'var(--color-gold)',
+              textShadow: urgent ? 'var(--glow-text-crimson-wide)' : 'var(--glow-text-gold-deep)',
+            }}
+          >
+            {timeLeft}
+          </div>
+        ) : (
+          <span className="font-ar-ui text-sm text-cream-60 text-end">
+            {phase === 'ended'
+              ? 'انتهت الجولة'
+              : bothConnected
+                ? 'الفريقان جاهزان'
+                : 'في انتظار الرسّامين'}
+            <span className="font-en-body italic text-xs opacity-70 ms-1" lang="en">
+              ·{' '}
+              {phase === 'ended'
+                ? 'Round over'
+                : bothConnected
+                  ? 'Both teams ready'
+                  : 'Waiting for drawers'}
+            </span>
+          </span>
+        )}
+      </header>
+
+      {/* Split canvases — one panel per team */}
+      <div className="flex-1 grid grid-cols-1 grid-rows-2 md:grid-cols-2 md:grid-rows-1 gap-3 md:gap-4 min-h-0">
+        <TeamPanel
+          team={teams[0]}
+          word={sketch[0]}
+          isDark={isDark}
+          started={phase !== 'waiting'}
+          canvasRef={canvasRefA}
+          boxRef={boxRefA}
+          subscribed={subscribedA}
+          connected={connectedA}
+        />
+        <TeamPanel
+          team={teams[1]}
+          word={sketch[1]}
+          isDark={isDark}
+          started={phase !== 'waiting'}
+          canvasRef={canvasRefB}
+          boxRef={boxRefB}
+          subscribed={subscribedB}
+          connected={connectedB}
+        />
       </div>
 
-      <div className="mt-6 max-w-md w-full grid gap-1.5 text-center">
-        <p className="font-ar-ui text-sm text-cream-60">
-          <span style={{ color: team.color }}>{team.name}</span> · استعدّوا للتخمين
-        </p>
-        <p className="font-ar-ui text-sm text-cream-45">
-          <span style={{ color: otherTeam.color }}>{otherTeam.name}</span> · راقبوا فقط ولا تكشفوا
-        </p>
-      </div>
-
-      <button
-        type="button"
-        onClick={skip}
-        className="btn-outline mt-7 inline-flex items-center gap-2 px-5 py-3 rounded-xl"
-      >
-        <XIcon size={16} />
-        <span className="font-ar-ui text-sm font-semibold">تخطّي</span>
-        <span className="font-en-body text-xs opacity-70 uppercase tracking-wide" lang="en">
-          · Skip
-        </span>
-      </button>
+      {/* Footer — host controls */}
+      <footer className="mt-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          {phase === 'waiting' ? (
+            <>
+              <p className="font-ar-ui text-sm text-cream">
+                بعد أن يمسح الفريقان الرمزين، اضغط «ابدأ الجولة»
+              </p>
+              <p className="font-en-body text-xs text-cream-60 italic" lang="en">
+                Once both teams have scanned their QR, press Start round.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-ar-ui text-sm text-cream">
+                كل فريق يخمّن رسمته — أول فريق يعرف كلمته يفوز!
+              </p>
+              <p className="font-en-body text-xs text-cream-60 italic" lang="en">
+                Each team guesses its own drawing — first team to get it wins.
+              </p>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {phase === 'waiting' ? (
+            <>
+              <button
+                type="button"
+                onClick={endRound}
+                className="btn-outline inline-flex items-center gap-2 px-4 py-2.5 rounded-xl"
+              >
+                <XIcon size={15} />
+                <span className="font-ar-ui text-sm font-semibold">تخطّي</span>
+                <span className="font-en-body text-xs opacity-70" lang="en">
+                  · Skip
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={beginRound}
+                className="btn-gold inline-flex items-center gap-2 px-5 py-2.5 rounded-xl"
+              >
+                <Play size={15} />
+                <span className="font-ar-ui text-sm font-semibold">ابدأ الجولة</span>
+                <span className="font-en-body text-xs opacity-80" lang="en">
+                  · Start round
+                </span>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={endRound}
+              className="btn-gold inline-flex items-center gap-2 px-5 py-2.5 rounded-xl"
+            >
+              <XIcon size={15} />
+              <span className="font-ar-ui text-sm font-semibold">إنهاء الجولة</span>
+              <span className="font-en-body text-xs opacity-80" lang="en">
+                · End round
+              </span>
+            </button>
+          )}
+        </div>
+      </footer>
     </motion.div>
+  );
+}
+
+/* One half of the split screen: a team's QR (before its drawer connects) or
+   its live canvas (after). */
+function TeamPanel({ team, word, isDark, started, canvasRef, boxRef, subscribed, connected }) {
+  // Show the QR only until the round is under way; once it starts keep the
+  // canvas up even if this team's presence briefly flickers.
+  const showCanvas = started || connected;
+  const qrUrl = word
+    ? buildSketchUrl({
+        origin: window.location.origin,
+        titleAr: word.prompt.ar,
+        titleEn: word.prompt.en,
+        lang: 'ar',
+        sessionId: word.sessionId,
+        catAr: word.catAr,
+        catEn: word.catEn,
+        theme: isDark ? 'dark' : 'light',
+      })
+    : '';
+
+  return (
+    <div
+      className="flex flex-col min-h-0 rounded-2xl p-3"
+      style={{
+        background: `linear-gradient(150deg, ${team.color}26, var(--color-ink-50))`,
+        border: `2px solid ${team.color}aa`,
+      }}
+    >
+      {/* Team label + connection status */}
+      <div className="flex items-center justify-between gap-2 mb-2 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className="w-3 h-3 rounded-full shrink-0"
+            style={{ background: team.color }}
+            aria-hidden="true"
+          />
+          <span className="font-ar-ui text-base text-cream truncate">{team.name}</span>
+          <span className="font-en-body text-xs text-cream-60 italic truncate" lang="en">
+            · {team.nameEn}
+          </span>
+        </div>
+        {connected ? (
+          <span
+            className="px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0"
+            style={{ background: `${team.color}33`, border: `1px solid ${team.color}`, color: team.color }}
+          >
+            ● يرسم
+          </span>
+        ) : (
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0 bg-ink-80 border border-gold-faint text-cream-45">
+            ○ في الانتظار
+          </span>
+        )}
+      </div>
+
+      {/* Live canvas once the round is under way; the QR to scan before that */}
+      <div className="flex-1 flex items-center justify-center min-h-0">
+        {showCanvas ? (
+          <div
+            ref={boxRef}
+            className="rounded-xl overflow-hidden"
+            style={{
+              background: isDark ? CANVAS_PAPER.dark : CANVAS_PAPER.light,
+              boxShadow: '0 10px 32px rgba(0, 0, 0, 0.45)',
+            }}
+          >
+            <canvas ref={canvasRef} className="block w-full h-full" />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3 text-center">
+            {subscribed && qrUrl ? (
+              <div className="bg-white rounded-2xl p-3 inline-block">
+                <QRCode value={qrUrl} size={168} bgColor="#FFFFFF" fgColor="#0A0F1A" level="M" />
+              </div>
+            ) : (
+              <div className="w-[192px] h-[192px] rounded-2xl bg-ink-80 border border-gold-faint flex items-center justify-center">
+                <span className="font-ar-ui text-sm text-cream-45">جارٍ التحضير…</span>
+              </div>
+            )}
+            <p className="font-ar-ui text-sm text-cream">لاعب واحد يمسح الرمز ويرسم الكلمة</p>
+            <p className="font-en-body text-xs text-cream-60 italic" lang="en">
+              One player scans · sees the word · draws it
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

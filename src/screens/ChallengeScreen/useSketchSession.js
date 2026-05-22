@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 
-/* useSketchSession — the host/big-screen side of the Pictionary realtime
-   channel. Joins `sketch-<sessionId>`, watches Supabase Presence for the
-   drawer, receives stroke broadcasts and paints them onto a <canvas>, and
-   runs the 60-second round timer. See PICTIONARY_PLAN.md §4, §8. */
+/* useSketchSession — the host/big-screen side of ONE Pictionary drawing
+   session. Joins `sketch-<sessionId>`, watches Supabase Presence for that
+   team's drawer, receives stroke broadcasts and paints them onto a <canvas>,
+   and mirrors the shared round timer back to the phone.
 
-const SKETCH_TIME = 60; // seconds
+   The head-to-head sketch challenge runs TWO of these at once (one per team).
+   The round timer is owned by SketchStage and passed in via `timeLeft`, so
+   both teams count down together off a single clock. */
+
 const SKETCH_ASPECT = 3 / 4; // canvas width ÷ height — matches the phone surface
 const FALLBACK_INK = '#131313'; // light-theme fallback ink (dark theme uses white)
 // Caps on UNTRUSTED inbound broadcast. The phone self-limits, but a buggy or
@@ -57,73 +60,40 @@ function paintStrokes(ctx, w, h, strokes, fallbackInk) {
   }
 }
 
-export default function useSketchSession({ sessionId, onEnd, isDark }) {
+/**
+ * @param {object}  opts
+ * @param {string}  opts.sessionId — realtime channel id for this team
+ * @param {boolean} opts.isDark    — host theme (drives the fallback ink)
+ * @param {number|null} opts.timeLeft — shared countdown; null while waiting.
+ *   Broadcast to the phone whenever it changes so the drawer sees the clock.
+ * @param {boolean} opts.ended     — once true, tells the phone to lock.
+ */
+export default function useSketchSession({ sessionId, isDark, timeLeft, ended }) {
   const canvasRef = useRef(null);
   const boxRef = useRef(null);
   const [subscribed, setSubscribed] = useState(false);
-  const [started, setStarted] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(SKETCH_TIME);
 
   // Mutable state shared by channel callbacks + the rAF paint loop (refs so a
   // 60 fps repaint doesn't trigger React re-renders).
   const strokesRef = useRef([]);
   const strokeById = useRef(new Map());
   const dirtyRef = useRef(true);
-  const startedRef = useRef(false);
-  const endedRef = useRef(false);
-  const skipRef = useRef(() => {});
-  const onEndRef = useRef(onEnd);
   const isDarkRef = useRef(isDark);
-  // Keep the latest onEnd / isDark reachable from the channel + paint effects
-  // without adding them as deps (which would re-subscribe / re-init on change).
-  useEffect(() => {
-    onEndRef.current = onEnd;
-  }, [onEnd]);
+  const channelRef = useRef(null); // set once SUBSCRIBED — used to send timer/end
   useEffect(() => {
     isDarkRef.current = isDark;
   }, [isDark]);
 
-  // ── Channel lifecycle: subscribe, presence, incoming strokes, timer ──
+  // ── Channel lifecycle: subscribe, presence, incoming strokes ──
   useEffect(() => {
+    if (!sessionId) return undefined; // no session yet — nothing to join
     const channel = supabase.channel(`sketch-${sessionId}`, {
       config: { broadcast: { self: false } },
     });
-    let timerId = 0;
-    let endTimeoutId = 0;
-
-    const send = (t, extra) =>
-      channel.send({ type: 'broadcast', event: 'evt', payload: { t, ...extra } });
-
-    // End the round exactly once (first of: drawer Done, timer 0, host Skip).
-    function finishOnce(notify) {
-      if (endedRef.current) return;
-      endedRef.current = true;
-      clearInterval(timerId);
-      if (notify) send(notify);
-      // brief delay so the final broadcast flushes before SketchStage unmounts
-      endTimeoutId = setTimeout(() => onEndRef.current(), 180);
-    }
-    skipRef.current = () => finishOnce('end');
-
-    function startRound() {
-      if (startedRef.current) return;
-      startedRef.current = true;
-      setStarted(true);
-      let left = SKETCH_TIME;
-      setTimeLeft(left);
-      send('timer', { r: left });
-      timerId = setInterval(() => {
-        left -= 1;
-        const r = Math.max(0, left);
-        setTimeLeft(r);
-        send('timer', { r });
-        if (left <= 0) {
-          clearInterval(timerId);
-          finishOnce('expired');
-        }
-      }, 1000);
-    }
+    strokesRef.current = [];
+    strokeById.current = new Map();
+    dirtyRef.current = true;
 
     channel.on('broadcast', { event: 'evt' }, ({ payload: m }) => {
       if (!m || !m.t) return;
@@ -184,41 +154,67 @@ export default function useSketchSession({ sessionId, onEnd, isDark }) {
           break;
         }
         case 'done':
-          finishOnce(null); // drawer finished — phone already knows
-          break;
+          break; // a drawer finishing early no longer ends the shared round
         default:
           break;
       }
       dirtyRef.current = true;
     });
 
-    // Presence is the pairing signal — a drawer joining starts the round.
+    // Presence is the pairing signal — reflects whether this team's drawer is on.
     channel.on('presence', { event: 'sync' }, () => {
       const drawerHere = Object.values(channel.presenceState())
         .flat()
         .some((p) => p.role === 'drawer');
-      if (drawerHere) {
-        startRound();
-        setConnected(true);
-      } else if (startedRef.current) {
-        setConnected(false); // drawer dropped mid-round
-      }
+      setConnected(drawerHere);
     });
 
     channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') setSubscribed(true);
+      if (status === 'SUBSCRIBED') {
+        channelRef.current = channel;
+        setSubscribed(true);
+      }
     });
 
     return () => {
-      clearInterval(timerId);
-      clearTimeout(endTimeoutId);
+      channelRef.current = null;
+      setSubscribed(false);
+      setConnected(false);
       supabase.removeChannel(channel);
     };
   }, [sessionId]);
 
-  // ── Canvas sizing + rAF paint loop (runs once the round has started) ──
+  // ── Mirror the shared round timer to the phone ──
+  // SketchStage owns the countdown; rebroadcasting each tick keeps the drawer's
+  // on-phone clock in sync (and a phone that joins late catches up within 1s).
+  // `timeLeft` is null until the round starts, so nothing is sent while waiting.
   useEffect(() => {
-    if (!started) return undefined;
+    if (timeLeft == null || !channelRef.current) return;
+    channelRef.current.send({
+      type: 'broadcast',
+      event: 'evt',
+      payload: { t: 'timer', r: timeLeft },
+    });
+  }, [timeLeft]);
+
+  // ── Tell the phone the round is over so it locks its canvas ──
+  // Re-broadcast on a short interval: a single 'end' can be dropped, and there
+  // are no more timer ticks after the round to self-heal a phone still waiting.
+  useEffect(() => {
+    if (!ended) return undefined;
+    const sendEnd = () => {
+      if (channelRef.current) {
+        channelRef.current.send({ type: 'broadcast', event: 'evt', payload: { t: 'end' } });
+      }
+    };
+    sendEnd();
+    const id = setInterval(sendEnd, 400);
+    return () => clearInterval(id);
+  }, [ended]);
+
+  // ── Canvas sizing + rAF paint loop (runs once this team's drawer connects) ──
+  useEffect(() => {
+    if (!connected) return undefined;
     const canvas = canvasRef.current;
     const box = boxRef.current;
     if (!canvas || !box) return undefined;
@@ -286,9 +282,7 @@ export default function useSketchSession({ sessionId, onEnd, isDark }) {
         window.removeEventListener('orientationchange', size);
       }
     };
-  }, [started]);
+  }, [connected]);
 
-  const skip = useCallback(() => skipRef.current(), []);
-
-  return { canvasRef, boxRef, subscribed, started, connected, timeLeft, skip };
+  return { canvasRef, boxRef, subscribed, connected };
 }

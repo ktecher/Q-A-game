@@ -13,7 +13,7 @@ export default function ResultStage({
   chokeTeamIdx,
   cellValue,
   mode,
-  word,
+  sketchWords,
   onAward,
 }) {
   const autoWinnerIdx = chokeTeamIdx !== null ? 1 - chokeTeamIdx : null;
@@ -53,25 +53,35 @@ export default function ResultStage({
             ? `${teams[autoWinnerIdx].nameEn} wins — opponent choked`
             : `Who wins the challenge? · ${award} pts on the line`}
         </p>
-        {isSketch && word?.ar && (
+        {isSketch && sketchWords && (
           <motion.div
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 240, damping: 16, delay: 0.15 }}
-            className="mt-4 inline-flex flex-col items-center px-6 py-2.5 rounded-2xl bg-ink-80 border border-gold"
+            className="mt-4 flex flex-wrap justify-center gap-3"
           >
-            <span
-              className="font-en-body text-[10px] uppercase tracking-[0.2em] text-cream-45"
-              lang="en"
-            >
-              The word was
-            </span>
-            <span className="font-ar-body text-2xl md:text-3xl font-bold text-cream leading-tight">
-              {word.ar}
-            </span>
-            <span className="font-en-display italic text-gold-light text-sm" lang="en">
-              {word.en}
-            </span>
+            {teams.map((t, i) =>
+              sketchWords[i] ? (
+                <div
+                  key={t.id}
+                  className="inline-flex flex-col items-center px-5 py-2 rounded-2xl bg-ink-80 border"
+                  style={{ borderColor: `${t.color}aa` }}
+                >
+                  <span
+                    className="font-en-body text-[10px] uppercase tracking-[0.2em] text-cream-45"
+                    lang="en"
+                  >
+                    {t.nameEn}'s word
+                  </span>
+                  <span className="font-ar-body text-xl md:text-2xl font-bold text-cream leading-tight">
+                    {sketchWords[i].ar}
+                  </span>
+                  <span className="font-en-display italic text-gold-light text-sm" lang="en">
+                    {sketchWords[i].en}
+                  </span>
+                </div>
+              ) : null,
+            )}
           </motion.div>
         )}
       </div>

@@ -74,7 +74,10 @@ export function createInitialState() {
     currentCell: null,
     currentQuestion: null,
     challengeCells: pickChallengeCells(categories),
-    currentChallenge: null, // { categorySlug, value, rowIdx, prompt: { ar, en } } | null
+    // { categorySlug, value, rowIdx, variant, ... } | null. naming carries
+    // prompt:{ar,en}; sketch carries sketch:[{sessionId,prompt,catAr,catEn}] —
+    // one entry per team (sketch[i] belongs to teams[i]).
+    currentChallenge: null,
     lifelinesUsed: [
       { extraTime: false, hint: false, steal: false },
       { extraTime: false, hint: false, steal: false },
@@ -154,8 +157,9 @@ export function reducer(state, action) {
     }
 
     case 'START_CHALLENGE': {
-      // Triggered when a team accepts a Challenge cell.
-      // payload: { categorySlug, value, rowIdx, prompt: { ar, en } }
+      // Triggered when a team accepts a Challenge cell. The payload carries a
+      // `variant`: naming → { ..., prompt:{ar,en} }; sketch (head-to-head) →
+      // { ..., sketch:[{sessionId,prompt,catAr,catEn}, …] }, sketch[i] = teams[i].
       return {
         ...state,
         currentChallenge: action.payload,

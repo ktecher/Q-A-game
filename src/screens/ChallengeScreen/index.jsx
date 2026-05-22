@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useGame } from '../../contexts/GameContext';
@@ -30,6 +30,14 @@ export default function ChallengeScreen() {
     }
   }, [currentChallenge, state.started, navigate]);
 
+  // Sketch rounds have no choke/count — the host judges the result manually.
+  // Memoised (a hook, so it must precede the early return): SketchStage holds
+  // it in an effect dependency while ending the round.
+  const handleSketchEnd = useCallback(() => {
+    setChallengeResult({ counts: [0, 0], chokeTeamIdx: null, mode: 'sketch' });
+    setPhase('result');
+  }, []);
+
   if (!currentChallenge) return null;
 
   const cellValue = currentChallenge.value;
@@ -44,11 +52,6 @@ export default function ChallengeScreen() {
   };
   const handleNamingEnd = (result) => {
     setChallengeResult(result);
-    setPhase('result');
-  };
-  // Sketch rounds have no choke/count — the host judges the result manually.
-  const handleSketchEnd = () => {
-    setChallengeResult({ counts: [0, 0], chokeTeamIdx: null, mode: 'sketch' });
     setPhase('result');
   };
   const handleAward = (teamId) => {
@@ -85,8 +88,7 @@ export default function ChallengeScreen() {
         {phase === 'sketch' && (
           <SketchStage
             key="sketch-phase"
-            team={activeTeam}
-            otherTeam={teams[1 - activeTeamIdx]}
+            teams={teams}
             challenge={currentChallenge}
             onEnd={handleSketchEnd}
           />
@@ -99,7 +101,7 @@ export default function ChallengeScreen() {
             chokeTeamIdx={challengeResult.chokeTeamIdx}
             cellValue={cellValue}
             mode={challengeResult.mode}
-            word={currentChallenge.prompt}
+            sketchWords={currentChallenge.sketch?.map((s) => s.prompt)}
             onAward={handleAward}
           />
         )}

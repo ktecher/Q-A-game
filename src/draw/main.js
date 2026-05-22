@@ -16,6 +16,7 @@ const CLEAR_UNDO_MS = 400; // window after Clear during which Undo restores
 const MIN_STEP_PX = 0.6; // skip points that moved less than this (payload trim)
 const FLUSH_MS = 50; // batched point-broadcast cadence → ≤20 messages/sec
 const CANVAS_ASPECT = 3 / 4; // drawing surface width ÷ height (portrait)
+const WAIT_TIMEOUT_MS = 150000; // give up the "waiting for the round" hold after 2.5 min
 
 // Pen palette, keyed by the theme the host put in the QR. The canvas is
 // "paper" (see CANVAS_PAPER): light = dark ink on white, dark = light ink on a
@@ -58,6 +59,7 @@ const undoBtn = $('undo');
 const clearBtn = $('clear');
 const doneBtn = $('done');
 const toast = $('toast');
+const waitOverlay = $('wait-overlay');
 const doneOverlay = $('done-overlay');
 
 // ─── Decode the word from the URL fragment ───────────────────────────
@@ -156,7 +158,7 @@ function joinChannel() {
   channel.on('broadcast', { event: 'evt' }, ({ payload: m }) => {
     if (!m) return;
     if (m.t === 'timer') showTimer(m.r);
-    else if (m.t === 'expired' || m.t === 'end') lockCanvas();
+    else if (m.t === 'end') lockCanvas();
   });
   channel.subscribe((status) => {
     if (status === 'SUBSCRIBED') {
@@ -186,16 +188,23 @@ function flushPoints() {
 function showTimer(r) {
   timerEl.textContent = `${r}s`;
   timerEl.classList.toggle('urgent', r <= 10);
+  // The host's first timer tick means the round has started — release the
+  // canvas and hide the "waiting" overlay so the drawer can begin.
+  if (!roundStarted) {
+    roundStarted = true;
+    waitOverlay.classList.remove('show');
+    doneBtn.disabled = false;
+  }
   // A timer that jumps UP means the host re-subscribed (big-screen refresh)
   // and started a fresh round — rejoin it.
   if (r > lastTimerR) onHostRoundRestart();
   lastTimerR = r;
-  if (r <= 0) lockCanvas(); // self-lock even if the {t:'expired'} is lost
+  if (r <= 0) lockCanvas(); // self-lock even if the {t:'end'} is lost
 }
 
-// The host refreshed mid-round: it rejoined the channel with a blank canvas
-// and a fresh 60s. Unlock if we'd already locked, and re-sync our drawing so
-// the big screen shows it again — the round continues, drawing preserved.
+// The host's timer jumped UP — the big screen restarted the round (e.g. after
+// a refresh). Unlock if we had locked, and re-sync our drawing so the fresh
+// round shows it again.
 function onHostRoundRestart() {
   if (locked) {
     locked = false;
@@ -220,6 +229,7 @@ let current = null; // the stroke being drawn right now
 let activePointerId = null; // the one finger we track (extra touches are ignored)
 let strokeSeq = 0;
 let locked = false; // true once the round ends (Done / time-up / host End)
+let roundStarted = false; // false until the host's first timer tick (synced start)
 
 // Clear holds the wiped strokes briefly so Undo can restore them.
 let clearBackup = null;
@@ -250,6 +260,15 @@ function buildPalette() {
 
 function initCanvas() {
   buildPalette();
+  // Hold the canvas until the host starts the round — keeps the head-to-head
+  // race fair (neither team draws before the shared timer begins).
+  waitOverlay.classList.add('show');
+  doneBtn.disabled = true;
+  // Safety net: if the round never starts (e.g. the link was opened long after
+  // the challenge ended), stop waiting so the phone is not stuck forever.
+  setTimeout(() => {
+    if (!roundStarted && !locked) lockCanvas();
+  }, WAIT_TIMEOUT_MS);
   // The wrap gets a real size as soon as #draw is shown; the canvas box is
   // sized from it. A ResizeObserver covers the first layout pass plus every
   // viewport/orientation change (it fires once when observe() is called).
@@ -328,7 +347,8 @@ function addPoint(stroke, ev) {
 }
 
 function onPointerDown(e) {
-  if (locked || activePointerId !== null) return; // ignore extra fingers
+  // Blocked until the round starts, after it ends, or for extra fingers.
+  if (!roundStarted || locked || activePointerId !== null) return;
   activePointerId = e.pointerId;
   try {
     canvas.setPointerCapture(e.pointerId);
@@ -470,7 +490,7 @@ function doClear() {
 }
 
 function doDone() {
-  if (locked) return;
+  if (locked || !roundStarted) return;
   flushPoints();
   send('done');
   lockCanvas();
@@ -483,6 +503,7 @@ function lockCanvas() {
   current = null;
   clearInterval(flushTimer);
   flushTimer = 0;
+  waitOverlay.classList.remove('show');
   doneOverlay.classList.add('show');
   undoBtn.disabled = true;
   clearBtn.disabled = true;

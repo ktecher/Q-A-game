@@ -60,9 +60,9 @@ export default function BoardScreen() {
 
   // Deal each surprise challenge cell its variant + content ONCE per game.
   // Derived from the game seed (stable across remounts); each cell takes the
-  // next unused item from a seeded-shuffled pool — and falls back to the other
-  // variant if its own pool runs dry — so the two challenge cells never land
-  // on the same drawing word / naming prompt.
+  // next unused item(s) from a seeded-shuffled pool — and falls back to the
+  // other variant if its own pool runs dry — so no two challenge cells (and,
+  // for the head-to-head sketch, no two teams) share a word / naming prompt.
   const challengeAssignments = useMemo(() => {
     const keys = [...(challengeCells ?? [])].sort();
     if (keys.length === 0) return {};
@@ -74,23 +74,27 @@ export default function BoardScreen() {
     if (settings.sketch_challenge_enabled) variants.push('sketch');
     if (variants.length === 0) return {}; // no type available → all fall through
 
-    // Pre-shuffled pools; monotonic cursors hand out each item at most once.
+    // Pre-shuffled pools; the cursors below walk them as cells are assigned.
     const wordOrder = seededShuffle(drawingWords, seedFrom(gameSeed, 'sketch-words'));
     const promptOrder = seededShuffle(prompts, seedFrom(gameSeed, 'naming-prompts'));
-    let wi = 0;
-    let pi = 0;
-    const dealSketch = () =>
-      wi < wordOrder.length ? { variant: 'sketch', word: wordOrder[wi++] } : null;
-    const dealNaming = () =>
-      pi < promptOrder.length ? { variant: 'naming', prompt: promptOrder[pi++] } : null;
 
     const out = {};
+    let wi = 0; // next unused drawing word (a head-to-head sketch needs two)
+    let pi = 0; // next unused naming prompt
     for (const key of keys) {
       const variant = seededPickN(variants, 1, seedFrom(gameSeed, 'variant', key))[0];
-      // Take from the chosen variant's pool; if it is spent, borrow the other.
-      const assignment =
-        variant === 'sketch' ? dealSketch() ?? dealNaming() : dealNaming() ?? dealSketch();
-      if (assignment) out[key] = assignment; // both pools spent → normal question
+      const canSketch = wi + 1 < wordOrder.length; // two distinct words available
+      const canName = pi < promptOrder.length;
+      // Use the dealt variant; if its pool is spent, borrow the other one.
+      const useSketch = variant === 'sketch' ? canSketch : !canName;
+      if (useSketch && canSketch) {
+        out[key] = { variant: 'sketch', words: [wordOrder[wi], wordOrder[wi + 1]] };
+        wi += 2;
+      } else if (canName) {
+        out[key] = { variant: 'naming', prompt: promptOrder[pi] };
+        pi += 1;
+      }
+      // else: both pools spent → leave unset → cell falls through to a normal Q
     }
     return out;
   }, [gameSeed, challengeCells, settings, prompts, drawingWords]);
@@ -102,16 +106,20 @@ export default function BoardScreen() {
     if (challengeCells?.has(key) && assignment) {
       // Surprise! A challenge cell — variant + content were dealt at game start.
       if (assignment.variant === 'sketch') {
-        const { word } = assignment;
+        // Head-to-head: one drawing session per team. sketch[i] belongs to
+        // teams[i] — each team draws its own word on its own QR/canvas.
+        const toSession = (w) => ({
+          sessionId: makeSessionId(),
+          prompt: { ar: w.ar, en: w.en },
+          catAr: w.catAr,
+          catEn: w.catEn,
+        });
         startChallenge({
           categorySlug: cat.slug,
           value,
           rowIdx,
           variant: 'sketch',
-          sessionId: makeSessionId(),
-          prompt: { ar: word.ar, en: word.en },
-          catAr: word.catAr,
-          catEn: word.catEn,
+          sketch: assignment.words.map(toSession),
         });
         return;
       }

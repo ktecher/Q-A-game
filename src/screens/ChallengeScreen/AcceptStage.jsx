@@ -9,18 +9,18 @@ export default function AcceptStage({ cellValue, team, variant, onAccept, onDecl
     ? [
         {
           icon: <Sparkles size={20} />,
-          ar: 'رسّام واحد من فريقك يرسم على هاتفه',
-          en: 'One player from your team draws on their phone',
+          ar: 'كلا الفريقين يرسمان معًا — رسّام واحد لكل فريق',
+          en: 'Both teams draw at once — one drawer per team',
         },
         {
           icon: <Zap size={20} />,
-          ar: 'امسح الرمز، شاهد الكلمة السرية، وارسمها',
-          en: 'Scan the QR, see a secret word, and draw it',
+          ar: 'كل فريق يمسح رمزه ويرسم كلمته السرية المختلفة',
+          en: 'Each team scans its own QR and draws its own secret word',
         },
         {
           icon: <Hourglass size={20} />,
-          ar: '٦٠ ثانية — فريقك يخمّن بصوت عالٍ',
-          en: '60 seconds — your team shouts guesses',
+          ar: '٦٠ ثانية — أول فريق يخمّن كلمته يفوز',
+          en: '60 seconds — first team to guess its word wins',
         },
         {
           icon: <Trophy size={20} />,
