@@ -5,7 +5,8 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
-import { CATEGORIES as LOCAL_CATEGORIES, getCategoryBySlug } from '../data/categories';
+import { CATEGORIES as LOCAL_CATEGORIES } from '../data/categories';
+import { DRAWING_WORDS } from '../data/drawingWords';
 import { pickN } from './random';
 import { buildCharadeUrl } from './charadesEncoding';
 
@@ -55,18 +56,19 @@ function getStubQuestion() {
   };
 }
 
-// Presentation fields (imageUrl, accent, icon) ALWAYS come from data/categories.js — the
-// single source of truth for category visuals. Supabase owns names + catalog metadata only.
-// Edit src/data/categories.js to change a category image; Setup, Reveal, and Board all update.
+// The database is the single source of truth for category presentation —
+// name, image, icon, accent, and kind all come straight from the row. The
+// /dashboard admin area edits these columns; data/categories.js is only an
+// offline fallback (placeholderData + the on-error path below).
 function mapCategoryRow(row) {
-  const presentation = getCategoryBySlug(row.slug) ?? {};
   return {
     slug: row.slug,
-    ar: row.name_ar ?? presentation.ar,
-    en: row.name_en ?? presentation.en,
-    icon: presentation.icon,
-    accent: presentation.accent,
-    imageUrl: presentation.imageUrl ?? null,
+    ar: row.name_ar,
+    en: row.name_en,
+    icon: row.icon_name ?? 'BookOpen',
+    accent: row.accent_color ?? '#173D6E',
+    imageUrl: row.image_url ?? null,
+    kind: row.kind ?? null,
     isFeaturedForGuests: row.is_featured_for_guests,
   };
 }
@@ -97,7 +99,7 @@ export function useCategories() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
-        .select('slug, name_ar, name_en, is_featured_for_guests, display_order')
+        .select('slug, name_ar, name_en, kind, icon_name, accent_color, image_url, is_featured_for_guests, display_order')
         .order('display_order');
       if (error) throw error;
       return data.map(mapCategoryRow);
@@ -174,7 +176,11 @@ export function usePrefetchQuestions(categories) {
           .select('category_slug, difficulty, title_ar, title_en')
           .in('category_slug', walaKalmaSlugs)
           .eq('is_active', true)
-          .order('display_order');
+          // `id` is a stable tiebreaker — display_order ties (the admin
+          // dashboard defaults new titles to 0) would otherwise be ordered
+          // arbitrarily by Postgres and could collide the two slot picks.
+          .order('display_order')
+          .order('id');
         if (cancelled) return;
         if (!error && data) {
           const grouped = new Map();
@@ -231,6 +237,68 @@ export function useChallengePrompts() {
   };
 }
 
+// Transform a drawing_words row into the {ar,en,catAr,catEn} shape the game
+// already uses (matches the local src/data/drawingWords.js entries).
+function mapDrawingWordRow(row) {
+  return {
+    ar: row.word_ar,
+    en: row.word_en,
+    catAr: row.category_ar,
+    catEn: row.category_en,
+  };
+}
+
+/**
+ * Fetch the active drawing words (Pictionary challenge word pool), ordered by
+ * display_order. The /dashboard "Drawing Words" page edits these; the local
+ * DRAWING_WORDS file is the offline fallback.
+ */
+export function useDrawingWords() {
+  const query = useQuery({
+    queryKey: ['drawing_words'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('drawing_words')
+        .select('word_ar, word_en, category_ar, category_en')
+        .eq('is_active', true)
+        .order('display_order');
+      if (error) throw error;
+      return data.map(mapDrawingWordRow);
+    },
+    staleTime: 60 * 60 * 1000, // 1 hour — words rarely change
+    placeholderData: DRAWING_WORDS,
+  });
+  return { ...query, data: query.data ?? DRAWING_WORDS };
+}
+
+// Defaults when app_settings is unreachable — fail OPEN (both challenge types
+// on) so a Supabase hiccup never silently strips the game's challenge rounds.
+// Frozen so the shared fallback object can never be mutated by a consumer.
+const SETTINGS_DEFAULTS = Object.freeze({
+  naming_challenge_enabled: true,
+  sketch_challenge_enabled: true,
+});
+
+/**
+ * Fetch the admin feature flags from app_settings as a { key: boolean } map.
+ * The /dashboard "Settings" page toggles these. Always-defined data.
+ */
+export function useAppSettings() {
+  const query = useQuery({
+    queryKey: ['app_settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('app_settings').select('key, value');
+      if (error) throw error;
+      const map = { ...SETTINGS_DEFAULTS };
+      for (const row of data ?? []) map[row.key] = row.value;
+      return map;
+    },
+    staleTime: 60 * 60 * 1000,
+    placeholderData: SETTINGS_DEFAULTS,
+  });
+  return { ...query, data: query.data ?? SETTINGS_DEFAULTS };
+}
+
 /**
  * Fetch a question for (category.slug, difficulty, rowIdx).
  * Each board has TWO rows per difficulty (row 0/1 = 200, row 2/3 = 400, row 4/5 = 600).
@@ -255,7 +323,10 @@ export function useQuestion(category, value, rowIdx = 0) {
           .eq('category_slug', category.slug)
           .eq('difficulty', value)
           .eq('is_active', true)
+          // `id` tiebreaker keeps the two slot picks distinct + deterministic
+          // even when display_order values tie.
           .order('display_order')
+          .order('id')
           .limit(2);
         if (error || !data || data.length === 0) return getStubQuestion();
         const row = data[slot] ?? data[0];

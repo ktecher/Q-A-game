@@ -114,6 +114,28 @@ When `VITE_SUPABASE_URL` is missing AND `import.meta.env.DEV` is true:
 
 The mock-mode bypass is gated on `import.meta.env.DEV` — it cannot ship to a production build by accident.
 
+## Admin dashboard
+
+A content-management dashboard lives at **`/dashboard`** — reachable only by typing
+that URL (there is no link to it anywhere in the app). Sign in with username
+**`admin`**; the password is held (hashed) only by Supabase, never in code.
+
+It gives full CRUD over the database: categories, questions, Wala Kalma titles,
+challenge prompts, plus read/edit of profiles, game sessions and the seen-question
+log. Writes go through the browser's publishable key and are gated server-side by
+RLS — only the registered admin account (see `app_admins` + `is_admin()` in
+`supabase/migrations/0003_admin_dashboard.sql`) can mutate anything.
+
+> **The dashboard is the source of truth for game content.** It writes straight to
+> the live database. The `scripts/seed-*.js` scripts are **destructive, one-time
+> bootstrap tools** — re-running `npm run db:seed` (or the other seed scripts) wipes
+> and re-inserts from the CSV/JS files and will overwrite any dashboard edits. Do
+> not run them against a live database after go-live.
+
+Category presentation (image, icon, accent colour, `kind`) is now stored in the
+`categories` table and read by the game from there — `src/data/categories.js` is
+kept only as an offline fallback.
+
 ## What's left
 
 The full build spec lives at [`../SEEN_JEEM_BUILD_SPEC.md`](../SEEN_JEEM_BUILD_SPEC.md).

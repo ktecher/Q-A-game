@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, Search } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGame } from '../../contexts/GameContext';
-import { useCategories } from '../../lib/queries';
+import { useCategories, useAppSettings } from '../../lib/queries';
 import { pickN } from '../../lib/random';
 import { makeSetupTeams } from '../../lib/teams';
 import { readSettings, writeSettings } from '../../lib/settingsStorage';
@@ -18,6 +18,11 @@ export default function SetupScreen() {
   const { user, guestProfile, isGuest } = useAuth();
   const { startGame } = useGame();
   const { data: CATEGORIES } = useCategories();
+  const { data: appSettings } = useAppSettings();
+  // Challenge rounds need BOTH the player's toggle below AND at least one
+  // challenge type enabled in the admin dashboard Settings page.
+  const anyChallengeType =
+    appSettings.naming_challenge_enabled || appSettings.sketch_challenge_enabled;
 
   // Section A — mode
   const [mode, setMode] = useState('pick');
@@ -46,6 +51,13 @@ export default function SetupScreen() {
   const guestSelected = GUEST_PRESET;
   const effectiveSelected = isGuest ? guestSelected : selected;
   const selectionReady = effectiveSelected.length === CATEGORIES_PER_GAME;
+
+  // Full category objects for the chosen slugs — passed to startGame so the
+  // in-progress game carries database-sourced visuals (image, icon, accent,
+  // kind) rather than re-hydrating from the local code file.
+  const effectiveCategories = effectiveSelected
+    .map((slug) => CATEGORIES.find((c) => c.slug === slug))
+    .filter(Boolean);
 
   const filteredCats = CATEGORIES.filter(
     (c) =>
@@ -330,6 +342,7 @@ export default function SetupScreen() {
               writeSettings({ challengesEnabled });
               startGame({
                 categorySlugs: effectiveSelected,
+                categories: effectiveCategories,
                 teams: teams.map((t, i) => ({
                   id: i + 1,
                   name: t.name || t.defaultNameAr,
@@ -340,7 +353,7 @@ export default function SetupScreen() {
                 })),
                 difficulty,
                 timerSeconds: timerSecs,
-                challengesEnabled,
+                challengesEnabled: challengesEnabled && anyChallengeType,
               });
               navigate('/reveal');
             }}

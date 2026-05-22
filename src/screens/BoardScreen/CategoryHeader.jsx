@@ -1,7 +1,7 @@
-import { ICON_MAP } from '../../data/categories';
+import { ICON_MAP, FALLBACK_ICON } from '../../data/categories';
 
 export default function CategoryHeader({ category }) {
-  const Icon = ICON_MAP[category.icon];
+  const Icon = ICON_MAP[category.icon] ?? FALLBACK_ICON;
   return (
     <div
       className="accent-card relative flex flex-col items-center justify-end gap-0.5 px-1.5 py-2 rounded-t-lg text-center overflow-hidden min-h-[70px] sm:min-h-[120px]"

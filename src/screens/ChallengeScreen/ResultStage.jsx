@@ -7,9 +7,18 @@ import TeamIdentity from '../../components/TeamIdentity';
    The other-team card gets a 👑 + glow when auto-winner (opponent choked).
    A smaller "No winner" button below allows host to deny the award. */
 
-export default function ResultStage({ teams, counts, chokeTeamIdx, cellValue, onAward }) {
+export default function ResultStage({
+  teams,
+  counts,
+  chokeTeamIdx,
+  cellValue,
+  mode,
+  word,
+  onAward,
+}) {
   const autoWinnerIdx = chokeTeamIdx !== null ? 1 - chokeTeamIdx : null;
   const award = cellValue * 2;
+  const isSketch = mode === 'sketch';
 
   return (
     <motion.div
@@ -44,6 +53,27 @@ export default function ResultStage({ teams, counts, chokeTeamIdx, cellValue, on
             ? `${teams[autoWinnerIdx].nameEn} wins — opponent choked`
             : `Who wins the challenge? · ${award} pts on the line`}
         </p>
+        {isSketch && word?.ar && (
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 240, damping: 16, delay: 0.15 }}
+            className="mt-4 inline-flex flex-col items-center px-6 py-2.5 rounded-2xl bg-ink-80 border border-gold"
+          >
+            <span
+              className="font-en-body text-[10px] uppercase tracking-[0.2em] text-cream-45"
+              lang="en"
+            >
+              The word was
+            </span>
+            <span className="font-ar-body text-2xl md:text-3xl font-bold text-cream leading-tight">
+              {word.ar}
+            </span>
+            <span className="font-en-display italic text-gold-light text-sm" lang="en">
+              {word.en}
+            </span>
+          </motion.div>
+        )}
       </div>
 
       {/* Team cards */}
@@ -56,6 +86,7 @@ export default function ResultStage({ teams, counts, chokeTeamIdx, cellValue, on
             choked={chokeTeamIdx === idx}
             isAutoWinner={autoWinnerIdx === idx}
             award={award}
+            hideCount={isSketch}
             onClick={() => onAward(team.id)}
           />
         ))}
@@ -79,7 +110,7 @@ export default function ResultStage({ teams, counts, chokeTeamIdx, cellValue, on
   );
 }
 
-function TeamResultCard({ team, count, choked, isAutoWinner, award, onClick }) {
+function TeamResultCard({ team, count, choked, isAutoWinner, award, hideCount, onClick }) {
   return (
     <button
       type="button"
@@ -107,15 +138,22 @@ function TeamResultCard({ team, count, choked, isAutoWinner, award, onClick }) {
         <TeamIdentity team={team} size="lg" />
       </div>
 
-      <div
-        className="font-en-display font-bold text-6xl md:text-7xl leading-none"
-        style={{ color: team.color }}
-      >
-        {count}
-      </div>
-      <div className="font-en-body text-xs uppercase tracking-wider text-cream-45 mt-1" lang="en">
-        named
-      </div>
+      {!hideCount && (
+        <>
+          <div
+            className="font-en-display font-bold text-6xl md:text-7xl leading-none"
+            style={{ color: team.color }}
+          >
+            {count}
+          </div>
+          <div
+            className="font-en-body text-xs uppercase tracking-wider text-cream-45 mt-1"
+            lang="en"
+          >
+            named
+          </div>
+        </>
+      )}
 
       {choked && (
         <div className="mt-4 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-crimson/20 border border-crimson text-crimson">

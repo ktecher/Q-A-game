@@ -1,8 +1,8 @@
 import { Check } from 'lucide-react';
-import { ICON_MAP } from '../../data/categories';
+import { ICON_MAP, FALLBACK_ICON } from '../../data/categories';
 
 export default function CategoryTile({ cat, isSelected, asButton, onClick }) {
-  const IconCmp = ICON_MAP[cat.icon];
+  const IconCmp = ICON_MAP[cat.icon] ?? FALLBACK_ICON;
   const inner = (
     <>
       {/* Accent strip across the top — visible on top of the rounded corner */}

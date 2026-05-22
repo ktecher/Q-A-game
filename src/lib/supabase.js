@@ -17,4 +17,9 @@ if (!isSupabaseConfigured) {
   );
 }
 
-export const supabase = createClient(url ?? 'http://placeholder.local', anonKey ?? 'placeholder');
+export const supabase = createClient(url ?? 'http://placeholder.local', anonKey ?? 'placeholder', {
+  // Realtime: cap broadcast at 30 msgs/sec/client — headroom for the Pictionary
+  // sketch channel (batched strokes ~20/sec plus s/e/u/c control messages).
+  // See PICTIONARY_PLAN.md §4.
+  realtime: { params: { eventsPerSecond: 30 } },
+});

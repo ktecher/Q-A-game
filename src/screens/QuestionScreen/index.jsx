@@ -5,7 +5,7 @@ import {
   Timer, Lightbulb, Swords, Sparkles, ArrowRight, Eye, Pause, Play,
 } from 'lucide-react';
 import { QRCode } from 'react-qr-code';
-import { ICON_MAP, getCategoryBySlug } from '../../data/categories';
+import { ICON_MAP, FALLBACK_ICON } from '../../data/categories';
 import { useGame } from '../../contexts/GameContext';
 import { useQuestion } from '../../lib/queries';
 import ExitGameButton from '../../components/ExitGameButton';
@@ -49,13 +49,18 @@ export default function QuestionScreen() {
   const activeTeam = teams[activeTeamIdx];
   const opposingTeam = teams[opposingTeamIdx];
 
+  // The chosen category comes from the in-progress game state (carries the
+  // database-sourced visuals + kind) — not the local code file.
   const category = useMemo(
-    () => (currentCell ? getCategoryBySlug(currentCell.categorySlug) : null),
-    [currentCell]
+    () =>
+      currentCell
+        ? state.categories.find((c) => c.slug === currentCell.categorySlug) ?? null
+        : null,
+    [currentCell, state.categories]
   );
   const cellValue = currentCell?.value ?? 0;
   const { data: Q } = useQuestion(category, cellValue, currentCell?.rowIdx ?? 0);
-  const CategoryIcon = category ? ICON_MAP[category.icon] : null;
+  const CategoryIcon = category ? (ICON_MAP[category.icon] ?? FALLBACK_ICON) : null;
 
   const { phaseState, phaseDispatch, intervalRef } = useQuestionFlow({
     currentCell,

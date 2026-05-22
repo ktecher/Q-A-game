@@ -85,8 +85,18 @@ const TOTAL_CELLS = 6 * ROW_VALUES.length; // 36
 export function reducer(state, action) {
   switch (action.type) {
     case 'START_GAME': {
-      const { categorySlugs, teams, difficulty, timerSeconds, challengesEnabled = true } = action.payload;
-      const categories = categorySlugs.map(getCategoryBySlug).filter(Boolean);
+      const {
+        categorySlugs,
+        categories: pickedCategories,
+        teams, difficulty, timerSeconds, challengesEnabled = true,
+      } = action.payload;
+      // Prefer full category objects passed from Setup — they carry the
+      // database-sourced visuals (image, icon, accent, kind). Fall back to
+      // hydrating slugs from the local catalog for legacy/direct callers.
+      const categories =
+        pickedCategories && pickedCategories.length > 0
+          ? pickedCategories.filter(Boolean)
+          : (categorySlugs ?? []).map(getCategoryBySlug).filter(Boolean);
       // Pad to CATEGORIES_PER_GAME if fewer (shouldn't happen — Setup enforces it)
       while (categories.length < CATEGORIES_PER_GAME) {
         const random = pickRandomSix().find((s) => !categories.some((c) => c.slug === s));

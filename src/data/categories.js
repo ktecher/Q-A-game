@@ -62,6 +62,11 @@ export function getCategoryBySlug(slug) {
   return CATEGORIES.find((c) => c.slug === slug);
 }
 
+// Default icon, used as a fallback wherever a category's icon_name comes
+// from the database — guards against an empty/unknown name rendering
+// `<undefined />` and crashing the screen. Use as: ICON_MAP[name] ?? FALLBACK_ICON
+export const FALLBACK_ICON = ICON_MAP.BookOpen;
+
 // Fallback random pick used when /reveal or /play is hit directly (no game started).
 export function pickRandomSix() {
   return pickN(CATEGORIES, CATEGORIES_PER_GAME).map((c) => c.slug);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CATEGORIES, ICON_MAP, pickRandomSix, getCategoryBySlug } from '../data/categories';
+import { CATEGORIES, ICON_MAP, FALLBACK_ICON, pickRandomSix, getCategoryBySlug } from '../data/categories';
 import { useGame } from '../contexts/GameContext';
 import { usePrefetchQuestions } from '../lib/queries';
 import { CATEGORIES_PER_GAME } from '../lib/gameDefaults';
@@ -20,7 +20,7 @@ function SpinningCard() {
   }, []);
 
   const blurred = SPIN_POOL[tick % SPIN_POOL.length];
-  const Icon = ICON_MAP[blurred.icon];
+  const Icon = ICON_MAP[blurred.icon] ?? FALLBACK_ICON;
 
   return (
     <div
@@ -44,7 +44,7 @@ function SpinningCard() {
 }
 
 function SettledCard({ category, isLatest }) {
-  const Icon = ICON_MAP[category.icon];
+  const Icon = ICON_MAP[category.icon] ?? FALLBACK_ICON;
 
   return (
     <motion.div

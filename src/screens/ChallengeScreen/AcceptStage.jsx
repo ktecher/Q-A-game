@@ -3,7 +3,53 @@ import { Sparkles, Zap, AlertTriangle, Hourglass, Trophy } from 'lucide-react';
 
 /* ─── ACCEPT STAGE · full-screen redesign of the challenge offer ─────── */
 
-export default function AcceptStage({ cellValue, team, onAccept, onDecline }) {
+export default function AcceptStage({ cellValue, team, variant, onAccept, onDecline }) {
+  const isSketch = variant === 'sketch';
+  const rules = isSketch
+    ? [
+        {
+          icon: <Sparkles size={20} />,
+          ar: 'رسّام واحد من فريقك يرسم على هاتفه',
+          en: 'One player from your team draws on their phone',
+        },
+        {
+          icon: <Zap size={20} />,
+          ar: 'امسح الرمز، شاهد الكلمة السرية، وارسمها',
+          en: 'Scan the QR, see a secret word, and draw it',
+        },
+        {
+          icon: <Hourglass size={20} />,
+          ar: '٦٠ ثانية — فريقك يخمّن بصوت عالٍ',
+          en: '60 seconds — your team shouts guesses',
+        },
+        {
+          icon: <Trophy size={20} />,
+          ar: `الفائز يحصل على ضعف النقاط (${cellValue * 2})`,
+          en: `Winner takes 2× points (${cellValue * 2})`,
+        },
+      ]
+    : [
+        {
+          icon: <Sparkles size={20} />,
+          ar: 'لاعب من كل فريق يتنافس وجهًا لوجه',
+          en: 'One player from each team faces off',
+        },
+        {
+          icon: <Hourglass size={20} />,
+          ar: '٣٠ ثانية مشتركة، يتبادلان الإجابة كلمة بكلمة',
+          en: '30 seconds shared, alternating word-by-word',
+        },
+        {
+          icon: <AlertTriangle size={20} />,
+          ar: 'من يعجز عن الإجابة في دوره يخسر',
+          en: 'If you choke on your turn, you lose',
+        },
+        {
+          icon: <Trophy size={20} />,
+          ar: `الفائز يحصل على ضعف النقاط (${cellValue * 2})`,
+          en: `Winner takes 2× points (${cellValue * 2})`,
+        },
+      ];
   return (
     <motion.div
       key="accept"
@@ -75,26 +121,9 @@ export default function AcceptStage({ cellValue, team, onAccept, onDecline }) {
 
           {/* Rules */}
           <div className="grid gap-3 mb-8 text-start">
-            <Rule
-              icon={<Sparkles size={20} />}
-              ar="لاعب من كل فريق يتنافس وجهًا لوجه"
-              en="One player from each team faces off"
-            />
-            <Rule
-              icon={<Hourglass size={20} />}
-              ar="٣٠ ثانية مشتركة، يتبادلان الإجابة كلمة بكلمة"
-              en="30 seconds shared, alternating word-by-word"
-            />
-            <Rule
-              icon={<AlertTriangle size={20} />}
-              ar="من يعجز عن الإجابة في دوره يخسر"
-              en="If you choke on your turn, you lose"
-            />
-            <Rule
-              icon={<Trophy size={20} />}
-              ar={`الفائز يحصل على ضعف النقاط (${cellValue * 2})`}
-              en={`Winner takes 2× points (${cellValue * 2})`}
-            />
+            {rules.map((r, i) => (
+              <Rule key={i} icon={r.icon} ar={r.ar} en={r.en} />
+            ))}
           </div>
 
           {/* CTAs */}

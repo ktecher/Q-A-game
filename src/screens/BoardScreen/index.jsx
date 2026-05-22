@@ -4,7 +4,14 @@ import { Volume2, Pause } from 'lucide-react';
 import { useGame } from '../../contexts/GameContext';
 import { cellKey } from '../../lib/cellKey';
 import { pickN } from '../../lib/random';
-import { usePrefetchQuestions, useChallengePrompts } from '../../lib/queries';
+import { makeSessionId } from '../../lib/sketchEncoding';
+import { pickDrawingWord } from '../../data/drawingWords';
+import {
+  usePrefetchQuestions,
+  useChallengePrompts,
+  useDrawingWords,
+  useAppSettings,
+} from '../../lib/queries';
 import ExitGameButton from '../../components/ExitGameButton';
 import ScoreAdjustDialog from '../../components/ScoreAdjustDialog';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -25,6 +32,10 @@ export default function BoardScreen() {
 
   // Warm the challenge prompts cache so picks are instant.
   const { data: prompts } = useChallengePrompts();
+  // Drawing-challenge word pool + the admin feature flags. Both have offline
+  // fallbacks, so they are always defined.
+  const { data: drawingWords } = useDrawingWords();
+  const { data: settings } = useAppSettings();
 
   // If game ended, kick to results
   useEffect(() => {
@@ -50,18 +61,42 @@ export default function BoardScreen() {
   const handlePick = (cat, value, rowIdx) => {
     const key = cellKey(cat.slug, value, rowIdx);
     if (challengeCells?.has(key)) {
-      // Surprise! Open the Challenge Round modal in-place; no nav.
-      // Accept → naming round; Decline → fall through via CANCEL_CHALLENGE → normal Q.
-      if (prompts.length === 0) {
-        // Prompts not loaded yet (network error) — fall through to normal question.
-        console.warn('[BoardScreen] challenge_prompts not loaded; falling through to normal question');
+      // Surprise! A challenge cell. The admin Settings page globally enables or
+      // disables each challenge type; the naming round also needs a loaded
+      // challenge_prompts pool. Build the list of usable variants.
+      const variants = [];
+      if (settings.naming_challenge_enabled && prompts.length > 0) variants.push('naming');
+      if (settings.sketch_challenge_enabled) variants.push('sketch');
+
+      if (variants.length === 0) {
+        // No challenge type available right now — fall through to a normal question.
         pickCell({ categorySlug: cat.slug, value, rowIdx });
         return;
       }
+
+      // pickN keeps the RNG in lib/random.js (no impure call in component render).
+      const variant = pickN(variants, 1)[0];
+
+      if (variant === 'sketch') {
+        const word = pickDrawingWord(drawingWords);
+        startChallenge({
+          categorySlug: cat.slug,
+          value,
+          rowIdx,
+          variant: 'sketch',
+          sessionId: makeSessionId(),
+          prompt: { ar: word.ar, en: word.en },
+          catAr: word.catAr,
+          catEn: word.catEn,
+        });
+        return;
+      }
+
       startChallenge({
         categorySlug: cat.slug,
         value,
         rowIdx,
+        variant: 'naming',
         prompt: pickN(prompts, 1)[0],
       });
       return;
