@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Volume2 } from 'lucide-react';
 import BrandHeader from '../components/BrandHeader';
 import ThemeToggle from '../components/ThemeToggle';
@@ -6,11 +6,17 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function LandingScreen() {
   const navigate = useNavigate();
-  const { continueAsGuest } = useAuth();
+  const { continueAsGuest, isAuthenticated, isGuest, loading } = useAuth();
+
+  // Logged-in users (real or guest) belong on /home, not the marketing landing.
+  // Gate on !loading so a session-rehydration tick doesn't flash the sign-in CTAs.
+  if (!loading && (isAuthenticated || isGuest)) {
+    return <Navigate to="/home" replace />;
+  }
 
   const handleGuest = () => {
     continueAsGuest();
-    navigate('/setup');
+    navigate('/home');
   };
 
   return (

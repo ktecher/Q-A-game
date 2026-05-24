@@ -12,11 +12,13 @@ const AdminAuthContext = createContext(null);
 
 export function AdminAuthProvider({ children }) {
   const [session, setSession] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  // `booted` flips true the first time we reach a definitive verdict (either
-  // no session, or the is_admin check finished). `loading` is derived from
-  // it, so a later token refresh never bounces the dashboard to a spinner.
-  const [booted, setBooted] = useState(false);
+  const [sessionResolved, setSessionResolved] = useState(false);
+  // Last completed admin check, tagged with the user.id it was made for.
+  // Keying by user.id (not the session ref) keeps the verdict valid across
+  // a silent token refresh — same user, same verdict, no spinner blink —
+  // while a real account change (sign-in / sign-out / different user) is
+  // correctly treated as "verdict unknown" until the rpc reruns.
+  const [verdict, setVerdict] = useState(null); // { userId, isAdmin } | null
 
   // Track the session ONLY. This callback stays synchronous — it must never
   // await a Supabase call. On refresh, Supabase recovers the stored session
@@ -30,21 +32,17 @@ export function AdminAuthProvider({ children }) {
       if (!active) return;
       const s = data.session ?? null;
       setSession(s);
-      // No session → the verdict is already final (show the login form).
-      if (!s) {
-        setIsAdmin(false);
-        setBooted(true);
-      }
+      setSessionResolved(true);
+      // Clear any stale verdict so a fresh sign-in always re-runs is_admin.
+      if (!s) setVerdict(null);
     });
 
     const { data: sub } = supabaseAdmin.auth.onAuthStateChange((_event, next) => {
       if (!active) return;
       const s = next ?? null;
       setSession(s);
-      if (!s) {
-        setIsAdmin(false);
-        setBooted(true);
-      }
+      setSessionResolved(true);
+      if (!s) setVerdict(null);
     });
 
     return () => {
@@ -53,17 +51,17 @@ export function AdminAuthProvider({ children }) {
     };
   }, []);
 
-  // The is_admin check runs in its own effect — OUTSIDE the auth lock —
-  // reacting to session changes. It re-runs on token refresh to keep
-  // `isAdmin` current, but never flips `loading` back on.
+  // Run the is_admin check OUTSIDE the auth lock, reacting to session
+  // changes. Skip while there is no session — the gate renders the login
+  // form in that case and no verdict is needed.
   useEffect(() => {
     if (!session) return undefined;
     let active = true;
+    const userId = session.user?.id ?? null;
 
     supabaseAdmin.rpc('is_admin').then(({ data, error }) => {
       if (!active) return;
-      setIsAdmin(!error && data === true);
-      setBooted(true);
+      setVerdict({ userId, isAdmin: !error && data === true });
     });
 
     return () => {
@@ -87,7 +85,18 @@ export function AdminAuthProvider({ children }) {
     await supabaseAdmin.auth.signOut();
   }, []);
 
-  const loading = !booted;
+  // Derived. The gate must NEVER see `isAdmin === false` for a session
+  // whose check has not completed yet — otherwise a fresh sign-in is
+  // bounced to /signin before the rpc can return (the regression we're
+  // fixing here). So we stay in `loading` until the verdict's `userId`
+  // matches the current session's user — that's the signal that the
+  // verdict is for THIS user, not leftover from a previous session.
+  const currentUserId = session?.user?.id ?? null;
+  const verdictForCurrent =
+    verdict && verdict.userId === currentUserId ? verdict.isAdmin : null;
+  const loading =
+    !sessionResolved || (!!session && verdictForCurrent === null);
+  const isAdmin = verdictForCurrent === true;
 
   return (
     <AdminAuthContext.Provider value={{ session, isAdmin, loading, signIn, signOut }}>

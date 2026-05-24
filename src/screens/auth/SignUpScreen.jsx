@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Loader2, CheckCircle2 } from 'lucide-react';
 import { z } from 'zod';
 import BrandHeader from '../../components/BrandHeader';
@@ -24,7 +24,7 @@ const IS_DEV_MOCK = import.meta.env.DEV && !isSupabaseConfigured;
 
 export default function SignUpScreen() {
   const navigate = useNavigate();
-  const { continueAsGuest } = useAuth();
+  const { continueAsGuest, isAuthenticated, isGuest, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -32,6 +32,13 @@ export default function SignUpScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  // Already signed in (real or guest)? Skip the form and send them home.
+  // Gate on !loading so session rehydration doesn't flash the form on refresh.
+  // Placed after the useState calls so the hook order stays stable across renders.
+  if (!loading && (isAuthenticated || isGuest)) {
+    return <Navigate to="/home" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,7 +88,7 @@ export default function SignUpScreen() {
   const handleMockSignUp = () => {
     const name = displayName.trim() || email.trim().split('@')[0] || 'مستخدم تجريبي';
     continueAsGuest({ name, emoji: '🎲', mock: true });
-    navigate('/setup');
+    navigate('/home');
   };
 
   if (success) {

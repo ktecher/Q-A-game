@@ -93,7 +93,7 @@ export default function ExitGameButton({ variant = 'icon' }) {
           </button>
           <button
             type="button"
-            onClick={() => exitTo('/')}
+            onClick={() => exitTo('/home')}
             className="btn-outline px-5 py-2.5 rounded-xl text-sm flex flex-col items-center gap-0"
           >
             <span>العودة للرئيسية</span>

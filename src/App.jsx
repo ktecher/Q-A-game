@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { GameProvider } from './contexts/GameContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import LandingScreen from './screens/LandingScreen';
+import HomeScreen from './screens/HomeScreen';
 import SignInScreen from './screens/auth/SignInScreen';
 import SignUpScreen from './screens/auth/SignUpScreen';
 import SetupScreen from './screens/SetupScreen';
@@ -33,6 +34,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingScreen />} />
+            <Route path="/home" element={<HomeScreen />} />
             <Route path="/signin" element={<SignInScreen />} />
             <Route path="/signup" element={<SignUpScreen />} />
             <Route path="/setup" element={<SetupScreen />} />

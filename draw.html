@@ -273,6 +273,25 @@
     .done-overlay .small,
     .wait-overlay .small { font-size: 0.9rem; color: var(--cream-60); font-style: italic; direction: ltr; }
 
+    /* ─── Post-lock countdown ───────────────────────────────────── */
+    .countdown {
+      margin-top: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--gold);
+      min-height: 1.4em; /* stable height before first tick */
+    }
+    .countdown-label {
+      font-size: 0.8rem;
+      color: var(--cream-60);
+      font-style: italic;
+    }
+    .countdown-label .en { direction: ltr; }
+    /* Dim palette + toolbar once the round ends — phone is fully dead */
+    body.locked .palette,
+    body.locked .toolbar { opacity: 0.45; pointer-events: none; }
+
     /* ─── Anti-spoiler gate ─────────────────────────────────────── */
     .gate {
       position: fixed;
@@ -350,6 +369,8 @@
         <div class="done-overlay" id="done-overlay">
           <span class="big">انتهت الجولة</span>
           <span class="small">Round over — watch the big screen</span>
+          <span class="countdown" id="countdown" aria-live="polite"></span>
+          <span class="countdown-label" id="countdown-label">إغلاق خلال… <span class="en">· Closing in…</span></span>
         </div>
       </div>
     </div>

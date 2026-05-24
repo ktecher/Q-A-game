@@ -52,6 +52,21 @@ export default function QuestionsPage() {
   ];
 
   const columns = [
+    {
+      key: 'image_url',
+      label: '',
+      thClassName: 'w-12',
+      render: (row) =>
+        row.image_url ? (
+          <img
+            src={row.image_url}
+            alt=""
+            className="h-9 w-9 rounded object-cover"
+          />
+        ) : (
+          <div className="h-9 w-9 rounded bg-slate-100" />
+        ),
+    },
     { key: 'difficulty', label: 'Pts', thClassName: 'w-14' },
     {
       key: 'question_en',
@@ -76,11 +91,6 @@ export default function QuestionsPage() {
           </div>
         </div>
       ),
-    },
-    {
-      key: 'image_url',
-      label: 'Image',
-      render: (row) => (row.image_url ? 'Yes' : '—'),
     },
   ];
 

@@ -2,13 +2,102 @@
 // Categories + questions both have offline fallbacks (the local data files)
 // so the app stays usable if Supabase is unreachable.
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { CATEGORIES as LOCAL_CATEGORIES } from '../data/categories';
 import { DRAWING_WORDS } from '../data/drawingWords';
 import { seededPickN, seedFrom } from './random';
 import { buildCharadeUrl } from './charadesEncoding';
+
+// Default returned by useSeenIds for guests / not-yet-loaded states.
+// Frozen so accidental mutation in a consumer can't poison the shared default.
+const EMPTY_SEEN_IDS = Object.freeze({ questions: {}, titles: {} });
+
+/**
+ * Filter a tier pool by the user's seen-set for that category. Each tier
+ * needs TWO distinct picks (the two cells per difficulty row), so a filtered
+ * pool of fewer than 2 rows triggers the reset — otherwise both slots would
+ * collapse to the same question via `picked[1] ?? picked[0]` and the user
+ * would see the same question twice in one row of the board.
+ */
+function applyTierFilter(allRows, seenSet) {
+  if (!seenSet || seenSet.size === 0) return { pool: allRows, exhausted: false };
+  const filtered = allRows.filter((r) => !seenSet.has(r.id));
+  if (filtered.length < 2 && allRows.length > 0) {
+    return { pool: allRows, exhausted: true };
+  }
+  return { pool: filtered, exhausted: false };
+}
+
+/**
+ * Fire a per-category reset RPC, but only once per (kind, slug) per call site
+ * for the lifetime of `firedRef`. The DB delete is idempotent, but skipping
+ * duplicate calls keeps the network quiet when an effect re-runs.
+ */
+function fireExhaustionReset(kind, slug, firedRef) {
+  const key = `${kind}|${slug}`;
+  if (firedRef.current.has(key)) return;
+  firedRef.current.add(key);
+  const fn = kind === 'wala-kalma'
+    ? 'reset_seen_wala_kalma_for_category'
+    : 'reset_seen_for_category';
+  // Fire-and-forget — the player is mid-game, we don't block on this.
+  // Errors are silently swallowed; if the reset fails the next game will
+  // detect exhaustion again and retry.
+  supabase.rpc(fn, { p_slug: slug }).then(() => {}, () => {});
+}
+
+/**
+ * Fetch the logged-in user's full "seen" history once per game and return it
+ * grouped by category slug. The query key includes `gameSeed`, so a new game
+ * always re-fetches fresh from the database — within one game the cached
+ * snapshot stays stable, which is what keeps the seeded picks at
+ * usePrefetchQuestions and useQuestion (the direct-link path) identical.
+ *
+ * For guests / unauthenticated callers, returns EMPTY_SEEN_IDS so the filter
+ * is a no-op and the current behavior is preserved exactly.
+ */
+export function useSeenIds(userId, gameSeed) {
+  const query = useQuery({
+    queryKey: ['seen_ids', userId, gameSeed],
+    enabled: !!userId,
+    staleTime: Infinity,
+    gcTime: 30 * 60 * 1000,
+    queryFn: async () => {
+      const [questionsRes, titlesRes] = await Promise.all([
+        supabase
+          .from('seen_questions')
+          .select('question_id, questions!inner(categories!inner(slug))')
+          .eq('user_id', userId),
+        supabase
+          .from('seen_wala_kalma_titles')
+          .select('title_id, wala_kalma_titles!inner(category_slug)')
+          .eq('user_id', userId),
+      ]);
+      const questions = {};
+      for (const r of questionsRes.data ?? []) {
+        const slug = r.questions?.categories?.slug;
+        if (!slug) continue;
+        (questions[slug] ??= new Set()).add(r.question_id);
+      }
+      const titles = {};
+      for (const r of titlesRes.data ?? []) {
+        const slug = r.wala_kalma_titles?.category_slug;
+        if (!slug) continue;
+        (titles[slug] ??= new Set()).add(r.title_id);
+      }
+      return { questions, titles };
+    },
+  });
+  return {
+    data: query.data ?? EMPTY_SEEN_IDS,
+    // Guests skip the fetch entirely → always ready.
+    // Authenticated users are ready once the query has settled at least once.
+    isReady: !userId ? true : query.isFetched,
+  };
+}
 
 // Bilingual "Scan the QR code" prompt shown inside the question card for
 // Wala Kalma (charades) cells. Localized once here so both the runtime
@@ -35,6 +124,10 @@ function mapWalaKalmaRow(row, categorySlug) {
     lang,
   });
   return {
+    // `id` + `kind` are carried on the cached question so the AWARD side
+    // effect in GameProvider knows which table to upsert the seen row into.
+    id: row.id,
+    kind: 'wala-kalma',
     ar: WALA_KALMA_PROMPT_AR,
     en: WALA_KALMA_PROMPT_EN,
     answerAr: row.title_ar,
@@ -80,6 +173,10 @@ function mapCategoryRow(row) {
 
 function mapQuestionRow(row) {
   return {
+    // See mapWalaKalmaRow — same purpose. `kind: null` distinguishes regular
+    // questions from charade titles at the AWARD-side upsert site.
+    id: row.id,
+    kind: null,
     ar: row.question_ar,
     en: row.question_en,
     answerAr: row.answer_ar,
@@ -129,13 +226,25 @@ export function useCategories() {
  */
 export function usePrefetchQuestions(categories, gameSeed) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const { data: seenIds, isReady: seenReady } = useSeenIds(userId, gameSeed);
   const cats = categories ?? [];
   const normalSlugs = cats.filter((c) => c.kind !== 'wala-kalma').map((c) => c.slug).filter(Boolean);
   const walaKalmaSlugs = cats.filter((c) => c.kind === 'wala-kalma').map((c) => c.slug).filter(Boolean);
   const slugsKey = [...normalSlugs, ...walaKalmaSlugs].slice().sort().join(',');
-  const cacheKey = `${gameSeed}|${slugsKey}`;
+  const cacheKey = `${gameSeed}|${slugsKey}|${userId ?? 'guest'}`;
+  // Dedupes exhaustion-reset RPCs per (kind, slug) across re-runs of this
+  // effect within one BoardScreen lifetime — keyed on userId+gameSeed so a
+  // brand-new game (new gameSeed) starts the dedupe set fresh.
+  const firedResetRef = useRef(new Set());
 
   useEffect(() => {
+    // Wait until the seen-ids snapshot is available so the seeded pick uses
+    // the same filtered pool that useQuestion's direct-link path will use.
+    // Without this, an authenticated user racing through to /play/question
+    // could land on a question that doesn't match what BoardScreen prefetched.
+    if (!seenReady) return;
     if (normalSlugs.length === 0 && walaKalmaSlugs.length === 0) return;
     let cancelled = false;
     (async () => {
@@ -160,12 +269,17 @@ export function usePrefetchQuestions(categories, gameSeed) {
           for (const [key, allRows] of grouped.entries()) {
             const [slug, diffStr] = key.split('|');
             const difficulty = parseInt(diffStr, 10);
-            const picked = seededPickN(allRows, 2, seedFrom(gameSeed, slug, difficulty));
+            const { pool, exhausted } = applyTierFilter(allRows, seenIds.questions[slug]);
+            if (exhausted) fireExhaustionReset('normal', slug, firedResetRef);
+            const picked = seededPickN(pool, 2, seedFrom(gameSeed, slug, difficulty));
             for (let slot = 0; slot < 2; slot++) {
               const row = picked[slot] ?? picked[0];
               if (!row) continue;
               queryClient.setQueryData(
-                ['question', slug, difficulty, slot, gameSeed],
+                // userId in the key keeps two users on the same device from
+                // sharing a cached question pick that was filtered against the
+                // wrong seen-set.
+                ['question', slug, difficulty, slot, gameSeed, userId ?? 'guest'],
                 mapQuestionRow(row)
               );
             }
@@ -179,7 +293,9 @@ export function usePrefetchQuestions(categories, gameSeed) {
       if (walaKalmaSlugs.length > 0) {
         const { data, error } = await supabase
           .from('wala_kalma_titles')
-          .select('category_slug, difficulty, title_ar, title_en')
+          // `id` is needed downstream so the AWARD side-effect can write the
+          // upsert into seen_wala_kalma_titles. Was previously not selected.
+          .select('id, category_slug, difficulty, title_ar, title_en')
           .in('category_slug', walaKalmaSlugs)
           .eq('is_active', true)
           // `id` is a stable tiebreaker — display_order ties (the admin
@@ -198,12 +314,14 @@ export function usePrefetchQuestions(categories, gameSeed) {
           for (const [key, allRows] of grouped.entries()) {
             const [slug, diffStr] = key.split('|');
             const difficulty = parseInt(diffStr, 10);
-            const picked = seededPickN(allRows, 2, seedFrom(gameSeed, slug, difficulty));
+            const { pool, exhausted } = applyTierFilter(allRows, seenIds.titles[slug]);
+            if (exhausted) fireExhaustionReset('wala-kalma', slug, firedResetRef);
+            const picked = seededPickN(pool, 2, seedFrom(gameSeed, slug, difficulty));
             for (let slot = 0; slot < 2; slot++) {
               const row = picked[slot] ?? picked[0];
               if (!row) continue;
               queryClient.setQueryData(
-                ['question', slug, difficulty, slot, gameSeed],
+                ['question', slug, difficulty, slot, gameSeed, userId ?? 'guest'],
                 mapWalaKalmaRow(row, slug)
               );
             }
@@ -214,9 +332,16 @@ export function usePrefetchQuestions(categories, gameSeed) {
     return () => {
       cancelled = true;
     };
-    // Only re-run when the set of slugs changes
+    // `seenIds` is referentially stable for a (userId, gameSeed) pair because
+    // useSeenIds uses staleTime: Infinity, so including it adds at most one
+    // extra run when the first fetch resolves — and guarantees the prefetch
+    // never reads a stale snapshot if the seen-set cache is ever mutated.
+    // `normalSlugs` / `walaKalmaSlugs` / `userId` are intentionally not listed
+    // — they're fresh arrays/literals on every render but their content is
+    // already encoded into `cacheKey`, so including them would force the
+    // effect to run on every parent re-render with no semantic change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey]);
+  }, [cacheKey, seenReady, seenIds, gameSeed, queryClient]);
 }
 
 /**
@@ -299,7 +424,13 @@ export function useAppSettings() {
       for (const row of data ?? []) map[row.key] = row.value;
       return map;
     },
-    staleTime: 60 * 60 * 1000,
+    // Feature flags gate challenge rounds, so a player's Setup screen must
+    // re-read them on every mount — that way an admin's dashboard toggle
+    // reaches every device by the next game instead of sitting behind a long
+    // cache. `placeholderData` keeps the prior value showing during the
+    // refetch, so there is no flash.
+    staleTime: 0,
+    refetchOnMount: 'always',
     placeholderData: SETTINGS_DEFAULTS,
   });
   return { ...query, data: query.data ?? SETTINGS_DEFAULTS };
@@ -318,9 +449,21 @@ export function useAppSettings() {
  */
 export function useQuestion(category, value, rowIdx = 0, gameSeed) {
   const slot = (rowIdx ?? 0) % 2;
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const { data: seenIds, isReady: seenReady } = useSeenIds(userId, gameSeed);
+  // Same dedupe contract as usePrefetchQuestions — one reset per (kind, slug)
+  // for this QuestionScreen's lifetime.
+  const firedResetRef = useRef(new Set());
   const query = useQuery({
-    queryKey: ['question', category?.slug, value, slot, gameSeed],
-    enabled: !!category?.slug && !!value,
+    // userId is in the key so two users on the same device can't share a
+    // cached question pick that was filtered against the wrong seen-set;
+    // matches the key written by usePrefetchQuestions above.
+    queryKey: ['question', category?.slug, value, slot, gameSeed, userId ?? 'guest'],
+    // Gate on seenReady so the queryFn (only fires on cache miss / direct-link)
+    // sees the same seenIds the prefetch used. Without this, a quick direct
+    // load could cache an unfiltered pick and de-sync from the board.
+    enabled: !!category?.slug && !!value && seenReady,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       // Wala Kalma (charades) categories use a different table; the returned
@@ -330,7 +473,9 @@ export function useQuestion(category, value, rowIdx = 0, gameSeed) {
       if (category.kind === 'wala-kalma') {
         const { data, error } = await supabase
           .from('wala_kalma_titles')
-          .select('title_ar, title_en')
+          // `id` is required so the seen-set filter can match by row id and
+          // so the AWARD side-effect knows which title to upsert as seen.
+          .select('id, title_ar, title_en')
           .eq('category_slug', category.slug)
           .eq('difficulty', value)
           .eq('is_active', true)
@@ -339,7 +484,9 @@ export function useQuestion(category, value, rowIdx = 0, gameSeed) {
           .order('id')
           .limit(MAX_TIER_QUESTIONS);
         if (error || !data || data.length === 0) return getStubQuestion();
-        const picked = seededPickN(data, 2, seedFrom(gameSeed, category.slug, value));
+        const { pool, exhausted } = applyTierFilter(data, seenIds.titles[category.slug]);
+        if (exhausted) fireExhaustionReset('wala-kalma', category.slug, firedResetRef);
+        const picked = seededPickN(pool, 2, seedFrom(gameSeed, category.slug, value));
         const row = picked[slot] ?? picked[0];
         return mapWalaKalmaRow(row, category.slug);
       }
@@ -357,7 +504,9 @@ export function useQuestion(category, value, rowIdx = 0, gameSeed) {
         .order('id')
         .limit(MAX_TIER_QUESTIONS);
       if (error || !data || data.length === 0) return getStubQuestion();
-      const picked = seededPickN(data, 2, seedFrom(gameSeed, category.slug, value));
+      const { pool, exhausted } = applyTierFilter(data, seenIds.questions[category.slug]);
+      if (exhausted) fireExhaustionReset('normal', category.slug, firedResetRef);
+      const picked = seededPickN(pool, 2, seedFrom(gameSeed, category.slug, value));
       const row = picked[slot] ?? picked[0];
       return mapQuestionRow(row);
     },

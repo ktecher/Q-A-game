@@ -1,6 +1,9 @@
 import { createContext, useContext, useReducer, useMemo, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { STORAGE_KEY, serializeState, loadStoredState } from '../lib/gameStorage';
 import { reducer, createInitialState, ROW_VALUES } from '../lib/gameReducer';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 const GameContext = createContext(null);
 
@@ -15,6 +18,12 @@ function initState() {
 
 export function GameProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, initState);
+  // Needed for the AWARD side-effect: read the cached question by its
+  // ['question', slug, value, slot, gameSeed] key so we know which row to
+  // upsert into the seen-* table. Auth is the gate for the upsert itself —
+  // guests skip silently and current behavior is preserved exactly.
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Persist on every change. Reset/unstarted/finished games clear the slot
   // so a new tab doesn't accidentally resume them.
@@ -52,14 +61,47 @@ export function GameProvider({ children }) {
       pickCell: (payload) => dispatch({ type: 'PICK_CELL', payload }),
       cancelPick: () => dispatch({ type: 'CANCEL_PICK' }),
       consumeLifeline: (payload) => dispatch({ type: 'USE_LIFELINE', payload }),
-      award: (teamId) => dispatch({ type: 'AWARD', payload: { teamId } }),
+      award: (teamId) => {
+        // Mark the served question as "seen" for this user BEFORE dispatching —
+        // the AWARD reducer clears currentCell, so we'd lose the (slug, value,
+        // rowIdx) tuple needed to look up the cached question. Guests have no
+        // user.id, so the upsert is skipped and they get current behavior.
+        if (user?.id && state.currentCell && state.gameSeed) {
+          const { categorySlug, value, rowIdx } = state.currentCell;
+          const slot = (rowIdx ?? 0) % 2;
+          const cached = queryClient.getQueryData([
+            // Key shape must match the one written in usePrefetchQuestions
+            // and useQuestion — userId trails so a sign-out / sign-in mid
+            // game can never read a previous user's filtered pick.
+            'question', categorySlug, value, slot, state.gameSeed, user.id,
+          ]);
+          if (cached?.id) {
+            const isWalaKalma = cached.kind === 'wala-kalma';
+            const table = isWalaKalma ? 'seen_wala_kalma_titles' : 'seen_questions';
+            const idCol = isWalaKalma ? 'title_id' : 'question_id';
+            // Fire-and-forget — the upsert is idempotent (composite PK) and a
+            // network blip just means the next game's seen-set may re-serve
+            // this one question. Don't block the host's score-awarding flow.
+            supabase
+              .from(table)
+              .upsert(
+                { user_id: user.id, [idCol]: cached.id },
+                { onConflict: `user_id,${idCol}` },
+              )
+              .then(() => {}, () => {});
+          }
+        }
+        dispatch({ type: 'AWARD', payload: { teamId } });
+      },
       adjustScore: (teamId, delta) => dispatch({ type: 'ADJUST_SCORE', payload: { teamId, delta } }),
       startChallenge: (payload) => dispatch({ type: 'START_CHALLENGE', payload }),
       awardChallenge: (teamId) => dispatch({ type: 'AWARD_CHALLENGE', payload: { teamId } }),
       cancelChallenge: () => dispatch({ type: 'CANCEL_CHALLENGE' }),
       reset: () => dispatch({ type: 'RESET' }),
     };
-  }, [state]);
+    // `user` is in deps so a sign-in mid-session immediately enables the
+    // seen-upsert; `queryClient` is stable but included for lint correctness.
+  }, [state, user, queryClient]);
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }

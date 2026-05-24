@@ -17,6 +17,8 @@ const MIN_STEP_PX = 0.6; // skip points that moved less than this (payload trim)
 const FLUSH_MS = 50; // batched point-broadcast cadence → ≤20 messages/sec
 const CANVAS_ASPECT = 3 / 4; // drawing surface width ÷ height (portrait)
 const WAIT_TIMEOUT_MS = 150000; // give up the "waiting for the round" hold after 2.5 min
+const CLOSE_COUNTDOWN_SECONDS = 3; // countdown from this value before window.close()
+const CLOSE_REFUSED_PROBE_MS = 250; // if still alive after this ms, close was blocked
 
 // Pen palette, keyed by the theme the host put in the QR. The canvas is
 // "paper" (see CANVAS_PAPER): light = dark ink on white, dark = light ink on a
@@ -61,6 +63,8 @@ const doneBtn = $('done');
 const toast = $('toast');
 const waitOverlay = $('wait-overlay');
 const doneOverlay = $('done-overlay');
+const countdownEl = $('countdown');
+const countdownLabelEl = $('countdown-label');
 
 // ─── Decode the word from the URL fragment ───────────────────────────
 const payload = decodeSketch(location.hash);
@@ -211,6 +215,16 @@ function onHostRoundRestart() {
     doneOverlay.classList.remove('show');
     doneBtn.disabled = false;
     if (!flushTimer) flushTimer = setInterval(flushPoints, FLUSH_MS);
+    // Cancel any in-flight close countdown so it doesn't kill the fresh round.
+    if (closeCountdownTimer) {
+      clearInterval(closeCountdownTimer);
+      closeCountdownTimer = 0;
+    }
+    document.body.classList.remove('locked');
+    // Reset countdown overlay so it doesn't flash stale digits on the next lock cycle.
+    countdownEl.textContent = '';
+    countdownEl.style.fontSize = '';
+    countdownLabelEl.innerHTML = 'إغلاق خلال… <span class="en">· Closing in…</span>';
   }
   updateButtons();
   if (strokes.length > 0) send('sync', { strokes: wireStrokes() });
@@ -235,6 +249,7 @@ let roundStarted = false; // false until the host's first timer tick (synced sta
 let clearBackup = null;
 let clearBackupTimer = 0;
 let toastTimer = 0;
+let closeCountdownTimer = 0; // setInterval id for the post-lock countdown
 
 // Render the pen-colour swatches. The first swatch is the theme's default ink
 // (black on light paper, white on dark) and starts selected.
@@ -503,11 +518,41 @@ function lockCanvas() {
   current = null;
   clearInterval(flushTimer);
   flushTimer = 0;
+  // Kill any pending toasts / clear-backup timers — nothing should fire after lock.
+  clearTimeout(clearBackupTimer);
+  clearTimeout(toastTimer);
+  clearBackupTimer = 0;
+  toastTimer = 0;
   waitOverlay.classList.remove('show');
   doneOverlay.classList.add('show');
   undoBtn.disabled = true;
   clearBtn.disabled = true;
   doneBtn.disabled = true;
+  // Dim palette + toolbar via body.locked CSS class — phone is fully dead.
+  document.body.classList.add('locked');
+  // 3-2-1 countdown → window.close(); if blocked, swap in a final message.
+  let remaining = CLOSE_COUNTDOWN_SECONDS;
+  function tick() {
+    countdownEl.textContent = `${remaining}`;
+  }
+  tick();
+  closeCountdownTimer = setInterval(() => {
+    remaining -= 1;
+    if (remaining > 0) {
+      tick();
+    } else {
+      clearInterval(closeCountdownTimer);
+      closeCountdownTimer = 0;
+      countdownEl.textContent = '0';
+      window.close();
+      // If we're still alive after CLOSE_REFUSED_PROBE_MS the browser blocked close.
+      setTimeout(() => {
+        countdownLabelEl.textContent = '';
+        countdownEl.textContent = 'انتهى التحدي · Challenge over — you can close this tab';
+        countdownEl.style.fontSize = '0.8rem';
+      }, CLOSE_REFUSED_PROBE_MS);
+    }
+  }, 1000);
 }
 
 function updateButtons() {
