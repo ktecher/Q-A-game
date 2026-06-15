@@ -6,7 +6,11 @@ import { useGame } from '../../contexts/GameContext';
 import { useCategories, useAppSettings } from '../../lib/queries';
 import { pickN } from '../../lib/random';
 import { makeSetupTeams } from '../../lib/teams';
-import { readSettings, writeSettings } from '../../lib/settingsStorage';
+import {
+  readSettings,
+  writeSettings,
+  ALLOWED_CHALLENGE_COUNTS,
+} from '../../lib/settingsStorage';
 import { GUEST_PRESET, CATEGORIES_PER_GAME } from '../../lib/gameDefaults';
 import CategoryTile from './CategoryTile';
 import Section from './Section';
@@ -36,10 +40,15 @@ export default function SetupScreen() {
   // Section D — timer
   const [timerSecs, setTimerSecs] = useState(30);
 
-  // Section E — challenge rounds (remembered between games via settingsStorage)
-  const [challengesEnabled, setChallengesEnabled] = useState(
-    () => readSettings().challengesEnabled
-  );
+  // Section E — challenge rounds (remembered between games via settingsStorage).
+  // Read once on mount; both pieces of section-E state come from the same blob.
+  const [{ challengesEnabled: storedEnabled, challengeCount: storedCount }] =
+    useState(readSettings);
+  const [challengesEnabled, setChallengesEnabled] = useState(storedEnabled);
+  // How many challenge cells to seed onto the board (2 or 4). Remembered
+  // independently of `challengesEnabled` so toggling Disabled then re-enabling
+  // restores the player's last count choice instead of resetting to default.
+  const [challengeCount, setChallengeCount] = useState(storedCount);
 
   // Section F — categories (last because it depends on the picked mode)
   const [selected, setSelected] = useState([]);
@@ -235,9 +244,59 @@ export default function SetupScreen() {
                 </button>
               ))}
             </div>
+
+            {/* Count picker — only meaningful when challenges are enabled. We
+                still render it (greyed) when Disabled so the section height
+                doesn't jump as the player toggles back and forth. The buttons
+                themselves carry `disabled`, which screen readers announce
+                per-option — more informative than aria-hiding the whole group. */}
+            <div
+              className={`flex rounded-xl overflow-hidden border border-gold-faint transition-opacity duration-150 ${
+                challengesEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'
+              }`}
+            >
+              {ALLOWED_CHALLENGE_COUNTS.map((n, idx) => {
+                // Map count → Arabic-Indic numeral. Only 2 and 4 are exposed.
+                const arNum = n === 2 ? '٢' : '٤';
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-pressed={challengeCount === n}
+                    onClick={() => setChallengeCount(n)}
+                    disabled={!challengesEnabled}
+                    className={`flex-1 flex flex-col items-center py-3 transition-colors duration-150 ${
+                      challengeCount === n
+                        ? 'bg-gradient-to-br from-gold to-gold-dark text-ink'
+                        : 'bg-ink-80 text-cream-60 hover:bg-gold/8 hover:text-cream'
+                    } ${idx > 0 ? 'border-s border-gold-faint' : ''}`}
+                  >
+                    <span className={`font-ar-ui font-semibold text-base ${challengeCount === n ? 'text-ink' : ''}`}>{arNum}</span>
+                    <span className={`font-en-body text-sm mt-0.5 ${challengeCount === n ? 'text-ink/70' : 'text-cream-45'}`} lang="en">{n}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <p className="font-ar-ui text-sm text-cream-45 text-center border border-gold-faint rounded-lg px-3 py-2 bg-ink-80">
-              خليّتان مخفيّتان تتحوّلان إلى تحدٍّ بنقاط مضاعفة ·{' '}
-              <span lang="en" className="font-en-body">2 hidden cells become double-point challenges</span>
+              {challengesEnabled && challengeCount === 2 && (
+                <>
+                  خليّتان مخفيّتان تتحوّلان إلى تحديَّين بنقاط مضاعفة ·{' '}
+                  <span lang="en" className="font-en-body">2 hidden cells become double-point challenges</span>
+                </>
+              )}
+              {challengesEnabled && challengeCount === 4 && (
+                <>
+                  ٤ خلايا مخفية تتحوّل إلى تحدّيات بنقاط مضاعفة ·{' '}
+                  <span lang="en" className="font-en-body">4 hidden cells become double-point challenges</span>
+                </>
+              )}
+              {!challengesEnabled && (
+                <>
+                  لا توجد جولات تحدّي في هذه اللعبة ·{' '}
+                  <span lang="en" className="font-en-body">No challenge rounds this game</span>
+                </>
+              )}
             </p>
           </div>
         </Section>
@@ -338,8 +397,8 @@ export default function SetupScreen() {
             type="button"
             disabled={!selectionReady}
             onClick={() => {
-              // Remember the challenge choice so it defaults the same next game.
-              writeSettings({ challengesEnabled });
+              // Remember the challenge choices so they default the same next game.
+              writeSettings({ challengesEnabled, challengeCount });
               startGame({
                 categorySlugs: effectiveSelected,
                 categories: effectiveCategories,
@@ -354,6 +413,7 @@ export default function SetupScreen() {
                 difficulty,
                 timerSeconds: timerSecs,
                 challengesEnabled: challengesEnabled && anyChallengeType,
+                challengeCount,
               });
               navigate('/reveal');
             }}

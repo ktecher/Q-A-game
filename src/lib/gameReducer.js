@@ -31,22 +31,31 @@ export { cellKey };
 
 export const ROW_VALUES = [200, 200, 400, 400, 600, 600];
 
-const CHALLENGE_CELLS_PER_GAME = 2;
+// Challenge-cell count is now player-chosen in Setup (2 or 4). The default
+// preserves the long-standing "2 hidden challenges per game" behavior for any
+// caller that doesn't pass a count (legacy payloads, tests, direct dispatches).
+export const DEFAULT_CHALLENGE_CELLS = 2;
+export const ALLOWED_CHALLENGE_COUNTS = [2, 4];
 
 // Pick N random cell keys ("slug|value|rowIdx") to be marked as Challenge cells.
 // Hidden until picked (Daily Double-style surprise). When `enabled` is false the
 // player turned challenge rounds off in Setup — return an empty Set so no cell
 // ever triggers the challenge flow (BoardScreen's `challengeCells.has()` check
 // then always falls through to a normal question).
-function pickChallengeCells(categories, enabled = true, n = CHALLENGE_CELLS_PER_GAME) {
+//
+// `n` is clamped to ALLOWED_CHALLENGE_COUNTS (falling back to DEFAULT_CHALLENGE_CELLS)
+// — the reducer is the single source of truth, so a corrupt UI/storage value
+// can't smuggle in 0, 99, or NaN.
+function pickChallengeCells(categories, enabled = true, n = DEFAULT_CHALLENGE_CELLS) {
   if (!enabled || !categories || categories.length === 0) return new Set();
+  const count = ALLOWED_CHALLENGE_COUNTS.includes(n) ? n : DEFAULT_CHALLENGE_CELLS;
   const allKeys = [];
   for (let rowIdx = 0; rowIdx < ROW_VALUES.length; rowIdx++) {
     for (const cat of categories) {
       allKeys.push(cellKey(cat.slug, ROW_VALUES[rowIdx], rowIdx));
     }
   }
-  return new Set(pickN(allKeys, n));
+  return new Set(pickN(allKeys, count));
 }
 
 // A fresh per-game seed. Every random question/challenge pick for the game is
@@ -102,6 +111,7 @@ export function reducer(state, action) {
         categorySlugs,
         categories: pickedCategories,
         teams, difficulty, timerSeconds, challengesEnabled = true,
+        challengeCount = DEFAULT_CHALLENGE_CELLS,
       } = action.payload;
       // Prefer full category objects passed from Setup — they carry the
       // database-sourced visuals (image, icon, accent, kind). Fall back to
@@ -129,7 +139,7 @@ export function reducer(state, action) {
         difficulty: difficulty ?? 'mixed',
         timerSeconds: timerSeconds ?? 30,
         picked: new Set(),
-        challengeCells: pickChallengeCells(finalCategories, challengesEnabled),
+        challengeCells: pickChallengeCells(finalCategories, challengesEnabled, challengeCount),
       };
     }
 
