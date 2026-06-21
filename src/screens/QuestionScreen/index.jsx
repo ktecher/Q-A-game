@@ -62,7 +62,7 @@ export default function QuestionScreen() {
   const { data: Q } = useQuestion(category, cellValue, currentCell?.rowIdx ?? 0, gameSeed);
   const CategoryIcon = category ? (ICON_MAP[category.icon] ?? FALLBACK_ICON) : null;
 
-  const { phaseState, phaseDispatch, intervalRef } = useQuestionFlow({
+  const { phaseState, phaseDispatch } = useQuestionFlow({
     currentCell,
     primaryTimer: PRIMARY_TIMER,
     secondaryTimer: SECONDARY_TIMER,
@@ -76,7 +76,9 @@ export default function QuestionScreen() {
   const togglePause = () => phaseDispatch({ type: 'TOGGLE_PAUSE' });
 
   const handleReveal = () => {
-    clearInterval(intervalRef.current);
+    // Phase → 'reveal' makes useQuestionFlow's countdown effect tear down the
+    // interval via its cleanup; the hook owns the interval, so no imperative
+    // clear here (that was a second owner racing the effect).
     phaseDispatch({ type: 'REVEAL_NOW' });
   };
 

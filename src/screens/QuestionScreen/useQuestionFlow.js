@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useRef } from 'react';
+import { useReducer, useEffect } from 'react';
 
 // Local phase-machine reducer: atomic tick + phase advance.
 // Keeps the dual-answer state out of the global GameContext (it's transient UI state).
@@ -60,8 +60,6 @@ export function useQuestionFlow({ currentCell, primaryTimer, secondaryTimer }) {
     hintShown: false,
     paused: false,
   }));
-  const intervalRef = useRef(null);
-
   // Reset local state whenever we land on a new cell
   useEffect(() => {
     phaseDispatch({
@@ -73,11 +71,15 @@ export function useQuestionFlow({ currentCell, primaryTimer, secondaryTimer }) {
 
   // Countdown — single tick action, reducer handles phase advance atomically.
   // Skips entirely when paused so the interval doesn't even spin needlessly.
+  // This effect is the SOLE owner of the interval: the id is local, so no other
+  // code can clear it out from under the effect. To stop the clock early (e.g.
+  // "Reveal Answer"), dispatch a phase change to 'reveal' — the dep change tears
+  // the interval down through this cleanup. Never clear it imperatively.
   useEffect(() => {
     if (phaseState.phase === 'reveal' || phaseState.paused) return;
-    intervalRef.current = setInterval(() => phaseDispatch({ type: 'TICK' }), 1000);
-    return () => clearInterval(intervalRef.current);
+    const id = setInterval(() => phaseDispatch({ type: 'TICK' }), 1000);
+    return () => clearInterval(id);
   }, [phaseState.phase, phaseState.paused]);
 
-  return { phaseState, phaseDispatch, intervalRef };
+  return { phaseState, phaseDispatch };
 }
