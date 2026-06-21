@@ -107,27 +107,43 @@ if (!payload) {
 }
 
 // ─── Anti-spoiler gate ───────────────────────────────────────────────
+let gateDismissedAt = 0;
 function dismissGate() {
+  if (gate.classList.contains('gone')) return;
   gate.classList.add('gone');
   reveal.classList.add('revealed');
+  gateDismissedAt = Date.now();
 }
 gate.addEventListener('click', dismissGate);
-gate.addEventListener('touchstart', dismissGate, { passive: true });
+// NON-passive on purpose: a tap on the full-screen gate synthesises a
+// compatibility `click` ~moments later at the same x/y. The moment we dismiss
+// the gate it becomes pointer-events:none, so that synthesised click falls
+// THROUGH to whatever is underneath — and the Ready button sits dead-centre
+// under the gate. The drawer then skips straight to the canvas without ever
+// reading the word (intermittent: only when the tap lands over Ready).
+// preventDefault() suppresses that synthesised click at the source.
+gate.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  dismissGate();
+});
 gate.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') dismissGate();
 });
 
 // ─── Ready → switch to the drawing canvas + join the realtime channel ─
-readyBtn.addEventListener(
-  'click',
-  () => {
-    reveal.style.display = 'none';
-    drawSection.classList.add('active');
-    initCanvas();
-    joinChannel();
-  },
-  { once: true }, // guard: a double-tap must not wire the canvas listeners twice
-);
+let canvasWired = false; // replaces { once:true } so a guarded click can re-tap
+readyBtn.addEventListener('click', () => {
+  // Backstop for the gate click-through (see dismissGate): ignore a click that
+  // lands within 400ms of revealing the word — that is the synthesised tap, not
+  // a deliberate press. Forces the drawer to actually read the word, then tap.
+  if (Date.now() - gateDismissedAt < 400) return;
+  if (canvasWired) return; // guard: a double-tap must not wire listeners twice
+  canvasWired = true;
+  reveal.style.display = 'none';
+  drawSection.classList.add('active');
+  initCanvas();
+  joinChannel();
+});
 
 // ─── Realtime channel (Phase 3) ──────────────────────────────────────
 let channel = null;
