@@ -42,13 +42,18 @@ export function GameProvider({ children }) {
 
   const value = useMemo(() => {
     const totalCells = 6 * ROW_VALUES.length;
+    // Defensive reads: a corrupt/legacy restored game (hand-edited localStorage,
+    // older payload) could yield a teams array shorter than 2. Guard so the
+    // provider renders instead of white-screening on first paint.
+    const score0 = state.teams?.[0]?.score ?? 0;
+    const score1 = state.teams?.[1]?.score ?? 0;
     const winner =
-      state.gameOver && state.teams[0].score !== state.teams[1].score
-        ? state.teams[0].score > state.teams[1].score
+      state.gameOver && score0 !== score1
+        ? score0 > score1
           ? state.teams[0]
           : state.teams[1]
         : null;
-    const isTie = state.gameOver && state.teams[0].score === state.teams[1].score;
+    const isTie = state.gameOver && score0 === score1;
     return {
       state,
       dispatch,

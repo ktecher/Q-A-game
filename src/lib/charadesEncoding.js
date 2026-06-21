@@ -29,31 +29,6 @@ export function encodeCharade({ titleAr, titleEn, lang }) {
 }
 
 /**
- * Decode a base64url fragment back to the title payload.
- * Accepts a raw token, a `d=…` fragment, or a `#d=…` fragment for convenience.
- * Returns `null` on any error so the phone page can show "invalid link".
- */
-export function decodeCharade(fragment) {
-  if (!fragment) return null;
-  let s = fragment;
-  if (s.startsWith('#')) s = s.slice(1);
-  if (s.startsWith('d=')) s = s.slice(2);
-  s = s.replace(/-/g, '+').replace(/_/g, '/');
-  while (s.length % 4) s += '=';
-  try {
-    const bin = atob(s);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    const json = new TextDecoder().decode(bytes);
-    const payload = JSON.parse(json);
-    if (payload.v !== PAYLOAD_VERSION) return null;
-    return { titleAr: payload.ar, titleEn: payload.en, lang: payload.l };
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Convenience: build the full charade URL for a host page rendering a QR.
  * `origin` should be `window.location.origin` from the host context.
  */

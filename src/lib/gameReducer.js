@@ -4,8 +4,6 @@ import { cellKey } from './cellKey';
 import { makeReducerTeams } from './teams';
 import { CATEGORIES_PER_GAME } from './gameDefaults';
 
-export { cellKey };
-
 /**
  * GameContext — single source of truth for an in-progress game.
  *
@@ -123,7 +121,12 @@ export function reducer(state, action) {
       // Pad to CATEGORIES_PER_GAME if fewer (shouldn't happen — Setup enforces it)
       while (categories.length < CATEGORIES_PER_GAME) {
         const random = pickRandomSix().find((s) => !categories.some((c) => c.slug === s));
-        if (random) categories.push(getCategoryBySlug(random));
+        // getCategoryBySlug can return null/undefined for a slug absent from the
+        // local catalog (categories are DB-sourced; the local file is only a
+        // fallback). Guard so a null never reaches finalCategories — downstream
+        // BoardScreen/RevealScreen map over `cat.slug` and would throw.
+        const cat = random ? getCategoryBySlug(random) : null;
+        if (cat) categories.push(cat);
         else break;
       }
       const finalCategories = categories.slice(0, CATEGORIES_PER_GAME);

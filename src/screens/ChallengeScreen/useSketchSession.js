@@ -73,6 +73,13 @@ export default function useSketchSession({ sessionId, isDark, timeLeft, ended })
   const boxRef = useRef(null);
   const [subscribed, setSubscribed] = useState(false);
   const [connected, setConnected] = useState(false);
+  // Latches true on the FIRST drawer connect and never flips back (for this
+  // session). The paint loop is gated on this instead of `connected` so a
+  // transient presence-sync drop mid-round doesn't tear down the rAF loop and
+  // blank the live drawing — the canvas stays mounted via SketchStage's
+  // `started`, so it must keep being painted. Reset only when the channel
+  // itself resets (new sessionId).
+  const [everConnected, setEverConnected] = useState(false);
 
   // Mutable state shared by channel callbacks + the rAF paint loop (refs so a
   // 60 fps repaint doesn't trigger React re-renders).
@@ -167,6 +174,9 @@ export default function useSketchSession({ sessionId, isDark, timeLeft, ended })
         .flat()
         .some((p) => p.role === 'drawer');
       setConnected(drawerHere);
+      // Latch the paint loop on at the first connect; it never flips back for
+      // this session, so a later presence flicker can't blank the live drawing.
+      if (drawerHere) setEverConnected(true);
     });
 
     channel.subscribe((status) => {
@@ -180,6 +190,7 @@ export default function useSketchSession({ sessionId, isDark, timeLeft, ended })
       channelRef.current = null;
       setSubscribed(false);
       setConnected(false);
+      setEverConnected(false);
       supabase.removeChannel(channel);
     };
   }, [sessionId]);
@@ -213,8 +224,10 @@ export default function useSketchSession({ sessionId, isDark, timeLeft, ended })
   }, [ended]);
 
   // ── Canvas sizing + rAF paint loop (runs once this team's drawer connects) ──
+  // Gated on `everConnected` (latched) not `connected` (live) — a presence
+  // flicker mid-round must not tear down the loop and blank the drawing.
   useEffect(() => {
-    if (!connected) return undefined;
+    if (!everConnected) return undefined;
     const canvas = canvasRef.current;
     const box = boxRef.current;
     if (!canvas || !box) return undefined;
@@ -282,7 +295,7 @@ export default function useSketchSession({ sessionId, isDark, timeLeft, ended })
         window.removeEventListener('orientationchange', size);
       }
     };
-  }, [connected]);
+  }, [everConnected]);
 
   return { canvasRef, boxRef, subscribed, connected };
 }
