@@ -1,11 +1,11 @@
-// Single source for the two default teams (names, colors, emojis). Three
-// surfaces previously hand-coded the same Team Alpha (#3A7BC8, 🦅) and Team
-// Beta (#9B2D3A, 🌙) values: the game reducer's initial state, the Setup
-// screen's editable defaults, and the Results screen's demo data. Drifting
-// any one of them by mistake produced inconsistent branding.
+// Single source for the two default teams (names, colors). Three surfaces
+// previously hand-coded the same Team Alpha (#3A7BC8) and Team Beta (#9B2D3A)
+// values: the game reducer's initial state, the Setup screen's editable
+// defaults, and the Results screen's demo data. Drifting any one of them by
+// mistake produced inconsistent branding.
 const TEAM_DEFAULTS = [
-  { nameAr: 'الفريق الأول', nameEn: 'Team Alpha', color: '#3A7BC8', emoji: '🦅' },
-  { nameAr: 'الفريق الثاني', nameEn: 'Team Beta',  color: '#9B2D3A', emoji: '🌙' },
+  { nameAr: 'الفريق الأول', nameEn: 'Team Alpha', color: '#3A7BC8' },
+  { nameAr: 'الفريق الثاني', nameEn: 'Team Beta',  color: '#9B2D3A' },
 ];
 
 // Initial team shape used by the gameReducer (with id, score, players).
@@ -15,7 +15,6 @@ export function makeReducerTeams() {
     name: d.nameAr,
     nameEn: d.nameEn,
     color: d.color,
-    emoji: d.emoji,
     score: 0,
     players: [],
   }));
@@ -29,7 +28,6 @@ export function makeSetupTeams() {
     defaultNameAr: d.nameAr,
     defaultNameEn: d.nameEn,
     color: d.color,
-    emoji: d.emoji,
     players: [],
   }));
 }
@@ -42,7 +40,6 @@ export function makeDemoTeams(scores = [1800, 1400]) {
     name: d.nameAr,
     nameEn: d.nameEn,
     color: d.color,
-    emoji: d.emoji,
     score: scores[i] ?? 0,
   }));
 }

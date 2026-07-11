@@ -1,0 +1,645 @@
+<title>Question Screen — Redesign Study</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ============================================================
+   PAGE CHROME (theme-aware) — the studio canvas the mockups sit on.
+   Kept deliberately quiet so the gold game artboards carry the color.
+   ============================================================ */
+:root{
+  --canvas:#0B0E15; --canvas-2:#0f131c;
+  --panel:#12161f; --panel-2:#161b26;
+  --text:#E7E2D4; --muted:rgba(231,226,212,.60); --faint:rgba(231,226,212,.40);
+  --line:rgba(212,162,76,.20); --line-soft:rgba(231,226,212,.10);
+  --accent:#D4A24C; --accent-light:#E8B968;
+  --good:#5FA88A; --bad:#C4515F;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --canvas:#E7E3D8; --canvas-2:#efece3;
+    --panel:#FBFAF6; --panel-2:#f4f1e8;
+    --text:#1B1D22; --muted:rgba(27,29,34,.64); --faint:rgba(27,29,34,.45);
+    --line:rgba(140,104,34,.30); --line-soft:rgba(27,29,34,.12);
+    --accent:#8B6822; --accent-light:#A87C2E;
+    --good:#3E7A61; --bad:#9B2D3A;
+  }
+}
+:root[data-theme="dark"]{
+  --canvas:#0B0E15; --canvas-2:#0f131c; --panel:#12161f; --panel-2:#161b26;
+  --text:#E7E2D4; --muted:rgba(231,226,212,.60); --faint:rgba(231,226,212,.40);
+  --line:rgba(212,162,76,.20); --line-soft:rgba(231,226,212,.10);
+  --accent:#D4A24C; --accent-light:#E8B968; --good:#5FA88A; --bad:#C4515F;
+}
+:root[data-theme="light"]{
+  --canvas:#E7E3D8; --canvas-2:#efece3; --panel:#FBFAF6; --panel-2:#f4f1e8;
+  --text:#1B1D22; --muted:rgba(27,29,34,.64); --faint:rgba(27,29,34,.45);
+  --line:rgba(140,104,34,.30); --line-soft:rgba(27,29,34,.12);
+  --accent:#8B6822; --accent-light:#A87C2E; --good:#3E7A61; --bad:#9B2D3A;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:
+    radial-gradient(120% 80% at 50% -10%, var(--canvas-2), var(--canvas) 60%);
+  color:var(--text);
+  font-family:'Manrope','Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  line-height:1.55; letter-spacing:.001em;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:clamp(20px,4vw,56px) clamp(16px,4vw,40px)}
+
+/* ---- studio typography ---- */
+.eyebrow{font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent);
+  font-weight:700}
+h1{font-family:'Cormorant Garamond',Georgia,serif; font-weight:600;
+  font-size:clamp(34px,6vw,60px); line-height:1.02; letter-spacing:-.01em;
+  margin:.28em 0 .1em; text-wrap:balance}
+h1 em{font-style:italic; color:var(--accent-light)}
+.lede{max-width:60ch; color:var(--muted); font-size:clamp(15px,1.6vw,18px)}
+h2{font-family:'Cormorant Garamond',Georgia,serif; font-weight:600;
+  font-size:clamp(24px,3.4vw,36px); letter-spacing:-.01em; margin:0; line-height:1.1}
+h3{font-size:15px; letter-spacing:.02em; margin:0}
+.small{font-size:13px; color:var(--muted)}
+
+/* ---- top bar ---- */
+.topbar{display:flex; align-items:flex-start; justify-content:space-between; gap:20px;
+  flex-wrap:wrap}
+.toggle{border:1px solid var(--line); background:var(--panel); color:var(--text);
+  border-radius:999px; padding:9px 15px; font:inherit; font-size:13px; font-weight:600;
+  cursor:pointer; display:inline-flex; gap:8px; align-items:center; white-space:nowrap}
+.toggle:hover{border-color:var(--accent)}
+.toggle:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ---- rule / meta ---- */
+.rule{height:1px; background:linear-gradient(90deg,var(--line),transparent); border:0; margin:0}
+
+/* ---- diagnosis grid ---- */
+.diag{display:grid; grid-template-columns:1.1fr 1fr; gap:clamp(18px,3vw,40px);
+  align-items:start; margin-top:26px}
+@media (max-width:820px){.diag{grid-template-columns:1fr}}
+.count{font-family:'Cormorant Garamond',Georgia,serif; font-size:clamp(52px,9vw,86px);
+  line-height:.9; color:var(--accent); font-weight:600}
+.problem-list{list-style:none; margin:14px 0 0; padding:0; display:grid; gap:2px}
+.problem-list li{display:flex; gap:12px; align-items:baseline; padding:9px 0;
+  border-top:1px solid var(--line-soft); font-size:14px}
+.problem-list li:first-child{border-top:0}
+.problem-list b{color:var(--text); font-weight:700}
+.problem-list .n{font-variant-numeric:tabular-nums; color:var(--accent);
+  font-weight:700; font-size:12px; min-width:1.4em}
+
+.legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:16px}
+.legend span{display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.dot.keep{background:var(--good)} .dot.cut{background:var(--bad)} .dot.merge{background:var(--accent)}
+
+/* ============================================================
+   GALLERY OF ARTBOARDS
+   ============================================================ */
+.designs{display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(20px,3vw,34px);
+  margin-top:14px}
+@media (max-width:900px){.designs{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel-2));
+  border:1px solid var(--line-soft); border-radius:18px; overflow:hidden;
+  box-shadow:0 1px 0 var(--line-soft), 0 22px 50px -30px rgba(0,0,0,.6)}
+.card.span{grid-column:1/-1}
+.card-head{display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+  padding:20px 22px 6px}
+.tag{font-size:11px; letter-spacing:.16em; text-transform:uppercase; font-weight:700;
+  padding:4px 9px; border-radius:6px; white-space:nowrap}
+.tag.now{color:var(--bad); border:1px solid color-mix(in srgb,var(--bad) 45%,transparent);
+  background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.tag.new{color:var(--accent); border:1px solid var(--line);
+  background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.card-head h2 small{display:block; font-family:'Manrope',system-ui,sans-serif; font-weight:600;
+  font-size:12px; letter-spacing:.04em; color:var(--muted); margin-top:3px}
+.card-body{padding:8px 22px 22px}
+.desc{font-size:13.5px; color:var(--muted); margin:0 0 16px; max-width:52ch}
+.changes{list-style:none; margin:16px 0 0; padding:16px 0 0; border-top:1px solid var(--line-soft);
+  display:grid; gap:8px}
+.changes li{position:relative; padding-inline-start:20px; font-size:13px; color:var(--muted)}
+.changes li::before{content:""; position:absolute; inset-inline-start:2px; top:.55em;
+  width:8px;height:8px;border-radius:2px}
+.changes li.merge::before{background:var(--accent)}
+.changes li.cut::before{background:var(--bad)}
+.changes li.keep::before{background:var(--good)}
+.changes b{color:var(--text)}
+
+/* ============================================================
+   GAME ARTBOARD — fixed brand look (product's dark identity),
+   the real tokens from index.css. Same in both page themes: this is
+   the product being shown, like a screenshot on a wall.
+   ============================================================ */
+.stage{
+  --ink:#0A0F1A; --cream:#F4ECD8;
+  --gold:#D4A24C; --gold-l:#E8B968; --gold-faint:rgba(212,162,76,.25);
+  --sap:#173D6E; --sap-deep:#0E2949; --crimson:#C44150;
+  --c60:rgba(244,236,216,.60); --c45:rgba(244,236,216,.45); --c30:rgba(244,236,216,.30);
+  --ink50:rgba(10,15,26,.55);
+  direction:rtl; color:var(--cream);
+  border-radius:14px; padding:18px 16px; position:relative; overflow:hidden;
+  background:
+    radial-gradient(130% 90% at 50% -20%, rgba(23,61,110,.30), transparent 60%),
+    linear-gradient(180deg,#0c1220,#080c16);
+  box-shadow:inset 0 0 0 1px var(--gold-faint), inset 0 0 60px rgba(0,0,0,.5);
+  font-family:'Tajawal','Segoe UI',system-ui,sans-serif;
+}
+.stage::before{content:""; position:absolute; inset:0; pointer-events:none; opacity:.05;
+  background-image:radial-gradient(var(--gold) 1px, transparent 1px);
+  background-size:22px 22px}
+.stage>*{position:relative}
+.ar{font-family:'Amiri','Noto Naskh Arabic','Segoe UI Arabic',serif}
+.en{font-family:'Cormorant Garamond',Georgia,serif; font-style:italic; direction:ltr}
+.enb{font-family:'Manrope',system-ui,sans-serif; direction:ltr}
+
+/* shared game atoms */
+.g-pill{display:inline-flex; align-items:center; gap:8px; padding:5px 12px; border-radius:999px;
+  border:1px solid var(--gold-faint); background:rgba(212,162,76,.12);
+  font-size:11.5px; font-weight:700; color:var(--gold-l); letter-spacing:.02em}
+.g-pill .led{width:6px;height:6px;border-radius:50%; background:var(--gold)}
+.g-exit{margin-inline-start:auto; color:var(--c60); font-size:12px; background:none; border:0;
+  cursor:pointer; display:inline-flex; gap:5px; align-items:center}
+.g-exit:hover{color:var(--crimson)}
+
+.g-cat{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:7px;
+  background:#173D6E; color:var(--cream); font-size:11.5px; font-weight:700}
+.g-val{font-family:'Cormorant Garamond',Georgia,serif; color:var(--gold); font-weight:700;
+  font-size:19px; direction:ltr}
+
+.g-team{display:flex; flex-direction:column; gap:6px; padding:11px 13px; border-radius:11px;
+  border:1px solid var(--gold-faint); background:var(--ink50)}
+.g-team.active{border-color:var(--gold);
+  background:linear-gradient(135deg,rgba(58,123,200,.55),var(--ink50));
+  box-shadow:0 0 0 2px rgba(212,162,76,.18),0 0 22px rgba(212,162,76,.30)}
+.g-team.dim{opacity:.55}
+.g-team .nm{font-family:'Amiri',serif; font-weight:700; font-size:15px; line-height:1.1}
+.g-team .ne{font-size:11px; color:var(--c45); direction:ltr}
+.g-team .sc{font-family:'Cormorant Garamond',Georgia,serif; font-weight:700; font-size:16px;
+  color:var(--gold); direction:ltr; line-height:1.05; text-shadow:0 0 10px rgba(212,162,76,.35)}
+.g-team .sc span{font-family:'Tajawal',sans-serif; font-size:10px; font-weight:600; color:var(--c45)}
+.g-team .st{font-size:11px; display:flex; align-items:center; gap:6px; color:var(--c60)}
+.g-team.active .st{color:var(--gold-l)}
+.g-team .st .led{width:6px;height:6px;border-radius:50%;background:var(--c30)}
+.g-team.active .st .led{background:var(--gold); animation:pulse 1.4s ease-in-out infinite}
+.g-team.done .st .led{background:var(--gold-l)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+@media (prefers-reduced-motion:reduce){.g-team.active .st .led{animation:none}}
+.g-emoji{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:16px;
+  flex:none}
+
+.g-vs{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:700; font-size:17px;
+  color:rgba(212,162,76,.6); direction:ltr}
+
+.g-timer{display:flex; align-items:center; gap:16px; padding:11px 15px; border-radius:11px;
+  border:1px solid var(--gold-faint); background:var(--ink50)}
+.g-timer .lab{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-l)}
+.g-timer .big{font-family:'Cormorant Garamond',serif; font-weight:700; font-size:34px;
+  color:var(--gold); line-height:1; direction:ltr; text-shadow:0 0 14px rgba(212,162,76,.4)}
+.g-timer .sep{width:1px; align-self:stretch; background:var(--gold-faint)}
+.g-timer .sm{font-family:'Cormorant Garamond',serif; font-weight:600; font-size:20px;
+  color:var(--c60); line-height:1; direction:ltr}
+.g-timer .mut{opacity:.6}
+
+.g-q{position:relative; border-radius:14px; padding:22px 20px; text-align:center;
+  background:linear-gradient(160deg,rgba(23,61,110,.28),var(--ink50));
+  border:1.5px solid var(--gold-faint);
+  box-shadow:inset 0 0 0 6px var(--ink50),0 0 40px rgba(212,162,76,.08)}
+.g-q .corner{position:absolute; color:rgba(232,185,104,.7); font-size:13px; line-height:1}
+.g-q .corner.tl{top:7px;inset-inline-start:7px} .g-q .corner.tr{top:7px;inset-inline-end:7px}
+.g-q .corner.bl{bottom:7px;inset-inline-start:7px} .g-q .corner.br{bottom:7px;inset-inline-end:7px}
+.g-q .qar{font-family:'Amiri',serif; font-weight:700; font-size:21px; line-height:1.4; color:var(--cream)}
+.g-q .qen{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:14px; color:var(--c60);
+  margin-top:6px; direction:ltr}
+
+.g-life{display:flex; flex-direction:column; align-items:center; gap:3px; padding:11px 8px;
+  border-radius:10px; border:1px solid var(--gold-faint); background:var(--ink50); color:inherit;
+  cursor:pointer; font:inherit}
+.g-life:hover{border-color:rgba(212,162,76,.6); background:rgba(212,162,76,.06)}
+.g-life .ic{font-size:19px}
+.g-life .t1{font-size:12.5px; font-weight:600}
+.g-life .t2{font-size:10.5px; color:var(--c45); text-transform:uppercase; letter-spacing:.04em; direction:ltr}
+.g-life.off{opacity:.35; cursor:not-allowed}
+.g-life.steal .t1{color:var(--crimson)} .g-life.steal .t2{color:var(--crimson)}
+
+.g-btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; cursor:pointer;
+  border-radius:12px; padding:11px 16px; font:inherit; font-size:13px; font-weight:600;
+  border:1px solid var(--gold-faint); background:var(--ink50); color:var(--c60)}
+.g-btn:hover{border-color:rgba(212,162,76,.6); color:var(--gold)}
+.g-btn small{font-family:'Manrope',sans-serif; font-size:10px; opacity:.7; font-weight:500; direction:ltr}
+.g-btn.col{flex-direction:column; gap:1px}
+.g-btn.outline{border-color:var(--gold-faint); color:var(--cream)}
+.g-btn.outline:hover{background:rgba(212,162,76,.08); border-color:var(--gold)}
+.g-btn.gold{background:linear-gradient(135deg,#D4A24C,#B7883b); color:#1a1206; border-color:#E8B968;
+  font-weight:700; box-shadow:0 6px 20px -8px rgba(212,162,76,.7)}
+.g-btn.gold:hover{filter:brightness(1.06)}
+.g-btn.ghost{background:none; border-color:transparent; color:var(--c60)}
+.g-btn.ghost:hover{background:rgba(212,162,76,.08); border-color:var(--gold-faint)}
+
+.g-chip{display:inline-flex; align-items:center; gap:6px; padding:7px 11px; border-radius:999px;
+  border:1px solid var(--gold-faint); background:var(--ink50); font-size:12px; font-weight:600;
+  color:var(--cream); cursor:pointer}
+.g-chip:hover{border-color:var(--gold)}
+.g-chip .ic{font-size:14px}
+.g-chip.off{opacity:.35}
+
+.eyebrow-min{font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--c45);
+  font-weight:700}
+
+/* small helpers inside stage */
+.row{display:flex; align-items:center}
+.gap6{gap:6px}.gap8{gap:8px}.gap10{gap:10px}.gap12{gap:12px}
+.mt8{margin-top:8px}.mt10{margin-top:10px}.mt12{margin-top:12px}.mt14{margin-top:14px}.mt16{margin-top:16px}
+.between{justify-content:space-between}
+.center{justify-content:center}
+.wrapf{flex-wrap:wrap}
+
+/* radial timer ring */
+.ring{--p:0; width:74px;height:74px;border-radius:50%; display:grid; place-items:center; flex:none;
+  background:conic-gradient(var(--gold) calc(var(--p)*1%), rgba(212,162,76,.16) 0);
+  -webkit-mask:none}
+.ring .inner{width:60px;height:60px;border-radius:50%; background:#0b1120; display:grid;
+  place-items:center; box-shadow:inset 0 0 0 1px var(--gold-faint)}
+.ring .num{font-family:'Cormorant Garamond',serif; font-weight:700; font-size:24px; color:var(--gold);
+  line-height:1; direction:ltr}
+
+footer{margin-top:56px; padding-top:24px; border-top:1px solid var(--line-soft); color:var(--muted);
+  font-size:13.5px; display:grid; gap:6px}
+footer b{color:var(--text)}
+.pick{display:inline-block; color:var(--accent); font-weight:700}
+</style>
+
+<div class="wrap">
+
+  <!-- ================= HEADER ================= -->
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">Q&amp;A Game · UI Study</div>
+      <h1>The <em>/question</em> screen,<br>uncrowded.</h1>
+      <p class="lede">One faithful snapshot of the screen today, then four ways to
+        make it neat, calm, and easy to follow — same brand, same content,
+        fewer competing boxes. No code changed; these are static mockups to choose from.</p>
+    </div>
+    <button class="toggle" id="tg" type="button" aria-label="Toggle light and dark">
+      <span id="tgi">◑</span><span id="tgt">Theme</span>
+    </button>
+  </header>
+
+  <hr class="rule" style="margin:34px 0 30px">
+
+  <!-- ================= DIAGNOSIS ================= -->
+  <section>
+    <h2>Why it feels crowded</h2>
+    <div class="diag">
+      <div>
+        <div class="row" style="align-items:flex-end; gap:14px">
+          <span class="count">10</span>
+          <p class="small" style="margin:0 0 10px">bordered blocks stacked head-to-toe —
+            four info panels and six tap targets — each with its own frame, gradient, and
+            an Arabic + English label. The actual question, the one thing that matters,
+            sits fifth from the top.</p>
+        </div>
+        <div class="legend">
+          <span><i class="dot keep"></i> keep — earns its space</span>
+          <span><i class="dot merge"></i> merge — combine or shrink</span>
+          <span><i class="dot cut"></i> cut — remove or demote</span>
+        </div>
+      </div>
+      <ol class="problem-list">
+        <li><span class="n">1</span><span><b>Stage banner</b> — long bilingual sentence in a pill, plus a separate exit button.</span></li>
+        <li><span class="n">2</span><span><b>Team tracker</b> — two large status cards + a "vs", each repeating name, English name, and a status line.</span></li>
+        <li><span class="n">3</span><span><b>Category row</b> — chip, English caption, and value, three type styles fighting on one line.</span></li>
+        <li><span class="n">4</span><span><b>Dual timer</b> — a full bordered block for two numbers, as heavy as the question card.</span></li>
+        <li><span class="n">5</span><span><b>Question card</b> — the hero, but buried below four blocks.</span></li>
+        <li><span class="n">6</span><span><b>Lifelines</b> — three big buttons, each an icon over two lines of text.</span></li>
+        <li><span class="n">7</span><span><b>Action row</b> — three more two-line buttons; Reveal doesn't stand out from Pause.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <hr class="rule" style="margin:36px 0 24px">
+  <h2 style="margin-bottom:6px">The snapshot &amp; four directions</h2>
+  <p class="small" style="margin:0 0 22px; max-width:60ch">Each artboard renders the real
+    answer phase — Falcons vs. Eagles, a 400-point history question. Compare density, then pick a lane.</p>
+
+  <div class="designs">
+
+    <!-- ========== CURRENT ========== -->
+    <div class="card span">
+      <div class="card-head">
+        <div><h2>Current<small>As it ships today — everything stacked</small></h2></div>
+        <span class="tag now">Now</span>
+      </div>
+      <div class="card-body">
+        <p class="desc">A vertical tower of ten framed blocks. Nothing is broken — but every
+          element shouts at the same volume, so the eye has no path.</p>
+        <div class="stage" style="max-width:460px; margin:0 auto">
+          <!-- 1 stage + exit -->
+          <div class="row gap8" style="margin-bottom:14px">
+            <span class="g-pill"><span class="led"></span>المرحلة الأولى — الإجابة
+              <span class="enb" style="opacity:.6;font-weight:500">· Stage 1 · Answer</span></span>
+            <button class="g-exit" type="button">خروج ✕</button>
+          </div>
+          <!-- 2 teams -->
+          <div class="row gap10" style="margin-bottom:14px">
+            <div class="g-team active" style="flex:1">
+              <div class="row gap8"><span class="g-emoji" style="background:#3A7BC8">🦅</span>
+                <div><div class="nm">الصقور</div><div class="ne">Falcons</div></div></div>
+              <div class="st"><span class="led"></span>يجيب الآن <span style="opacity:.7" class="enb">· Answering</span></div>
+            </div>
+            <span class="g-vs">vs</span>
+            <div class="g-team dim" style="flex:1">
+              <div class="row gap8"><span class="g-emoji" style="background:#9B2D3A">🦉</span>
+                <div><div class="nm">النسور</div><div class="ne">Eagles</div></div></div>
+              <div class="st"><span class="led"></span>التالي · 0:15 <span style="opacity:.7" class="enb">· Up next</span></div>
+            </div>
+          </div>
+          <!-- 3 category -->
+          <div class="row gap8" style="margin-bottom:12px">
+            <span class="g-cat">📜 تاريخ</span>
+            <span class="enb" style="font-size:11px;color:var(--c45);text-transform:uppercase;letter-spacing:.06em">History</span>
+            <span class="g-val" style="margin-inline-start:auto">· 400</span>
+          </div>
+          <!-- 4 dual timer -->
+          <div class="g-timer" style="margin-bottom:14px">
+            <div><div class="lab">الوقت الأساسي · Primary</div><div class="big">0:30</div></div>
+            <div class="sep"></div>
+            <div class="mut"><div class="lab" style="color:var(--c60)">للفريق الآخر · Eagles gets</div>
+              <div class="sm">0:15</div></div>
+          </div>
+          <!-- 5 question -->
+          <div class="g-q" style="margin-bottom:14px">
+            <span class="corner tl">❖</span><span class="corner tr">❖</span>
+            <span class="corner bl">❖</span><span class="corner br">❖</span>
+            <div class="qar">ما هي عاصمة دولة الكويت؟</div>
+            <div class="qen">What is the capital of the State of Kuwait?</div>
+          </div>
+          <!-- 6 lifelines -->
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:14px">
+            <button class="g-life"><span class="ic">⏱️</span><span class="t1">وقت إضافي</span><span class="t2">Extra Time</span></button>
+            <button class="g-life"><span class="ic">💡</span><span class="t1">تلميح</span><span class="t2">Hint</span></button>
+            <button class="g-life steal off"><span class="ic">⚔️</span><span class="t1">سرقة</span><span class="t2">Steal</span></button>
+          </div>
+          <!-- 7 actions -->
+          <div class="row center wrapf" style="gap:9px">
+            <button class="g-btn col"><span>⏸ إيقاف</span><small>Pause</small></button>
+            <button class="g-btn outline col"><span>إنهاء دور الصقور →</span><small>End Falcons' Turn</small></button>
+            <button class="g-btn gold col"><span>👁 كشف الإجابة</span><small>Reveal Answer</small></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== A · FOCUS FLOW ========== -->
+    <div class="card">
+      <div class="card-head">
+        <div><h2>A · Focus Flow<small>Slim HUD on top, question is the hero</small></h2></div>
+        <span class="tag new">Option A</span>
+      </div>
+      <div class="card-body">
+        <p class="desc">Everything above the question collapses into two thin lines. The card
+          grows and centers. English drops to quiet captions. Lowest-risk — same layout, less weight.</p>
+        <div class="stage">
+          <!-- one-line HUD: stage · exit · timer -->
+          <div class="row between gap8">
+            <span class="g-pill" style="padding:4px 10px"><span class="led"></span>المرحلة الأولى<span class="enb" style="opacity:.55;font-weight:500;font-size:10px">· Answer</span></span>
+            <div class="row gap8">
+              <span class="ar" style="font-size:11px;color:var(--c45)">الوقت</span>
+              <span class="en" style="font-weight:700;font-size:24px;color:var(--gold);text-shadow:0 0 12px rgba(212,162,76,.4)">0:30</span>
+              <span class="enb" style="font-size:10px;color:var(--c45)">▸ 0:15</span>
+              <button class="g-exit" type="button" style="margin:0">✕</button>
+            </div>
+          </div>
+          <!-- teams as one slim bar -->
+          <div class="row between mt12" style="padding:7px 11px;border:1px solid var(--gold-faint);border-radius:999px;background:var(--ink50)">
+            <span class="row gap6"><span style="width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold)"></span>
+              <span class="ar" style="font-weight:700;font-size:13px">🦅 الصقور</span>
+              <span class="ar" style="font-size:11px;color:var(--gold-l)">تجيب</span></span>
+            <span class="g-vs" style="font-size:13px">vs</span>
+            <span class="row gap6" style="opacity:.55"><span class="ar" style="font-weight:700;font-size:13px">النسور 🦉</span>
+              <span class="enb" style="font-size:10px;color:var(--c45)">next</span></span>
+          </div>
+          <!-- category eyebrow -->
+          <div class="row center gap8 mt14">
+            <span class="g-cat" style="padding:3px 9px">📜 تاريخ</span>
+            <span class="eyebrow-min">History · 400 pts</span>
+          </div>
+          <!-- hero question -->
+          <div class="g-q mt10" style="padding:30px 22px">
+            <span class="corner tl">❖</span><span class="corner tr">❖</span>
+            <span class="corner bl">❖</span><span class="corner br">❖</span>
+            <div class="qar" style="font-size:24px">ما هي عاصمة دولة الكويت؟</div>
+            <div class="qen">What is the capital of the State of Kuwait?</div>
+          </div>
+          <!-- lifelines as inline chips -->
+          <div class="row center gap8 mt14">
+            <button class="g-chip"><span class="ic">⏱️</span>وقت إضافي</button>
+            <button class="g-chip"><span class="ic">💡</span>تلميح</button>
+            <button class="g-chip off"><span class="ic">⚔️</span>سرقة</button>
+          </div>
+          <!-- actions: reveal dominant -->
+          <div class="row mt14 gap8">
+            <button class="g-btn ghost" type="button" aria-label="Pause">⏸</button>
+            <button class="g-btn outline" style="flex:1">إنهاء دور الصقور</button>
+            <button class="g-btn gold" style="flex:1.4">👁 كشف الإجابة</button>
+          </div>
+        </div>
+        <ul class="changes">
+          <li class="merge"><b>Stage + timer + exit</b> → one top line.</li>
+          <li class="merge"><b>Team cards</b> → a single pill; status by a glowing dot.</li>
+          <li class="cut"><b>English</b> demoted to small captions everywhere.</li>
+          <li class="keep"><b>Reveal</b> is now visually the primary action.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ========== B · COMMAND HUD ========== -->
+    <div class="card">
+      <div class="card-head">
+        <div><h2>B · Command HUD<small>Sticky top bar, floating action dock</small></h2></div>
+        <span class="tag new">Option B</span>
+      </div>
+      <div class="card-body">
+        <p class="desc">Status lives in one fixed HUD strip; controls live in a docked bar at the
+          bottom. The middle is pure question with breathing room — reads like a broadcast lower-third.</p>
+        <div class="stage" style="display:flex;flex-direction:column">
+          <!-- HUD strip -->
+          <div class="row between" style="padding:8px 12px;margin:-4px -2px 0;border:1px solid var(--gold-faint);border-radius:11px;background:linear-gradient(90deg,rgba(23,61,110,.4),var(--ink50))">
+            <span class="row gap6"><span class="g-emoji" style="width:22px;height:22px;font-size:12px;background:#3A7BC8">🦅</span>
+              <span class="ar" style="font-weight:700;font-size:12px">الصقور</span>
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 7px var(--gold)"></span></span>
+            <div style="text-align:center;line-height:1">
+              <div class="en" style="font-weight:700;font-size:28px;color:var(--gold);text-shadow:0 0 12px rgba(212,162,76,.45)">0:30</div>
+              <div class="eyebrow-min" style="font-size:9px">الصقور تجيب · Eagles ▸ 0:15</div>
+            </div>
+            <span class="row gap6" style="opacity:.5"><span class="ar" style="font-weight:700;font-size:12px">النسور</span>
+              <span class="g-emoji" style="width:22px;height:22px;font-size:12px;background:#9B2D3A">🦉</span></span>
+          </div>
+          <!-- question region -->
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:6px 0">
+            <div class="row center gap8 mt14" style="margin-bottom:12px">
+              <span class="g-cat" style="padding:3px 9px">📜 تاريخ</span>
+              <span class="eyebrow-min">History · 400</span>
+            </div>
+            <div class="g-q" style="padding:32px 22px;position:relative">
+              <span class="corner tl">❖</span><span class="corner tr">❖</span>
+              <span class="corner bl">❖</span><span class="corner br">❖</span>
+              <div class="qar" style="font-size:25px">ما هي عاصمة دولة الكويت؟</div>
+              <div class="qen">What is the capital of the State of Kuwait?</div>
+              <!-- lifelines float top-end of card -->
+              <div class="row gap6" style="position:absolute;top:-13px;inset-inline-end:14px">
+                <button class="g-chip" style="padding:6px 9px;box-shadow:0 4px 12px -4px #000">⏱️</button>
+                <button class="g-chip" style="padding:6px 9px;box-shadow:0 4px 12px -4px #000">💡</button>
+              </div>
+            </div>
+          </div>
+          <!-- docked actions -->
+          <div class="row gap8 mt16" style="padding-top:12px;border-top:1px solid var(--gold-faint)">
+            <button class="g-btn ghost" type="button" aria-label="Pause">⏸</button>
+            <button class="g-btn outline" type="button" aria-label="End turn">إنهاء الدور</button>
+            <button class="g-btn gold" style="flex:1">👁 كشف الإجابة · Reveal</button>
+          </div>
+        </div>
+        <ul class="changes">
+          <li class="merge"><b>Both teams + timer</b> → one broadcast HUD strip.</li>
+          <li class="merge"><b>Lifelines</b> float on the question's edge, out of the flow.</li>
+          <li class="keep"><b>Docked action bar</b> stays put; Reveal is the wide primary.</li>
+          <li class="cut">Vertical stacking mostly gone — fixed top, fixed bottom, calm middle.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ========== C · SPLIT STAGE ========== -->
+    <div class="card">
+      <div class="card-head">
+        <div><h2>C · Split Stage<small>Controls left rail, question right — uses width</small></h2></div>
+        <span class="tag new">Option C</span>
+      </div>
+      <div class="card-body">
+        <p class="desc">On a tablet/projector the screen is wide, not tall. Push status and
+          lifelines into a narrow rail so the question owns the stage. Stacks back to one column on phones.</p>
+        <div class="stage">
+          <div class="row between gap8" style="margin-bottom:12px">
+            <span class="g-pill" style="padding:4px 10px"><span class="led"></span>الإجابة</span>
+            <button class="g-exit" type="button" style="margin:0">خروج ✕</button>
+          </div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:12px">
+            <!-- rail -->
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="ring" style="--p:82;margin:0 auto"><div class="inner"><span class="num">0:30</span></div></div>
+              <div class="eyebrow-min" style="text-align:center;margin-top:-4px">النسور ▸ 0:15</div>
+              <div class="g-team active" style="padding:9px 11px">
+                <div class="row gap8"><span class="g-emoji" style="width:26px;height:26px;font-size:14px;background:#3A7BC8">🦅</span>
+                  <div><div class="nm" style="font-size:13px">الصقور</div>
+                    <div class="sc">1200 <span>نقطة</span></div></div></div>
+              </div>
+              <div class="g-team dim" style="padding:9px 11px">
+                <div class="row gap8"><span class="g-emoji" style="width:26px;height:26px;font-size:14px;background:#9B2D3A">🦉</span>
+                  <div><div class="nm" style="font-size:13px">النسور</div>
+                    <div class="sc">800 <span>نقطة</span></div></div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px">
+                <button class="g-chip" style="justify-content:center">⏱️ وقت</button>
+                <button class="g-chip" style="justify-content:center">💡 تلميح</button>
+              </div>
+            </div>
+            <!-- main -->
+            <div style="display:flex;flex-direction:column">
+              <div class="row center gap8" style="margin-bottom:8px">
+                <span class="g-cat" style="padding:3px 9px">📜 تاريخ</span>
+                <span class="eyebrow-min">History · 400</span>
+              </div>
+              <div class="g-q" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:26px 18px">
+                <span class="corner tl">❖</span><span class="corner tr">❖</span>
+                <span class="corner bl">❖</span><span class="corner br">❖</span>
+                <div class="qar" style="font-size:22px">ما هي عاصمة دولة الكويت؟</div>
+                <div class="qen">What is the capital of Kuwait?</div>
+              </div>
+              <div class="row gap8 mt12">
+                <button class="g-btn outline" style="flex:1">إنهاء الدور</button>
+                <button class="g-btn gold" style="flex:1.3">👁 كشف</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="changes">
+          <li class="merge"><b>Left rail</b> holds teams, timer ring, lifelines — off the vertical path.</li>
+          <li class="merge"><b>Circular timer</b> replaces the heavy dual-timer block.</li>
+          <li class="keep"><b>Question</b> fills the tall right column, centered.</li>
+          <li class="cut">Best on wide screens; rail drops below on mobile.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ========== D · SINGLE PANEL ========== -->
+    <div class="card">
+      <div class="card-head">
+        <div><h2>D · One Panel<small>Most minimal — corner badges, ring, three buttons</small></h2></div>
+        <span class="tag new">Option D</span>
+      </div>
+      <div class="card-body">
+        <p class="desc">Strip it to essentials inside a single stage. Teams become two corner
+          badges, the timer a ring, the question centered, actions a clean trio. Maximum calm.</p>
+        <div class="stage" style="padding:20px 18px">
+          <!-- corner badges + ring -->
+          <div class="row between" style="align-items:flex-start">
+            <span class="row gap6" style="padding:5px 10px;border:1px solid var(--gold);border-radius:999px;background:linear-gradient(135deg,rgba(58,123,200,.4),var(--ink50))">
+              <span class="g-emoji" style="width:20px;height:20px;font-size:11px;background:#3A7BC8">🦅</span>
+              <span class="ar" style="font-weight:700;font-size:12px">الصقور</span>
+              <span style="width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px var(--gold)"></span></span>
+            <span class="row gap6" style="padding:5px 10px;border:1px solid var(--gold-faint);border-radius:999px;opacity:.6">
+              <span class="ar" style="font-weight:700;font-size:12px">النسور</span>
+              <span class="g-emoji" style="width:20px;height:20px;font-size:11px;background:#9B2D3A">🦉</span></span>
+          </div>
+          <div class="ring" style="--p:82;margin:14px auto 4px"><div class="inner"><span class="num">0:30</span></div></div>
+          <div class="eyebrow-min" style="text-align:center">الصقور تجيب · Eagles get 0:15</div>
+          <div class="row center gap8 mt14">
+            <span class="g-cat" style="padding:3px 9px">📜 تاريخ</span>
+            <span class="eyebrow-min">400 pts</span>
+          </div>
+          <div class="mt10" style="text-align:center;padding:22px 12px">
+            <div class="qar" style="font-size:24px;line-height:1.4">ما هي عاصمة دولة الكويت؟</div>
+            <div class="qen">What is the capital of Kuwait?</div>
+          </div>
+          <div class="row center gap8 mt10">
+            <button class="g-chip"><span class="ic">⏱️</span>وقت</button>
+            <button class="g-chip"><span class="ic">💡</span>تلميح</button>
+          </div>
+          <div class="row gap8 mt16">
+            <button class="g-btn ghost" type="button" aria-label="Pause">⏸</button>
+            <button class="g-btn outline" style="flex:1">إنهاء</button>
+            <button class="g-btn gold" style="flex:1.5">👁 كشف الإجابة</button>
+          </div>
+        </div>
+        <ul class="changes">
+          <li class="cut"><b>No boxes-in-boxes</b> — the stage itself is the only frame.</li>
+          <li class="merge"><b>Corner badges</b> for teams; ring for the timer.</li>
+          <li class="keep"><b>Question centered</b> with the most whitespace of any option.</li>
+          <li class="merge"><b>Two lifeline chips</b> + a clean three-button row.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <div><b>Recommendation.</b> <span class="pick">A · Focus Flow</span> is the safe, high-impact pick —
+      it removes the most visual weight while keeping the exact structure the code already renders,
+      so it maps to the smallest diff. <b>B · Command HUD</b> is the strongest if you want it to feel
+      like a broadcast game show. <b>C</b> pays off on projectors/tablets; <b>D</b> is the calmest but
+      hides the opposing-team detail behind a badge.</div>
+    <div class="small">All four keep the pause / end-turn / reveal actions, both lifelines, the RTL
+      Arabic-first hierarchy, and the gold-on-ink identity. Reveal-and-award (Stage 2) is unchanged and
+      not shown. Static mockups only — no application code was modified.</div>
+  </footer>
+
+</div>
+
+<script>
+  (function(){
+    var root=document.documentElement, b=document.getElementById('tg'),
+        i=document.getElementById('tgi'), t=document.getElementById('tgt');
+    function cur(){ if(root.dataset.theme) return root.dataset.theme;
+      return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'; }
+    function paint(){ var d=cur()==='dark'; i.textContent=d?'☾':'☀'; t.textContent=d?'Dark':'Light'; }
+    b.addEventListener('click',function(){ root.dataset.theme=cur()==='dark'?'light':'dark'; paint(); });
+    paint();
+  })();
+</script>

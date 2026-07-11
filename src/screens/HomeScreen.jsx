@@ -20,7 +20,6 @@ export default function HomeScreen() {
   if (!isAuthenticated && !isGuest) return <Navigate to="/" replace />;
 
   const displayName = user?.email?.split('@')[0] ?? guestProfile?.name ?? 'ضيف';
-  const avatar = guestProfile?.emoji ?? '🎲';
 
   const handleSignOut = async () => {
     await signOut();
@@ -44,7 +43,6 @@ export default function HomeScreen() {
             <Volume2 size={16} />
           </button>
           <span className="flex items-center gap-2 bg-ink-80 border border-gold-faint rounded-full px-3 py-1">
-            <span className="text-base leading-none">{avatar}</span>
             <span className="font-ar-ui text-sm text-cream truncate max-w-[120px]">
               {displayName}
             </span>

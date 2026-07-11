@@ -106,7 +106,6 @@ export const profileSchema = z.object({
     .trim()
     .min(2, 'At least 2 characters')
     .max(40, 'At most 40 characters'),
-  emoji: optionalText,
   preferred_language: z.enum(['ar', 'en']),
 });
 

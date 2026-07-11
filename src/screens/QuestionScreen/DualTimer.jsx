@@ -1,45 +1,54 @@
 import { motion } from 'framer-motion';
 import { formatTime } from '../../lib/format';
 
-export default function DualTimer({ primary, secondary, opposingTeamNameEn }) {
-  const urgent = primary <= 5 && primary > 0;
+// Circular countdown for the split-stage rail. The ring drains as time runs
+// out; the opposing team's secondary time sits underneath as a quiet caption.
+// Replaces the old heavy dual-panel block — same information, a fraction of the
+// visual weight.
+export default function DualTimer({ timeLeft, max, secondary, opposingTeamNameEn }) {
+  const urgent = timeLeft <= 5 && timeLeft > 0;
+  const pct = max > 0 ? Math.max(0, Math.min(100, (timeLeft / max) * 100)) : 0;
+  const ringColor = urgent ? 'var(--color-crimson, #C44150)' : 'var(--color-gold)';
+
   return (
-    <div
-      className="flex items-center gap-4 md:gap-5 px-4 py-3 rounded-lg border"
-      style={{
-        background: 'var(--color-ink-50)',
-        borderColor: 'var(--color-gold-faint)',
-      }}
-    >
-      <div className="flex flex-col">
-        <span className="font-ar-ui text-sm text-gold-light tracking-wider uppercase">
-          الوقت الأساسي · <span lang="en">Primary</span>
-        </span>
-        <motion.span
-          key={Math.floor(primary)}
-          initial={urgent ? { scale: 1.15 } : { scale: 1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.25 }}
-          className="font-en-display font-bold leading-none"
+    <div className="flex flex-col items-center gap-1.5">
+      <div
+        className="rounded-full grid place-items-center"
+        style={{
+          width: 78,
+          height: 78,
+          background: `conic-gradient(${ringColor} ${pct}%, var(--color-gold-faint) 0)`,
+        }}
+        role="timer"
+        aria-label={`${formatTime(timeLeft)} remaining`}
+      >
+        <div
+          className="rounded-full grid place-items-center"
           style={{
-            fontSize: '36px',
-            color: urgent ? '#C44150' : 'var(--color-gold)',
-            textShadow: urgent
-              ? 'var(--glow-text-crimson)'
-              : 'var(--glow-text-gold)',
+            width: 62,
+            height: 62,
+            background: 'var(--color-ink)',
+            boxShadow: 'inset 0 0 0 1px var(--color-gold-faint)',
           }}
         >
-          {formatTime(primary)}
-        </motion.span>
+          <motion.span
+            key={Math.floor(timeLeft)}
+            initial={urgent ? { scale: 1.15 } : { scale: 1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.25 }}
+            className="font-en-display font-bold leading-none tabular-nums"
+            style={{
+              fontSize: 24,
+              color: ringColor,
+              textShadow: urgent ? 'var(--glow-text-crimson)' : 'var(--glow-text-gold)',
+            }}
+          >
+            {formatTime(timeLeft)}
+          </motion.span>
+        </div>
       </div>
-      <div className="w-px self-stretch bg-gold-faint mx-1" />
-      <div className="flex flex-col opacity-60">
-        <span className="font-ar-ui text-sm text-cream-60 tracking-wider uppercase">
-          للفريق الآخر · <span lang="en">{opposingTeamNameEn} gets</span>
-        </span>
-        <span className="font-en-display font-semibold text-cream-60 text-xl leading-none">
-          {formatTime(secondary)}
-        </span>
+      <div className="font-ar-ui text-[11px] text-cream-45 text-center leading-tight">
+        <span lang="en" dir="ltr">{opposingTeamNameEn}</span> ▸ {formatTime(secondary)}
       </div>
     </div>
   );

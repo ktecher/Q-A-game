@@ -1,8 +1,8 @@
-// Visual identity for a team: emoji + Arabic name + English name. Three
-// surfaces (BoardScreen's TeamChip, QuestionScreen's TeamCell, ChallengeRound's
-// TeamTurnChip) previously hand-coded the same emoji-and-name block. Now they
-// share this primitive — only the surrounding wrapper (status, score, button
-// vs. div) varies per surface.
+// Visual identity for a team: Arabic name + English name. Three surfaces
+// (BoardScreen's TeamChip, QuestionScreen's TeamCell, ChallengeRound's
+// TeamTurnChip) previously hand-coded the same name block. Now they share this
+// primitive — only the surrounding wrapper (status, score, button vs. div)
+// varies per surface.
 
 const SIZE_TOKENS = {
   sm: { name: 'text-sm',   nameEn: 'text-xs' },

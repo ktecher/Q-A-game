@@ -21,7 +21,6 @@ const fmtDate = (value) => (value ? new Date(value).toLocaleString() : '—');
 // ── Profiles ────────────────────────────────────────────────────────
 const profileFields = [
   { name: 'display_name', label: 'Display name', type: 'text' },
-  { name: 'emoji', label: 'Emoji', type: 'text' },
   {
     name: 'preferred_language',
     label: 'Preferred language',
@@ -35,7 +34,6 @@ const profileFields = [
 
 const profileColumns = [
   { key: 'display_name', label: 'Name' },
-  { key: 'emoji', label: 'Emoji' },
   { key: 'preferred_language', label: 'Language' },
   {
     key: 'id',

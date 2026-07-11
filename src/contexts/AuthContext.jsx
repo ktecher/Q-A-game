@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const continueAsGuest = (profile = { name: 'ضيف', emoji: '🎲' }) => {
+  const continueAsGuest = (profile = { name: 'ضيف' }) => {
     const full = { ...profile, deviceId: getDeviceId() };
     localStorage.setItem(STORAGE_KEYS.GUEST_PROFILE, JSON.stringify(full));
     setGuestProfile(full);

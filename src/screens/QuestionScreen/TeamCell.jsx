@@ -1,8 +1,11 @@
-import { formatTime } from '../../lib/format';
 import TeamIdentity from '../../components/TeamIdentity';
 
-export default function TeamCell({ team, status, secondaryTimer, answeredText }) {
-  // status: 'answering' | 'waiting' | 'done'
+// Rail team card for the split-stage question screen. Shows the team's name +
+// running score. Whose turn it is is conveyed purely by the active highlight
+// (gold border + glow) — no status text needed, since only one card lights up.
+//
+// status: 'answering' | 'waiting' | 'done'
+export default function TeamCell({ team, status }) {
   const isAnswering = status === 'answering';
   const isWaiting = status === 'waiting';
   const isDone = status === 'done';
@@ -17,54 +20,25 @@ export default function TeamCell({ team, status, secondaryTimer, answeredText })
       ? `${team.color}aa`
       : 'var(--color-gold-faint)';
 
-  const opacity = isWaiting ? 0.55 : 1;
-
   return (
     <div
-      className="flex flex-col gap-1.5 px-3.5 py-3 rounded-lg border transition-all"
+      className="flex flex-col gap-1 px-3 py-2.5 rounded-lg border transition-all"
       style={{
         background: bg,
         borderColor: border,
-        opacity,
-        boxShadow: isAnswering
-          ? 'var(--chip-active-shadow)'
-          : 'none',
+        opacity: isWaiting ? 0.55 : 1,
+        boxShadow: isAnswering ? 'var(--chip-active-shadow)' : 'none',
       }}
     >
-      <div className="flex items-center gap-2.5">
-        <TeamIdentity
-          team={team}
-          size="lg"
-          truncate
-          suffixEn={answeredText ? ` · said: "${answeredText}"` : undefined}
-        />
-      </div>
-      <div
-        className="font-ar-ui text-xs flex items-center gap-1.5"
-        style={{ color: isAnswering ? 'var(--color-gold-light)' : 'var(--color-cream-60)' }}
-      >
+      <TeamIdentity team={team} size="sm" truncate />
+      <div className="flex items-baseline gap-1.5">
         <span
-          className={`w-1.5 h-1.5 rounded-full ${isAnswering ? 'bg-gold animate-pulse-dot' : isDone ? 'bg-gold-light' : 'bg-cream-30'
-            }`}
-        />
-        {isAnswering && (
-          <>
-            <span>يجيب الآن</span>
-            <span className="opacity-70" lang="en">· Answering</span>
-          </>
-        )}
-        {isWaiting && (
-          <>
-            <span>التالي · {formatTime(secondaryTimer)}</span>
-            <span className="opacity-70" lang="en">· Up next</span>
-          </>
-        )}
-        {isDone && (
-          <>
-            <span>أجاب</span>
-            <span className="opacity-70" lang="en">· Done</span>
-          </>
-        )}
+          className="font-en-display font-bold text-xl leading-none"
+          style={{ color: isAnswering ? 'var(--color-gold)' : team.color }}
+        >
+          {team.score}
+        </span>
+        <span className="font-ar-ui text-[10px] text-cream-45">نقطة</span>
       </div>
     </div>
   );

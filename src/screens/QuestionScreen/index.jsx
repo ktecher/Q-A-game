@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Timer, Lightbulb, Swords, Sparkles, ArrowRight, Eye, Pause, Play,
+  Timer, Lightbulb, Sparkles, ArrowRight, Eye, Pause, Play,
 } from 'lucide-react';
 import { QRCode } from 'react-qr-code';
 import { ICON_MAP, FALLBACK_ICON } from '../../data/categories';
@@ -103,7 +103,6 @@ export default function QuestionScreen() {
   const isReveal = phase === 'reveal';
 
   const activeTurnTeamName = isActiveAnswering ? activeTeam?.name : opposingTeam?.name;
-  const activeTurnTeamNameEn = isActiveAnswering ? activeTeam?.nameEn : opposingTeam?.nameEn;
 
   // If we got bounced before render, draw nothing
   if (!currentCell) return null;
@@ -132,7 +131,6 @@ export default function QuestionScreen() {
     <div className="min-h-screen px-4 py-5 md:px-8 md:py-8 max-w-4xl mx-auto">
       {/* Stage label + exit */}
       <div className="flex items-center justify-between gap-2 mb-5">
-        <div className="flex items-center gap-2">
         <span
           className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-ar-ui font-semibold uppercase tracking-wider"
           style={{
@@ -150,44 +148,7 @@ export default function QuestionScreen() {
             · {isReveal ? 'Stage 2 · Reveal & Award' : 'Stage 1 · Answer Phase'}
           </span>
         </span>
-        </div>
         <ExitGameButton variant="text" />
-      </div>
-
-      {/* Team tracker — stable positions: teams[0] always first, teams[1] always second.
-          Status is derived per team based on activeTeamIdx so the gold ring always
-          follows the actual answering team, regardless of who picked. */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mb-5">
-        <TeamCell
-          team={teams[0]}
-          status={getTeamStatus(0, activeTeamIdx, phase)}
-          secondaryTimer={SECONDARY_TIMER}
-        />
-        <span className="font-en-display italic text-gold/60 font-bold text-lg">vs</span>
-        <TeamCell
-          team={teams[1]}
-          status={getTeamStatus(1, activeTeamIdx, phase)}
-          secondaryTimer={SECONDARY_TIMER}
-        />
-      </div>
-
-      {/* Category tag */}
-      <div className="flex items-center gap-2 mb-3">
-        <span
-          className="accent-card inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-ar-body font-bold text-cream"
-          style={{ background: category?.accent ?? '#173D6E' }}
-        >
-          {CategoryIcon && <CategoryIcon size={14} aria-hidden="true" />}
-          {category?.ar}
-        </span>
-        <span
-          className="font-en-body text-cream-45 text-xs tracking-wide uppercase"
-          lang="en"
-          dir="ltr"
-        >
-          {category?.en}
-        </span>
-        <span className="font-en-display text-gold font-bold text-lg ms-auto">· {cellValue}</span>
       </div>
 
       <AnimatePresence mode="wait">
@@ -198,183 +159,179 @@ export default function QuestionScreen() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
+            className="grid gap-4 md:grid-cols-[172px_1fr] items-stretch"
           >
-            {/* Dual timer */}
-            <div className="mb-4">
+            {/* ── Rail: timer ring, team scores, lifelines, pause ── */}
+            <div className="flex flex-col gap-3">
               <DualTimer
-                primary={timeLeft}
+                timeLeft={timeLeft}
+                max={PRIMARY_TIMER}
                 secondary={SECONDARY_TIMER}
                 opposingTeamNameEn={opposingTeam?.nameEn ?? 'Other team'}
               />
+
+              <TeamCell team={teams[0]} status={getTeamStatus(0, activeTeamIdx, phase)} />
+              <TeamCell team={teams[1]} status={getTeamStatus(1, activeTeamIdx, phase)} />
+
+              <div className="flex flex-col gap-2 mt-0.5">
+                <button
+                  type="button"
+                  onClick={handleExtraTime}
+                  disabled={extraUsed}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition ${
+                    extraUsed
+                      ? 'opacity-30 cursor-not-allowed border-cream-30 bg-ink-50'
+                      : 'border-gold-faint bg-ink-50 hover:border-gold/60 hover:bg-gold/5'
+                  }`}
+                >
+                  <Timer size={16} className="text-gold shrink-0" />
+                  <span className="font-ar-ui text-xs text-cream font-semibold">وقت إضافي</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleHint}
+                  disabled={hintUsed}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition ${
+                    hintUsed
+                      ? 'opacity-30 cursor-not-allowed border-cream-30 bg-ink-50'
+                      : 'border-gold-faint bg-ink-50 hover:border-gold/60 hover:bg-gold/5'
+                  }`}
+                >
+                  <Lightbulb size={16} className="text-gold-light shrink-0" />
+                  <span className="font-ar-ui text-xs text-cream font-semibold">تلميح</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={togglePause}
+                  aria-pressed={paused}
+                  title={paused ? 'استئناف · Resume timer' : 'إيقاف · Pause timer'}
+                  className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition ${
+                    paused
+                      ? 'border-gold bg-gold/10 text-gold'
+                      : 'border-gold-faint bg-ink-50 text-cream-60 hover:border-gold/60 hover:text-gold'
+                  }`}
+                >
+                  {paused ? <Play size={15} /> : <Pause size={15} />}
+                  <span className="font-ar-ui text-xs font-semibold">
+                    {paused ? 'استئناف' : 'إيقاف'}
+                  </span>
+                </button>
+              </div>
             </div>
 
-            {/* Question card with ❖ corners.
-                Padding tightens when an image or QR is present so the whole
-                screen still fits on a ~768-900px viewport. Text-only cards
-                keep the roomier padding so corner ornaments don't collide
-                with the question text. */}
-            <div
-              className={`relative rounded-xl mb-4 text-center ${
-                Q.imageUrl || Q.qrUrl
-                  ? 'px-5 py-5 md:px-7 md:py-6'
-                  : 'px-5 py-6 md:px-7 md:py-8'
-              }`}
-              style={{
-                background: 'var(--card-sapphire-grad)',
-                border: '1.5px solid var(--color-gold-faint)',
-                boxShadow: 'var(--card-sapphire-inset)',
-              }}
-            >
-              <span className="absolute top-2 start-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
-              <span className="absolute top-2 end-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
-              <span className="absolute bottom-2 start-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
-              <span className="absolute bottom-2 end-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
-
-              <div className="font-ar-body font-bold text-cream text-xl md:text-2xl leading-snug">
-                {Q.ar}
-              </div>
-              <div className="font-en-display italic text-cream-60 text-sm md:text-base mt-2 leading-snug" lang="en">
-                {Q.en}
+            {/* ── Main: category, question hero, actions ── */}
+            <div className="flex flex-col min-w-0">
+              {/* Category tag */}
+              <div className="flex items-center gap-2 mb-2.5">
+                <span
+                  className="accent-card inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-ar-body font-bold text-cream"
+                  style={{ background: category?.accent ?? '#173D6E' }}
+                >
+                  {CategoryIcon && <CategoryIcon size={14} aria-hidden="true" />}
+                  {category?.ar}
+                </span>
+                <span
+                  className="font-en-body text-cream-45 text-xs tracking-wide uppercase"
+                  lang="en"
+                  dir="ltr"
+                >
+                  {category?.en}
+                </span>
+                <span className="font-en-display text-gold font-bold text-lg ms-auto">· {cellValue}</span>
               </div>
 
-              {Q.qrUrl && (
-                <div className="mt-3 flex justify-center">
-                  <div className="bg-white rounded-xl p-3 inline-block">
-                    <QRCode
-                      value={Q.qrUrl}
-                      size={180}
-                      bgColor="#FFFFFF"
-                      fgColor="#0A0F1A"
-                      level="M"
+              {/* Question card with ❖ corners — the hero. Fills the column height
+                  so it stays visually dominant. Padding tightens when an image or
+                  QR is present so everything still fits on a laptop viewport. */}
+              <div
+                className={`relative rounded-xl text-center flex-1 flex flex-col justify-center ${
+                  Q.imageUrl || Q.qrUrl
+                    ? 'px-5 py-5 md:px-7 md:py-6'
+                    : 'px-5 py-6 md:px-7 md:py-8'
+                }`}
+                style={{
+                  background: 'var(--card-sapphire-grad)',
+                  border: '1.5px solid var(--color-gold-faint)',
+                  boxShadow: 'var(--card-sapphire-inset)',
+                }}
+              >
+                <span className="absolute top-2 start-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
+                <span className="absolute top-2 end-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
+                <span className="absolute bottom-2 start-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
+                <span className="absolute bottom-2 end-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
+
+                <div className="font-ar-body font-bold text-cream text-xl md:text-2xl leading-snug">
+                  {Q.ar}
+                </div>
+                <div className="font-en-display italic text-cream-60 text-sm md:text-base mt-2 leading-snug" lang="en">
+                  {Q.en}
+                </div>
+
+                {Q.qrUrl && (
+                  <div className="mt-3 flex justify-center">
+                    <div className="bg-white rounded-xl p-3 inline-block">
+                      <QRCode
+                        value={Q.qrUrl}
+                        size={180}
+                        bgColor="#FFFFFF"
+                        fgColor="#0A0F1A"
+                        level="M"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {Q.imageUrl && (
+                  <div className="mt-3 flex justify-center">
+                    <img
+                      src={Q.imageUrl}
+                      alt=""
+                      loading="lazy"
+                      className="max-h-[38vh] md:max-h-72 max-w-sm w-auto rounded-lg border border-gold-faint shadow-lg"
                     />
                   </div>
-                </div>
-              )}
-
-              {Q.imageUrl && (
-                <div className="mt-3 flex justify-center">
-                  <img
-                    src={Q.imageUrl}
-                    alt=""
-                    loading="lazy"
-                    className="max-h-[38vh] md:max-h-72 max-w-sm w-auto rounded-lg border border-gold-faint shadow-lg"
-                  />
-                </div>
-              )}
-
-              {/* Hint reveal */}
-              <AnimatePresence>
-                {hintShown && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-3 inline-block px-4 py-2 rounded-md border border-gold-faint bg-gold/10"
-                  >
-                    <div className="font-ar-ui text-sm text-gold-light flex items-center justify-center gap-1.5">
-                      <Lightbulb size={14} /> تلميح: {Q.hintAr}
-                    </div>
-                    <div className="font-en-body text-cream-60 text-sm italic" lang="en">
-                      {Q.hintEn}
-                    </div>
-                  </motion.div>
                 )}
-              </AnimatePresence>
-            </div>
 
-            {/* Lifelines (active team only) */}
-            <div className="grid grid-cols-3 gap-2.5 mb-5">
-              <button
-                type="button"
-                onClick={handleExtraTime}
-                disabled={extraUsed}
-                className={`flex flex-col items-center gap-1 px-3 py-3 rounded-lg border transition ${
-                  extraUsed
-                    ? 'opacity-30 cursor-not-allowed border-cream-30 bg-ink-50'
-                    : 'border-gold-faint bg-ink-50 hover:border-gold/60 hover:bg-gold/5'
-                }`}
-              >
-                <Timer size={22} className="text-gold" />
-                <span className="font-ar-ui text-sm text-cream font-semibold">وقت إضافي</span>
-                <span className="font-en-body text-sm text-cream-45 uppercase tracking-wide" lang="en">
-                  Extra Time
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={handleHint}
-                disabled={hintUsed}
-                className={`flex flex-col items-center gap-1 px-3 py-3 rounded-lg border transition ${
-                  hintUsed
-                    ? 'opacity-30 cursor-not-allowed border-cream-30 bg-ink-50'
-                    : 'border-gold-faint bg-ink-50 hover:border-gold/60 hover:bg-gold/5'
-                }`}
-              >
-                <Lightbulb size={22} className="text-gold-light" />
-                <span className="font-ar-ui text-sm text-cream font-semibold">تلميح</span>
-                <span className="font-en-body text-sm text-cream-45 uppercase tracking-wide" lang="en">
-                  Hint
-                </span>
-              </button>
-              <button
-                type="button"
-                disabled
-                title="Steal is being re-evaluated under the dual-answer flow"
-                className="flex flex-col items-center gap-1 px-3 py-3 rounded-lg border border-cream-30 bg-ink-50 opacity-40 cursor-not-allowed"
-              >
-                <Swords size={20} className="text-crimson" />
-                <span className="font-ar-ui text-sm text-crimson font-semibold">سرقة</span>
-                <span className="font-en-body text-sm text-crimson uppercase tracking-wide" lang="en">
-                  Steal
-                </span>
-              </button>
-            </div>
+                {/* Hint reveal */}
+                <AnimatePresence>
+                  {hintShown && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-3 inline-block px-4 py-2 rounded-md border border-gold-faint bg-gold/10"
+                    >
+                      <div className="font-ar-ui text-sm text-gold-light flex items-center justify-center gap-1.5">
+                        <Lightbulb size={14} /> تلميح: {Q.hintAr}
+                      </div>
+                      <div className="font-en-body text-cream-60 text-sm italic" lang="en">
+                        {Q.hintEn}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-            {/* Bottom CTAs */}
-            <div className="flex flex-wrap justify-center gap-2.5">
-              <button
-                type="button"
-                onClick={togglePause}
-                aria-pressed={paused}
-                title={paused ? 'استئناف · Resume timer' : 'إيقاف · Pause timer'}
-                className={`px-4 py-3 rounded-xl text-sm flex items-center gap-2 border transition ${
-                  paused
-                    ? 'border-gold bg-gold/10 text-gold'
-                    : 'border-gold-faint bg-ink-50 text-cream-60 hover:border-gold/60 hover:text-gold'
-                }`}
-              >
-                {paused ? <Play size={16} /> : <Pause size={16} />}
-                <div className="flex flex-col items-center gap-0">
-                  <span>{paused ? 'استئناف' : 'إيقاف'}</span>
-                  <span className="font-en-body text-xs opacity-70" lang="en">
-                    {paused ? 'Resume' : 'Pause'}
-                  </span>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={endTurn}
-                className="btn-outline px-5 py-3 rounded-xl text-sm flex items-center gap-2"
-              >
-                <span>إنهاء دور {activeTurnTeamName}</span>
-                <ArrowRight size={14} />
-                <span className="font-en-body text-xs opacity-70" lang="en">
-                  End {activeTurnTeamNameEn}'s Turn
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={handleReveal}
-                className="btn-gold px-6 py-3 rounded-xl text-sm flex items-center gap-2"
-              >
-                <Eye size={16} />
-                <div className="flex flex-col items-center gap-0">
+              {/* Bottom CTAs — Reveal is the primary, weighted wider */}
+              <div className="flex gap-2.5 mt-4">
+                <button
+                  type="button"
+                  onClick={endTurn}
+                  className="btn-outline px-4 py-3 rounded-xl text-sm flex items-center justify-center gap-2 flex-1"
+                >
+                  <span>إنهاء دور {activeTurnTeamName}</span>
+                  <ArrowRight size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReveal}
+                  className="btn-gold px-5 py-3 rounded-xl text-sm flex items-center justify-center gap-2"
+                  style={{ flex: '1.4' }}
+                >
+                  <Eye size={16} />
                   <span>كشف الإجابة</span>
-                  <span className="font-en-body text-xs font-medium opacity-80" lang="en">
-                    Reveal Answer
-                  </span>
-                </div>
-              </button>
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

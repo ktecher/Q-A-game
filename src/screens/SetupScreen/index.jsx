@@ -114,7 +114,6 @@ export default function SetupScreen() {
             </span>
           ) : (
             <span className="flex items-center gap-2 bg-ink-80 border border-gold-faint rounded-full px-3 py-1">
-              <span className="text-base leading-none">{guestProfile?.emoji ?? '🎲'}</span>
               <span className="font-ar-ui text-sm text-cream truncate max-w-[120px]">{displayName}</span>
             </span>
           )}
@@ -407,7 +406,6 @@ export default function SetupScreen() {
                   name: t.name || t.defaultNameAr,
                   nameEn: t.defaultNameEn,
                   color: t.color,
-                  emoji: t.emoji,
                   players: t.players,
                 })),
                 difficulty,

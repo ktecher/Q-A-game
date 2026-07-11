@@ -87,7 +87,7 @@ export default function SignUpScreen() {
 
   const handleMockSignUp = () => {
     const name = displayName.trim() || email.trim().split('@')[0] || 'مستخدم تجريبي';
-    continueAsGuest({ name, emoji: '🎲', mock: true });
+    continueAsGuest({ name, mock: true });
     navigate('/home');
   };
 
