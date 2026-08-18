@@ -200,6 +200,13 @@ html[data-theme='light'] {
     unicode-bidi: isolate;
   }
 
+  /* Placeholders are hints, not values — muted so a blank team-name field
+     never looks like it is already filled in. */
+  input::placeholder {
+    color: var(--muted2);
+    opacity: 1;
+  }
+
   /* Keep a visible focus ring — never the browser default. */
   :focus-visible {
     outline: 4px solid var(--gold);

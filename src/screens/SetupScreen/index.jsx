@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGame } from '../../contexts/GameContext';
@@ -96,7 +96,14 @@ export default function SetupScreen() {
   const anyChallengeType =
     appSettings.naming_challenge_enabled || appSettings.sketch_challenge_enabled;
 
-  // Section A — mode
+  // Setup runs as two steps so neither page is a wall of controls:
+  //   1 · the match rules  — timer, teams, challenge rounds
+  //   2 · the content      — mode, difficulty, the six stages
+  // Both feed one startGame() call, so the state stays in this component
+  // rather than moving to a route parent.
+  const [step, setStep] = useState(1);
+
+  // Section D — mode
   const [mode, setMode] = useState('pick');
 
   // Section B — difficulty
@@ -166,6 +173,13 @@ export default function SetupScreen() {
     setTeams((prev) => prev.map((t, i) => (i === idx ? { ...t, ...patch } : t)));
   };
 
+  const goHome = () => navigate('/home');
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
+  const isStepOne = step === 1;
   const timerFilled = Math.round((timerSecs / 60) * TIMER_SEGMENTS);
 
   return (
@@ -179,18 +193,37 @@ export default function SetupScreen() {
           borderBottom: '4px solid var(--gold-d)',
         }}
       >
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={goHome}
+            title="العودة للرئيسية · Back to home"
+            className="font-en-body leading-none shrink-0 grid place-items-center"
+            style={{
+              width: 44,
+              height: 44,
+              background: 'var(--panel2)',
+              border: '4px solid var(--line)',
+              color: 'var(--gold-ink)',
+              fontSize: 12,
+            }}
+          >
+            <span aria-hidden="true">◄</span>
+            <span className="sr-only" lang="en">Back to home</span>
+          </button>
+          <span
+            className="font-ar-body font-extrabold leading-none truncate"
+            style={{ fontSize: 34, color: 'var(--gold-ink)' }}
+          >
+            أم الهيمان
+          </span>
+        </div>
         <span
-          className="font-ar-body font-extrabold leading-none"
-          style={{ fontSize: 34, color: 'var(--gold-ink)' }}
-        >
-          أم الهيمان
-        </span>
-        <span
-          className="font-en-body leading-none truncate uppercase"
+          className="font-en-body leading-none truncate uppercase shrink-0"
           style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.1em' }}
           lang="en"
         >
-          STAGE SELECT · {isGuest ? 'GUEST' : displayName}
+          STEP {step}/2 · {isGuest ? 'GUEST' : displayName}
         </span>
       </header>
 
@@ -200,87 +233,22 @@ export default function SetupScreen() {
           className="font-ar-body font-extrabold leading-none"
           style={{ fontSize: 'clamp(34px, 5vw, 56px)', color: 'var(--text)', textShadow: '4px 4px 0 var(--red-d)' }}
         >
-          إعداد اللعبة
+          {isStepOne ? 'إعداد الفرق' : 'اختر الفئات'}
         </h2>
         <p
           className="font-en-body leading-none"
           style={{ fontSize: 12, color: 'var(--muted)', letterSpacing: '0.16em', marginTop: 8 }}
           lang="en"
         >
-          SELECT YOUR STAGE
+          {isStepOne ? 'PLAYERS · TIMER · CHALLENGES' : 'SELECT YOUR STAGE'}
         </p>
       </div>
 
       <div className="flex-1 flex flex-col" style={{ padding: '16px 24px', gap: 22 }}>
-        {/* A — Mode picker */}
-        <Section badge="A" labelAr="طريقة اللعب" labelEn="Mode">
-          <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 14 }}>
-            {[
-              { val: 'quick',    ar: 'اختيار سريع', en: 'QUICK PICK'      },
-              { val: 'pick',     ar: 'اختر الفئات', en: 'PICK CATEGORIES' },
-              { val: 'surprise', ar: 'بطاقة مفاجأة', en: 'SURPRISE ME'    },
-            ].map(({ val, ar, en }) => {
-              const active = mode === val;
-              return (
-                <button
-                  key={val}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => handleModeSelect(val)}
-                  className="relative text-center"
-                  style={{
-                    padding: 16,
-                    background: active ? 'var(--panel3)' : 'var(--panel)',
-                    border: `4px solid ${active ? 'var(--gold)' : 'var(--line)'}`,
-                    boxShadow: active ? '0 6px 0 var(--gold-sh)' : '0 6px 0 var(--shadow)',
-                  }}
-                >
-                  {active && (
-                    <span
-                      className="absolute font-en-body leading-none"
-                      style={{
-                        top: -14,
-                        insetInlineStart: 12,
-                        fontSize: 10,
-                        background: 'var(--gold)',
-                        color: 'var(--outline)',
-                        padding: '4px 6px',
-                      }}
-                      lang="en"
-                    >
-                      SELECTED
-                    </span>
-                  )}
-                  <div
-                    className="font-ar-body font-bold leading-none"
-                    style={{ fontSize: 30, color: active ? 'var(--gold-ink)' : 'var(--text)' }}
-                  >
-                    {ar}
-                  </div>
-                  <div
-                    className="font-en-body leading-none"
-                    style={{ marginTop: 8, fontSize: 10, color: active ? 'var(--gold-d)' : 'var(--muted2)' }}
-                    lang="en"
-                  >
-                    {en}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* B + C — Difficulty and Timer share a row on the sheet */}
-        <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 22 }}>
-          <Section badge="B" labelAr="الصعوبة" labelEn="Difficulty">
-            <Segments
-              options={DIFFICULTIES.map((d) => ({ value: d.value, ar: d.ar, en: d.en }))}
-              value={difficulty}
-              onChange={setDifficulty}
-            />
-          </Section>
-
-          <Section badge="C" labelAr="الوقت" labelEn="Timer">
+        {isStepOne ? (
+          <>
+          {/* A — Timer */}
+          <Section badge="A" labelAr="الوقت" labelEn="Timer">
             <div
               className="flex items-center flex-wrap"
               style={{ gap: 16, padding: '14px 16px', background: 'var(--panel)', border: '4px solid var(--line)' }}
@@ -328,153 +296,223 @@ export default function SetupScreen() {
               </span>
             </div>
           </Section>
-        </div>
 
-        {/* D — Teams */}
-        <Section badge="D" labelAr="الفرق" labelEn="Choose your fighters">
-          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 18 }}>
-            {teams.map((team, idx) => (
-              <TeamCard
-                key={idx}
-                team={team}
-                index={idx}
-                onChange={(patch) => updateTeam(idx, patch)}
+          {/* B — Teams */}
+          <Section badge="B" labelAr="الفرق" labelEn="Choose your fighters">
+            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 18 }}>
+              {teams.map((team, idx) => (
+                <TeamCard
+                  key={idx}
+                  team={team}
+                  index={idx}
+                  onChange={(patch) => updateTeam(idx, patch)}
+                />
+              ))}
+            </div>
+          </Section>
+
+          {/* C — Challenge rounds (no sheet screen; styled to match E) */}
+          <Section badge="C" labelAr="جولات التحدّي" labelEn="Challenge rounds">
+            <div className="flex flex-col" style={{ gap: 12 }}>
+              <Segments
+                options={[
+                  { value: true, ar: 'مُفعّلة', en: 'Enabled' },
+                  { value: false, ar: 'مُعطّلة', en: 'Disabled' },
+                ]}
+                value={challengesEnabled}
+                onChange={setChallengesEnabled}
               />
-            ))}
-          </div>
-        </Section>
-
-        {/* E — Challenge rounds (no sheet screen; styled to match B) */}
-        <Section badge="E" labelAr="جولات التحدّي" labelEn="Challenge rounds">
-          <div className="flex flex-col" style={{ gap: 12 }}>
-            <Segments
-              options={[
-                { value: true, ar: 'مُفعّلة', en: 'Enabled' },
-                { value: false, ar: 'مُعطّلة', en: 'Disabled' },
-              ]}
-              value={challengesEnabled}
-              onChange={setChallengesEnabled}
-            />
-            <Segments
-              options={ALLOWED_CHALLENGE_COUNTS.map((n) => ({
-                value: n,
-                ar: n === 2 ? '٢' : '٤',
-                en: String(n),
-              }))}
-              value={challengeCount}
-              onChange={setChallengeCount}
-              disabled={!challengesEnabled}
-            />
-            <p
-              className="font-en-body text-center"
-              style={{
-                fontSize: 10,
-                color: 'var(--muted)',
-                lineHeight: 1.8,
-                background: 'var(--cleared-bg)',
-                border: '4px solid var(--line)',
-                padding: '8px 12px',
-              }}
-              lang="en"
-            >
-              {challengesEnabled
-                ? `${challengeCount} HIDDEN CELLS BECOME DOUBLE-POINT CHALLENGES`
-                : 'NO CHALLENGE ROUNDS THIS GAME'}
-            </p>
-          </div>
-        </Section>
-
-        {/* F — Categories (LAST step — depends on chosen mode) */}
-        <Section
-          badge="F"
-          labelAr="اختر الفئات"
-          labelEn="Pick 6 stages"
-          trailing={
-            <CountChip ready={selectionReady}>
-              {effectiveSelected.length}/{CATEGORIES_PER_GAME} READY
-            </CountChip>
-          }
-        >
-          {isGuest ? (
-            <>
+              <Segments
+                options={ALLOWED_CHALLENGE_COUNTS.map((n) => ({
+                  value: n,
+                  ar: n === 2 ? '٢' : '٤',
+                  en: String(n),
+                }))}
+                value={challengeCount}
+                onChange={setChallengeCount}
+                disabled={!challengesEnabled}
+              />
               <p
-                className="font-en-body"
+                className="font-en-body text-center"
                 style={{
                   fontSize: 10,
-                  color: 'var(--gold-ink)',
-                  background: 'var(--panel)',
-                  border: '4px solid var(--gold-d)',
+                  color: 'var(--muted)',
+                  lineHeight: 1.8,
+                  background: 'var(--cleared-bg)',
+                  border: '4px solid var(--line)',
                   padding: '8px 12px',
-                  marginBottom: 14,
-                  letterSpacing: '0.08em',
                 }}
                 lang="en"
               >
-                6 STAGES PRE-SELECTED FOR GUEST MODE
+                {challengesEnabled
+                  ? `${challengeCount} HIDDEN CELLS BECOME DOUBLE-POINT CHALLENGES`
+                  : 'NO CHALLENGE ROUNDS THIS GAME'}
               </p>
-              <div className="grid grid-cols-3 sm:grid-cols-6" style={{ gap: 12 }}>
-                {CATEGORIES.filter((c) => guestSelected.includes(c.slug)).map((cat) => (
-                  <CategoryTile key={cat.slug} cat={cat} isSelected asButton={false} />
-                ))}
-              </div>
-            </>
-          ) : mode === 'pick' ? (
-            <>
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ابحث في الفئات"
-                aria-label="ابحث في الفئات · Search categories"
-                className="w-full font-ar-body font-bold"
-                style={{
-                  background: 'var(--input-bg)',
-                  border: '4px solid var(--blue)',
-                  boxShadow: 'inset 4px 4px 0 var(--inset)',
-                  padding: '8px 12px',
-                  color: 'var(--text)',
-                  fontSize: 26,
-                  marginBottom: 14,
-                }}
-              />
-              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6" style={{ gap: 12 }}>
-                {filteredCats.map((cat) => (
-                  <CategoryTile
-                    key={cat.slug}
-                    cat={cat}
-                    isSelected={selected.includes(cat.slug)}
-                    asButton
-                    onClick={() => handleTileToggle(cat.slug)}
-                  />
-                ))}
-                {filteredCats.length === 0 && (
-                  <div
-                    className="col-span-3 sm:col-span-5 md:col-span-6 text-center font-en-body"
-                    style={{ padding: '32px 0', fontSize: 10, color: 'var(--muted2)' }}
-                    lang="en"
+            </div>
+          </Section>
+          </>
+        ) : (
+          <>
+          {/* D — Mode picker */}
+          <Section badge="D" labelAr="طريقة اللعب" labelEn="Mode">
+            <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 14 }}>
+              {[
+                { val: 'quick',    ar: 'اختيار سريع', en: 'QUICK PICK'      },
+                { val: 'pick',     ar: 'اختر الفئات', en: 'PICK CATEGORIES' },
+                { val: 'surprise', ar: 'بطاقة مفاجأة', en: 'SURPRISE ME'    },
+              ].map(({ val, ar, en }) => {
+                const active = mode === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => handleModeSelect(val)}
+                    className="relative text-center"
+                    style={{
+                      padding: 16,
+                      background: active ? 'var(--panel3)' : 'var(--panel)',
+                      border: `4px solid ${active ? 'var(--gold)' : 'var(--line)'}`,
+                      boxShadow: active ? '0 6px 0 var(--gold-sh)' : '0 6px 0 var(--shadow)',
+                    }}
                   >
-                    NO RESULTS
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <p
-                className="font-en-body"
-                style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 14, letterSpacing: '0.08em' }}
-                lang="en"
-              >
-                {mode === 'quick' ? '6 RANDOM STAGES SELECTED' : 'SURPRISE SELECTION READY'}
-              </p>
-              <div className="grid grid-cols-3 sm:grid-cols-6" style={{ gap: 12 }}>
-                {CATEGORIES.filter((c) => selected.includes(c.slug)).map((cat) => (
-                  <CategoryTile key={cat.slug} cat={cat} isSelected asButton={false} />
-                ))}
-              </div>
-            </>
-          )}
-        </Section>
+                    {active && (
+                      <span
+                        className="absolute font-en-body leading-none"
+                        style={{
+                          top: -14,
+                          insetInlineStart: 12,
+                          fontSize: 10,
+                          background: 'var(--gold)',
+                          color: 'var(--outline)',
+                          padding: '4px 6px',
+                        }}
+                        lang="en"
+                      >
+                        SELECTED
+                      </span>
+                    )}
+                    <div
+                      className="font-ar-body font-bold leading-none"
+                      style={{ fontSize: 30, color: active ? 'var(--gold-ink)' : 'var(--text)' }}
+                    >
+                      {ar}
+                    </div>
+                    <div
+                      className="font-en-body leading-none"
+                      style={{ marginTop: 8, fontSize: 10, color: active ? 'var(--gold-d)' : 'var(--muted2)' }}
+                      lang="en"
+                    >
+                      {en}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+
+          {/* E — Difficulty */}
+          <Section badge="E" labelAr="الصعوبة" labelEn="Difficulty">
+            <Segments
+              options={DIFFICULTIES.map((d) => ({ value: d.value, ar: d.ar, en: d.en }))}
+              value={difficulty}
+              onChange={setDifficulty}
+            />
+          </Section>
+
+          {/* F — Categories (depends on the chosen mode) */}
+          <Section
+            badge="F"
+            labelAr="اختر الفئات"
+            labelEn="Pick 6 stages"
+            trailing={
+              <CountChip ready={selectionReady}>
+                {effectiveSelected.length}/{CATEGORIES_PER_GAME} READY
+              </CountChip>
+            }
+          >
+            {isGuest ? (
+              <>
+                <p
+                  className="font-en-body"
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--gold-ink)',
+                    background: 'var(--panel)',
+                    border: '4px solid var(--gold-d)',
+                    padding: '8px 12px',
+                    marginBottom: 14,
+                    letterSpacing: '0.08em',
+                  }}
+                  lang="en"
+                >
+                  6 STAGES PRE-SELECTED FOR GUEST MODE
+                </p>
+                <div className="grid grid-cols-3 sm:grid-cols-6" style={{ gap: 12 }}>
+                  {CATEGORIES.filter((c) => guestSelected.includes(c.slug)).map((cat) => (
+                    <CategoryTile key={cat.slug} cat={cat} isSelected asButton={false} />
+                  ))}
+                </div>
+              </>
+            ) : mode === 'pick' ? (
+              <>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="ابحث في الفئات"
+                  aria-label="ابحث في الفئات · Search categories"
+                  className="w-full font-ar-body font-bold"
+                  style={{
+                    background: 'var(--input-bg)',
+                    border: '4px solid var(--blue)',
+                    boxShadow: 'inset 4px 4px 0 var(--inset)',
+                    padding: '8px 12px',
+                    color: 'var(--text)',
+                    fontSize: 26,
+                    marginBottom: 14,
+                  }}
+                />
+                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6" style={{ gap: 12 }}>
+                  {filteredCats.map((cat) => (
+                    <CategoryTile
+                      key={cat.slug}
+                      cat={cat}
+                      isSelected={selected.includes(cat.slug)}
+                      asButton
+                      onClick={() => handleTileToggle(cat.slug)}
+                    />
+                  ))}
+                  {filteredCats.length === 0 && (
+                    <div
+                      className="col-span-3 sm:col-span-5 md:col-span-6 text-center font-en-body"
+                      style={{ padding: '32px 0', fontSize: 10, color: 'var(--muted2)' }}
+                      lang="en"
+                    >
+                      NO RESULTS
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <p
+                  className="font-en-body"
+                  style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 14, letterSpacing: '0.08em' }}
+                  lang="en"
+                >
+                  {mode === 'quick' ? '6 RANDOM STAGES SELECTED' : 'SURPRISE SELECTION READY'}
+                </p>
+                <div className="grid grid-cols-3 sm:grid-cols-6" style={{ gap: 12 }}>
+                  {CATEGORIES.filter((c) => selected.includes(c.slug)).map((cat) => (
+                    <CategoryTile key={cat.slug} cat={cat} isSelected asButton={false} />
+                  ))}
+                </div>
+              </>
+            )}
+          </Section>
+          </>
+        )}
       </div>
 
       {/* ── Fixed bottom bar ───────────────────────────────────────── */}
@@ -487,56 +525,132 @@ export default function SetupScreen() {
           borderTop: '4px solid var(--gold-d)',
         }}
       >
-        <CountChip ready={selectionReady}>
-          {effectiveSelected.length}/{CATEGORIES_PER_GAME}
-        </CountChip>
-        <button
-          type="button"
-          disabled={!selectionReady}
-          onClick={() => {
-            // Remember the challenge choices so they default the same next game.
-            writeSettings({ challengesEnabled, challengeCount });
-            startGame({
-              categorySlugs: effectiveSelected,
-              categories: effectiveCategories,
-              teams: teams.map((t, i) => ({
-                id: i + 1,
-                name: t.name || t.defaultNameAr,
-                nameEn: t.defaultNameEn,
-                color: t.color,
-                players: t.players,
-              })),
-              difficulty,
-              timerSeconds: timerSecs,
-              challengesEnabled: challengesEnabled && anyChallengeType,
-              challengeCount,
-            });
-            navigate('/reveal');
-          }}
-          className="flex-1 text-center transition-transform duration-100 enabled:hover:-translate-y-[3px] enabled:active:translate-y-[3px]"
-          style={{
-            padding: 14,
-            background: selectionReady
-              ? 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)'
-              : 'var(--cleared-bg)',
-            border: `4px solid ${selectionReady ? 'var(--outline)' : 'var(--line)'}`,
-            boxShadow: selectionReady ? '0 8px 0 var(--gold-sh)' : 'none',
-            color: selectionReady ? 'var(--outline)' : 'var(--muted2)',
-            opacity: selectionReady ? 1 : 0.45,
-            cursor: selectionReady ? undefined : 'not-allowed',
-          }}
-        >
-          <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 38 }}>
-            ابدأ اللعبة
-          </span>
-          <span
-            className="font-en-body leading-none"
-            style={{ fontSize: 12, marginInlineStart: 12 }}
-            lang="en"
-          >
-            PRESS START
-          </span>
-        </button>
+        {isStepOne ? (
+          <>
+            <button
+              type="button"
+              onClick={goHome}
+              className="shrink-0 transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+              style={{
+                padding: '14px 20px',
+                background: 'var(--panel2)',
+                border: '4px solid var(--line)',
+                boxShadow: '0 8px 0 var(--shadow)',
+                color: 'var(--text)',
+              }}
+            >
+              <span className="font-ar-body font-bold leading-none" style={{ fontSize: 28 }}>
+                رجوع
+              </span>{' '}
+              <span
+                className="font-en-body leading-none"
+                style={{ fontSize: 10, color: 'var(--muted)' }}
+                lang="en"
+              >
+                HOME
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              className="flex-1 text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+              style={{
+                padding: 14,
+                background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+                border: '4px solid var(--outline)',
+                boxShadow: '0 8px 0 var(--gold-sh)',
+                color: 'var(--outline)',
+              }}
+            >
+              <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 38 }}>
+                اختر الفئات
+              </span>
+              <span
+                className="font-en-body leading-none"
+                style={{ fontSize: 12, marginInlineStart: 12 }}
+                lang="en"
+              >
+                NEXT ▸
+              </span>
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="shrink-0 transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+              style={{
+                padding: '14px 20px',
+                background: 'var(--panel2)',
+                border: '4px solid var(--blue)',
+                boxShadow: '0 8px 0 var(--shadow)',
+                color: 'var(--text)',
+              }}
+            >
+              <span className="font-ar-body font-bold leading-none" style={{ fontSize: 28 }}>
+                رجوع
+              </span>{' '}
+              <span
+                className="font-en-body leading-none"
+                style={{ fontSize: 10, color: 'var(--muted)' }}
+                lang="en"
+              >
+                ◄ BACK
+              </span>
+            </button>
+            <CountChip ready={selectionReady}>
+              {effectiveSelected.length}/{CATEGORIES_PER_GAME}
+            </CountChip>
+            <button
+              type="button"
+              disabled={!selectionReady}
+              onClick={() => {
+                // Remember the challenge choices so they default the same next game.
+                writeSettings({ challengesEnabled, challengeCount });
+                startGame({
+                  categorySlugs: effectiveSelected,
+                  categories: effectiveCategories,
+                  teams: teams.map((t, i) => ({
+                    id: i + 1,
+                    name: t.name || t.defaultNameAr,
+                    nameEn: t.defaultNameEn,
+                    color: t.color,
+                    players: t.players,
+                  })),
+                  difficulty,
+                  timerSeconds: timerSecs,
+                  challengesEnabled: challengesEnabled && anyChallengeType,
+                  challengeCount,
+                });
+                navigate('/reveal');
+              }}
+              className="flex-1 text-center transition-transform duration-100 enabled:hover:-translate-y-[3px] enabled:active:translate-y-[3px]"
+              style={{
+                padding: 14,
+                background: selectionReady
+                  ? 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)'
+                  : 'var(--cleared-bg)',
+                border: `4px solid ${selectionReady ? 'var(--outline)' : 'var(--line)'}`,
+                boxShadow: selectionReady ? '0 8px 0 var(--gold-sh)' : 'none',
+                color: selectionReady ? 'var(--outline)' : 'var(--muted2)',
+                opacity: selectionReady ? 1 : 0.45,
+                cursor: selectionReady ? undefined : 'not-allowed',
+              }}
+            >
+              <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 38 }}>
+                ابدأ اللعبة
+              </span>
+              <span
+                className="font-en-body leading-none"
+                style={{ fontSize: 12, marginInlineStart: 12 }}
+                lang="en"
+              >
+                PRESS START
+              </span>
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
