@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Loader2, CheckCircle2 } from 'lucide-react';
 import { z } from 'zod';
-import BrandHeader from '../../components/BrandHeader';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { emailField, passwordField } from './authSchemas';
+import AuthCard from './AuthCard';
 import AuthInput from './AuthInput';
 import MockBypassButton from './MockBypassButton';
 import SubmitAlert from './SubmitAlert';
@@ -93,129 +92,126 @@ export default function SignUpScreen() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
-        <div className="surface px-8 py-10 w-full max-w-md text-center">
-          <BrandHeader subtitle={false} />
-          <CheckCircle2 size={48} className="text-gold mx-auto mt-6" aria-hidden="true" />
-          <h2 className="font-ar-body text-2xl text-cream mt-4">تم إنشاء الحساب</h2>
-          <p className="font-en-display italic text-cream-60 text-base" lang="en">
-            Account created
-          </p>
-          <p className="font-ar-ui text-base text-cream-60 mt-4">
+      <AuthCard titleAr="تم إنشاء الحساب" titleEn="PLAYER READY">
+        <div className="text-center flex flex-col items-center" style={{ gap: 18 }}>
+          <span
+            className="animate-bob"
+            style={{ width: 44, height: 44, background: 'var(--green)', border: '4px solid var(--outline)' }}
+            aria-hidden="true"
+          />
+          <div className="font-ar-body font-bold leading-none" style={{ fontSize: 30, color: 'var(--text)' }}>
             تحقق من بريدك الإلكتروني للتأكيد ثم سجّل الدخول.
-          </p>
-          <p className="font-en-body text-sm text-cream-45 mt-1" lang="en">
-            Check your email for confirmation, then sign in.
-          </p>
+          </div>
+          <div
+            className="font-en-body"
+            style={{ fontSize: 10, color: 'var(--muted)', lineHeight: 1.8, letterSpacing: '0.08em' }}
+            lang="en"
+          >
+            CHECK YOUR EMAIL FOR CONFIRMATION, THEN SIGN IN.
+          </div>
           <Link
             to="/signin"
-            className="btn-gold px-6 py-3 rounded-xl text-base inline-flex flex-col items-center gap-0.5 mt-6"
+            className="w-full text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+            style={{
+              padding: 14,
+              background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+              border: '4px solid var(--outline)',
+              boxShadow: '0 8px 0 var(--gold-sh)',
+              color: 'var(--outline)',
+            }}
           >
-            <span>اذهب لتسجيل الدخول</span>
-            <span className="font-en-body text-sm opacity-80" lang="en">
-              Go to Sign In
+            <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 32 }}>
+              تسجيل الدخول
+            </span>{' '}
+            <span className="font-en-body leading-none" style={{ fontSize: 11 }} lang="en">
+              SIGN IN
             </span>
           </Link>
         </div>
-      </div>
+      </AuthCard>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
-      <div className="surface px-8 py-10 w-full max-w-md">
-        <BrandHeader subtitle={false} />
+    <AuthCard titleAr="إنشاء حساب" titleEn="NEW PLAYER">
+      <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: 20 }} noValidate>
+        <AuthInput
+          id="signup-name"
+          type="text"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          placeholder="أبو علي"
+          labelAr="الاسم المعروض"
+          labelEn="Display name"
+          error={errors.displayName}
+          dir="rtl"
+          autoComplete="name"
+          inputFontClass="font-ar-body font-bold"
+          inputFontSize={26}
+        />
+        <AuthInput
+          id="signup-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          labelAr="البريد"
+          labelEn="Email"
+          error={errors.email}
+          lang="en"
+          autoComplete="email"
+        />
+        <AuthInput
+          id="signup-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          labelAr="كلمة السر"
+          labelEn="Password (8+)"
+          error={errors.password}
+          autoComplete="new-password"
+        />
 
-        <h2 className="text-center font-ar-body text-2xl text-cream mt-6">إنشاء حساب</h2>
-        <p className="text-center font-en-display italic text-cream-60 text-base" lang="en">
-          Sign Up
-        </p>
+        <SubmitAlert message={submitError} />
 
-        <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4" noValidate>
-          <AuthInput
-            id="signup-name"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="أبو علي"
-            labelAr="الاسم المعروض"
-            labelEn="Display name"
-            icon={User}
-            error={errors.displayName}
-            autoComplete="name"
-            inputFontClass="font-ar-body text-base"
-          />
-          <AuthInput
-            id="signup-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            labelAr="البريد الإلكتروني"
-            labelEn="Email"
-            icon={Mail}
-            error={errors.email}
-            dir="ltr"
-            lang="en"
-            autoComplete="email"
-          />
-          <AuthInput
-            id="signup-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            labelAr="كلمة المرور"
-            labelEn="Password (8+ chars)"
-            icon={Lock}
-            error={errors.password}
-            dir="ltr"
-            autoComplete="new-password"
-          />
+        <button
+          type="submit"
+          disabled={submitting}
+          aria-busy={submitting}
+          className="w-full text-center transition-transform duration-100 enabled:hover:-translate-y-[3px] enabled:active:translate-y-[3px] disabled:cursor-wait disabled:opacity-60"
+          style={{
+            padding: 14,
+            background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+            border: '4px solid var(--outline)',
+            boxShadow: '0 8px 0 var(--gold-sh)',
+            color: 'var(--outline)',
+          }}
+        >
+          <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 32 }}>
+            {submitting ? 'جارٍ الإنشاء…' : 'إنشاء حساب'}
+          </span>{' '}
+          <span className="font-en-body leading-none" style={{ fontSize: 11 }} lang="en">
+            {submitting ? 'LOADING…' : 'START'}
+          </span>
+        </button>
 
-          <SubmitAlert message={submitError} />
+        {IS_DEV_MOCK && (
+          <MockBypassButton labelEn="MOCK SIGN-UP (DEV)" onClick={handleMockSignUp} />
+        )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            aria-busy={submitting}
-            className="btn-gold px-6 py-3 rounded-xl text-base flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-wait"
-          >
-            {submitting ? (
-              <>
-                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                <span className="font-ar-ui">جارٍ الإنشاء...</span>
-              </>
-            ) : (
-              <span className="flex flex-col items-center gap-0.5">
-                <span>إنشاء حساب</span>
-                <span className="font-en-body text-sm font-medium opacity-80" lang="en">
-                  Sign Up
-                </span>
-              </span>
-            )}
-          </button>
-
-          {IS_DEV_MOCK && (
-            <MockBypassButton
-              labelEn="Skip · Mock sign-up (DEV only)"
-              onClick={handleMockSignUp}
-            />
-          )}
-        </form>
-
-        <div className="mt-6 flex flex-col items-center gap-2 text-sm">
-          <p className="text-cream-45 font-en-body" lang="en">
-            Already have an account?{' '}
-            <Link to="/signin" className="text-gold hover:text-gold-light underline-offset-4 hover:underline">
-              Sign In
-            </Link>
-          </p>
-          <Link to="/" className="text-cream-45 hover:text-cream-60 transition mt-3 font-en-body" lang="en">
-            ← Back to Home
+        <div
+          className="flex flex-wrap items-center justify-center text-center font-en-body leading-none"
+          style={{ gap: 14, fontSize: 10, color: 'var(--muted2)', letterSpacing: '0.08em' }}
+        >
+          <Link to="/signin">
+            <span lang="en">HAVE AN ACCOUNT? · </span>تسجيل الدخول
+          </Link>
+          <Link to="/">
+            <span lang="en">◄ TITLE</span>
           </Link>
         </div>
-      </div>
-    </div>
+      </form>
+    </AuthCard>
   );
 }

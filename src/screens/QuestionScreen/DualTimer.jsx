@@ -1,54 +1,62 @@
-import { motion } from 'framer-motion';
 import { formatTime } from '../../lib/format';
 
-// Circular countdown for the split-stage rail. The ring drains as time runs
-// out; the opposing team's secondary time sits underneath as a quiet caption.
-// Replaces the old heavy dual-panel block — same information, a fraction of the
-// visual weight.
-export default function DualTimer({ timeLeft, max, secondary, opposingTeamNameEn }) {
+// A 12-segment HUD meter replaces the old conic-gradient ring — the arcade
+// theme has no circles, and a segmented bar reads at TV distance.
+const SEGMENTS = 12;
+
+export default function DualTimer({ timeLeft, max, secondary, opposingLabel }) {
   const urgent = timeLeft <= 5 && timeLeft > 0;
-  const pct = max > 0 ? Math.max(0, Math.min(100, (timeLeft / max) * 100)) : 0;
-  const ringColor = urgent ? 'var(--color-crimson, #C44150)' : 'var(--color-gold)';
+  const ratio = max > 0 ? Math.max(0, Math.min(1, timeLeft / max)) : 0;
+  const filled = Math.ceil(ratio * SEGMENTS);
+  // Remaining segments burn gold, and drop to the darker gold once the clock is
+  // in the last five seconds; spent segments fall back to the empty-meter line.
+  const litColor = urgent ? 'var(--gold-sh)' : 'var(--gold)';
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div
+      className="text-center"
+      style={{
+        background: 'var(--panel)',
+        border: '4px solid var(--gold)',
+        boxShadow: '0 6px 0 var(--shadow)',
+        padding: 14,
+      }}
+    >
       <div
-        className="rounded-full grid place-items-center"
+        className="font-en-body leading-none"
+        style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.14em' }}
+        lang="en"
+      >
+        TIME LEFT
+      </div>
+      <div
+        className={`font-ar-body font-extrabold leading-none tabular-nums ${urgent ? 'animate-flash' : ''}`}
         style={{
-          width: 78,
-          height: 78,
-          background: `conic-gradient(${ringColor} ${pct}%, var(--color-gold-faint) 0)`,
+          fontSize: 76,
+          color: urgent ? 'var(--red-ink)' : 'var(--gold-ink)',
+          textShadow: urgent ? '4px 4px 0 var(--red-d)' : '4px 4px 0 var(--gold-sh)',
         }}
+        dir="ltr"
         role="timer"
         aria-label={`${formatTime(timeLeft)} remaining`}
       >
-        <div
-          className="rounded-full grid place-items-center"
-          style={{
-            width: 62,
-            height: 62,
-            background: 'var(--color-ink)',
-            boxShadow: 'inset 0 0 0 1px var(--color-gold-faint)',
-          }}
-        >
-          <motion.span
-            key={Math.floor(timeLeft)}
-            initial={urgent ? { scale: 1.15 } : { scale: 1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.25 }}
-            className="font-en-display font-bold leading-none tabular-nums"
-            style={{
-              fontSize: 24,
-              color: ringColor,
-              textShadow: urgent ? 'var(--glow-text-crimson)' : 'var(--glow-text-gold)',
-            }}
-          >
-            {formatTime(timeLeft)}
-          </motion.span>
-        </div>
+        {formatTime(timeLeft)}
       </div>
-      <div className="font-ar-ui text-[11px] text-cream-45 text-center leading-tight">
-        <span lang="en" dir="ltr">{opposingTeamNameEn}</span> ▸ {formatTime(secondary)}
+      <div className="flex" style={{ gap: 3, marginTop: 10 }}>
+        {Array.from({ length: SEGMENTS }, (_, i) => (
+          <span
+            key={i}
+            className="flex-1"
+            style={{ height: 18, background: i < filled ? litColor : 'var(--line)' }}
+          />
+        ))}
+      </div>
+      <div
+        className="font-en-body leading-none"
+        style={{ fontSize: 9, color: 'var(--muted)', marginTop: 10 }}
+        lang="en"
+      >
+        {opposingLabel} NEXT ▸ {formatTime(secondary)}
       </div>
     </div>
   );

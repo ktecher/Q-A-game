@@ -1,5 +1,24 @@
-import { X } from 'lucide-react';
 import { tierClasses } from './tierClasses';
+
+// Four 6×6 corner studs, inset 4px — the detail that makes a flat rectangle
+// read as a moulded arcade block.
+const STUD_POSITIONS = [
+  { top: 4, left: 4 },
+  { top: 4, right: 4 },
+  { bottom: 4, left: 4 },
+  { bottom: 4, right: 4 },
+];
+
+function Studs({ color }) {
+  return STUD_POSITIONS.map((pos, i) => (
+    <span
+      key={i}
+      aria-hidden="true"
+      className="absolute pointer-events-none"
+      style={{ ...pos, width: 6, height: 6, background: color }}
+    />
+  ));
+}
 
 export default function BoardCell({ category, value, isPicked, onPick }) {
   const tier = tierClasses(value);
@@ -8,9 +27,15 @@ export default function BoardCell({ category, value, isPicked, onPick }) {
     return (
       <div
         aria-label="Already played"
-        className="relative aspect-[5/2] rounded-lg flex items-center justify-center bg-ink-80 border border-gold-faint/40 opacity-30"
+        className="relative h-14 md:h-[76px] flex items-center justify-center font-en-body"
+        style={{
+          background: 'var(--cleared-bg)',
+          border: '4px solid var(--line)',
+          color: 'var(--cleared-ink)',
+          fontSize: 20,
+        }}
       >
-        <X size={22} className="text-cream-60" strokeWidth={1.5} aria-hidden="true" />
+        <span aria-hidden="true">✕</span>
       </div>
     );
   }
@@ -19,33 +44,21 @@ export default function BoardCell({ category, value, isPicked, onPick }) {
     <button
       type="button"
       onClick={() => onPick(category, value)}
-      className="relative aspect-[5/2] rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-ink [will-change:transform] transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.97]"
+      className="group relative h-14 md:h-[76px] flex items-center justify-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
       style={{
         background: tier.bg,
-        boxShadow: tier.ring,
+        border: `4px solid ${tier.border}`,
+        boxShadow: `0 5px 0 ${tier.shadow}`,
       }}
       aria-label={`${category.ar} · ${category.en} · ${value} نقطة`}
     >
-      {/* Tier hover glow */}
+      <Studs color={tier.stud} />
       <span
-        className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity pointer-events-none rounded-lg"
-        style={{ boxShadow: tier.hoverShadow }}
-      />
-      {/* 600-tier corner sparkle */}
-      {tier.showSparkle && (
-        <span
-          className="absolute top-1 end-1 text-cream/40 text-[10px] leading-none"
-          aria-hidden="true"
-        >
-          ✦
-        </span>
-      )}
-      <span
-        className="font-en-display font-bold leading-none"
+        className="font-ar-body font-extrabold leading-none"
         style={{
-          fontSize: `${tier.size}px`,
-          color: tier.textColor,
-          textShadow: tier.textShadow,
+          fontSize: tier.size,
+          color: tier.ink,
+          textShadow: '3px 3px 0 var(--shadow)',
         }}
       >
         {value}

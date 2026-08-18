@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Search } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGame } from '../../contexts/GameContext';
 import { useCategories, useAppSettings } from '../../lib/queries';
@@ -16,6 +15,75 @@ import CategoryTile from './CategoryTile';
 import Section from './Section';
 import TeamCard from './TeamCard';
 import { DIFFICULTIES } from './constants';
+
+// A flush row of segments — the shape the sheet uses for difficulty and for the
+// two challenge toggles. The active segment is the gold cabinet button.
+function Segments({ options, value, onChange, disabled }) {
+  return (
+    <div className={`flex ${disabled ? 'opacity-40 pointer-events-none' : ''}`}>
+      {options.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={String(opt.value)}
+            type="button"
+            aria-pressed={active}
+            disabled={disabled}
+            onClick={() => onChange(opt.value)}
+            className="flex-1 text-center"
+            style={{
+              padding: '14px 0',
+              background: active
+                ? 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)'
+                : 'var(--panel)',
+              border: `4px solid ${active ? 'var(--outline)' : 'var(--line)'}`,
+            }}
+          >
+            <div
+              className="font-ar-body leading-none"
+              style={{
+                fontSize: 28,
+                fontWeight: active ? 800 : 700,
+                color: active ? 'var(--outline)' : 'var(--muted)',
+              }}
+            >
+              {opt.ar}
+            </div>
+            <div
+              className="font-en-body leading-none uppercase"
+              style={{ marginTop: 6, fontSize: 9, color: active ? 'var(--gold-sh)' : 'var(--muted2)' }}
+              lang="en"
+            >
+              {opt.en}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+const TIMER_SEGMENTS = 10;
+
+// A status chip — green when the condition is met, inert line frame otherwise.
+function CountChip({ ready, children }) {
+  return (
+    <span
+      className="font-en-body leading-none inline-block"
+      style={{
+        fontSize: 12,
+        padding: '6px 10px',
+        background: ready ? 'var(--green)' : 'var(--cleared-bg)',
+        color: ready ? 'var(--outline)' : 'var(--muted2)',
+        border: ready ? 'none' : '4px solid var(--line)',
+      }}
+      lang="en"
+    >
+      {children}
+    </span>
+  );
+}
+
 
 export default function SetupScreen() {
   const navigate = useNavigate();
@@ -98,235 +166,253 @@ export default function SetupScreen() {
     setTeams((prev) => prev.map((t, i) => (i === idx ? { ...t, ...patch } : t)));
   };
 
-  return (
-    <div className="min-h-screen flex flex-col pb-24">
+  const timerFilled = Math.round((timerSecs / 60) * TIMER_SEGMENTS);
 
+  return (
+    <div className="min-h-screen flex flex-col" style={{ paddingBottom: 110 }}>
       {/* ── Sticky top header ──────────────────────────────────────── */}
-      <header className="sticky top-0 z-20 bg-ink/95 border-b border-gold-faint flex items-center justify-between px-4 py-3">
-        <span className="font-ar-body font-bold text-gold-light text-lg tracking-wide">
-          أم الهيمان ❖
+      <header
+        className="sticky top-0 z-20 flex items-center justify-between gap-3"
+        style={{
+          padding: '14px 20px',
+          background: 'var(--panel)',
+          borderBottom: '4px solid var(--gold-d)',
+        }}
+      >
+        <span
+          className="font-ar-body font-extrabold leading-none"
+          style={{ fontSize: 34, color: 'var(--gold-ink)' }}
+        >
+          أم الهيمان
         </span>
-        <div className="flex items-center gap-2">
-          {isGuest ? (
-            <span className="flex items-center gap-1.5 bg-ink-80 border border-gold-faint rounded-full px-3 py-1 text-sm font-ar-ui text-cream-60">
-              <span>ضيف</span>
-              <span className="text-cream-45" lang="en">· Guest</span>
-            </span>
-          ) : (
-            <span className="flex items-center gap-2 bg-ink-80 border border-gold-faint rounded-full px-3 py-1">
-              <span className="font-ar-ui text-sm text-cream truncate max-w-[120px]">{displayName}</span>
-            </span>
-          )}
-        </div>
+        <span
+          className="font-en-body leading-none truncate uppercase"
+          style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.1em' }}
+          lang="en"
+        >
+          STAGE SELECT · {isGuest ? 'GUEST' : displayName}
+        </span>
       </header>
 
       {/* ── Page title ─────────────────────────────────────────────── */}
-      <div className="px-5 pt-6 pb-4 text-center">
-        <h2 className="font-ar-body font-bold text-2xl text-cream">إعداد اللعبة</h2>
-        <p className="font-en-display italic text-cream-45 text-sm mt-0.5" lang="en">Game Setup</p>
+      <div className="text-center" style={{ padding: '26px 16px 8px' }}>
+        <h2
+          className="font-ar-body font-extrabold leading-none"
+          style={{ fontSize: 'clamp(34px, 5vw, 56px)', color: 'var(--text)', textShadow: '4px 4px 0 var(--red-d)' }}
+        >
+          إعداد اللعبة
+        </h2>
+        <p
+          className="font-en-body leading-none"
+          style={{ fontSize: 12, color: 'var(--muted)', letterSpacing: '0.16em', marginTop: 8 }}
+          lang="en"
+        >
+          SELECT YOUR STAGE
+        </p>
       </div>
 
-      {/* ── Sections wrapper ───────────────────────────────────────── */}
-      <div className="flex-1 border border-gold-faint rounded-xl mx-4 overflow-hidden bg-ink-60">
-
+      <div className="flex-1 flex flex-col" style={{ padding: '16px 24px', gap: 22 }}>
         {/* A — Mode picker */}
-        <Section badge="أ · A" labelAr="طريقة اللعب" labelEn="Mode">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <Section badge="A" labelAr="طريقة اللعب" labelEn="Mode">
+          <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 14 }}>
             {[
-              { val: 'quick',    ar: 'اختيار سريع',     en: 'Quick Pick'      },
-              { val: 'pick',     ar: 'اختر الفئات',     en: 'Pick Categories' },
-              { val: 'surprise', ar: 'بطاقة مفاجأة ✨', en: 'Surprise Me'     },
-            ].map(({ val, ar, en }) => (
-              <button
-                key={val}
-                type="button"
-                onClick={() => handleModeSelect(val)}
-                className={`flex flex-col items-center py-3 px-4 rounded-xl border-2 transition-colors duration-150 ${
-                  mode === val
-                    ? 'border-gold bg-gold/10 shadow-gold-glow'
-                    : 'border-gold-faint bg-ink-80 hover:border-gold/50 hover:bg-gold/5'
-                }`}
-              >
-                <span className="font-ar-ui font-semibold text-base text-cream">{ar}</span>
-                <span className="font-en-body text-sm text-cream-45 mt-0.5" lang="en">{en}</span>
-              </button>
-            ))}
-          </div>
-        </Section>
-
-        {/* B — Difficulty */}
-        <Section badge="ب · B" labelAr="الصعوبة" labelEn="Difficulty">
-          <div className="flex rounded-xl overflow-hidden border border-gold-faint">
-            {DIFFICULTIES.map(({ value, ar, en }, idx) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setDifficulty(value)}
-                className={`flex-1 flex flex-col items-center py-3 transition-colors duration-150 ${
-                  difficulty === value
-                    ? 'bg-gradient-to-br from-gold to-gold-dark text-ink'
-                    : 'bg-ink-80 text-cream-60 hover:bg-gold/8 hover:text-cream'
-                } ${idx > 0 ? 'border-s border-gold-faint' : ''}`}
-              >
-                <span className={`font-ar-ui font-semibold text-base ${difficulty === value ? 'text-ink' : ''}`}>{ar}</span>
-                <span className={`font-en-body text-sm mt-0.5 ${difficulty === value ? 'text-ink/70' : 'text-cream-45'}`} lang="en">{en}</span>
-              </button>
-            ))}
-          </div>
-        </Section>
-
-        {/* C — Teams */}
-        <Section badge="ج · C" labelAr="الفرق" labelEn="Teams">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {teams.map((team, idx) => (
-              <TeamCard key={idx} team={team} onChange={(patch) => updateTeam(idx, patch)} />
-            ))}
-          </div>
-        </Section>
-
-        {/* D — Timer */}
-        <Section badge="د · D" labelAr="الوقت" labelEn="Timer">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-baseline gap-3 justify-center">
-              <span className="font-ar-body font-bold text-5xl text-gold">{timerSecs}</span>
-              <div className="flex flex-col">
-                <span className="font-ar-body text-base text-cream-60">ثانية</span>
-                <span className="font-en-body text-sm text-cream-45" lang="en">seconds</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <input
-                type="range"
-                min={15}
-                max={60}
-                step={5}
-                value={timerSecs}
-                onChange={(e) => setTimerSecs(Number(e.target.value))}
-                className="w-full cursor-pointer h-2 rounded-full appearance-none bg-gold/20"
-                style={{ accentColor: 'var(--color-gold)' }}
-                aria-label="وقت الإجابة"
-              />
-              <div className="flex justify-between px-0.5">
-                {[15, 30, 45, 60].map((v) => (
-                  <span key={v} className="font-en-body text-sm text-cream-45" lang="en">{v}s</span>
-                ))}
-              </div>
-            </div>
-            <p className="font-ar-ui text-sm text-cream-45 text-center border border-gold-faint rounded-lg px-3 py-2 bg-ink-80">
-              للفريق الثاني سيكون نصف هذا الوقت ({Math.round(timerSecs / 2)} ثانية) ·{' '}
-              <span lang="en" className="font-en-body">Team B gets {Math.round(timerSecs / 2)}s</span>
-            </p>
-          </div>
-        </Section>
-
-        {/* E — Challenge rounds */}
-        <Section badge="هـ · E" labelAr="جولات التحدّي" labelEn="Challenge Rounds">
-          <div className="flex flex-col gap-3">
-            <div className="flex rounded-xl overflow-hidden border border-gold-faint">
-              {[
-                { val: true,  ar: 'مُفعّلة', en: 'Enabled'  },
-                { val: false, ar: 'مُعطّلة', en: 'Disabled' },
-              ].map(({ val, ar, en }, idx) => (
+              { val: 'quick',    ar: 'اختيار سريع', en: 'QUICK PICK'      },
+              { val: 'pick',     ar: 'اختر الفئات', en: 'PICK CATEGORIES' },
+              { val: 'surprise', ar: 'بطاقة مفاجأة', en: 'SURPRISE ME'    },
+            ].map(({ val, ar, en }) => {
+              const active = mode === val;
+              return (
                 <button
-                  key={String(val)}
+                  key={val}
                   type="button"
-                  aria-pressed={challengesEnabled === val}
-                  onClick={() => setChallengesEnabled(val)}
-                  className={`flex-1 flex flex-col items-center py-3 transition-colors duration-150 ${
-                    challengesEnabled === val
-                      ? 'bg-gradient-to-br from-gold to-gold-dark text-ink'
-                      : 'bg-ink-80 text-cream-60 hover:bg-gold/8 hover:text-cream'
-                  } ${idx > 0 ? 'border-s border-gold-faint' : ''}`}
+                  aria-pressed={active}
+                  onClick={() => handleModeSelect(val)}
+                  className="relative text-center"
+                  style={{
+                    padding: 16,
+                    background: active ? 'var(--panel3)' : 'var(--panel)',
+                    border: `4px solid ${active ? 'var(--gold)' : 'var(--line)'}`,
+                    boxShadow: active ? '0 6px 0 var(--gold-sh)' : '0 6px 0 var(--shadow)',
+                  }}
                 >
-                  <span className={`font-ar-ui font-semibold text-base ${challengesEnabled === val ? 'text-ink' : ''}`}>{ar}</span>
-                  <span className={`font-en-body text-sm mt-0.5 ${challengesEnabled === val ? 'text-ink/70' : 'text-cream-45'}`} lang="en">{en}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Count picker — only meaningful when challenges are enabled. We
-                still render it (greyed) when Disabled so the section height
-                doesn't jump as the player toggles back and forth. The buttons
-                themselves carry `disabled`, which screen readers announce
-                per-option — more informative than aria-hiding the whole group. */}
-            <div
-              className={`flex rounded-xl overflow-hidden border border-gold-faint transition-opacity duration-150 ${
-                challengesEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'
-              }`}
-            >
-              {ALLOWED_CHALLENGE_COUNTS.map((n, idx) => {
-                // Map count → Arabic-Indic numeral. Only 2 and 4 are exposed.
-                const arNum = n === 2 ? '٢' : '٤';
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    aria-pressed={challengeCount === n}
-                    onClick={() => setChallengeCount(n)}
-                    disabled={!challengesEnabled}
-                    className={`flex-1 flex flex-col items-center py-3 transition-colors duration-150 ${
-                      challengeCount === n
-                        ? 'bg-gradient-to-br from-gold to-gold-dark text-ink'
-                        : 'bg-ink-80 text-cream-60 hover:bg-gold/8 hover:text-cream'
-                    } ${idx > 0 ? 'border-s border-gold-faint' : ''}`}
+                  {active && (
+                    <span
+                      className="absolute font-en-body leading-none"
+                      style={{
+                        top: -14,
+                        insetInlineStart: 12,
+                        fontSize: 10,
+                        background: 'var(--gold)',
+                        color: 'var(--outline)',
+                        padding: '4px 6px',
+                      }}
+                      lang="en"
+                    >
+                      SELECTED
+                    </span>
+                  )}
+                  <div
+                    className="font-ar-body font-bold leading-none"
+                    style={{ fontSize: 30, color: active ? 'var(--gold-ink)' : 'var(--text)' }}
                   >
-                    <span className={`font-ar-ui font-semibold text-base ${challengeCount === n ? 'text-ink' : ''}`}>{arNum}</span>
-                    <span className={`font-en-body text-sm mt-0.5 ${challengeCount === n ? 'text-ink/70' : 'text-cream-45'}`} lang="en">{n}</span>
-                  </button>
-                );
-              })}
-            </div>
+                    {ar}
+                  </div>
+                  <div
+                    className="font-en-body leading-none"
+                    style={{ marginTop: 8, fontSize: 10, color: active ? 'var(--gold-d)' : 'var(--muted2)' }}
+                    lang="en"
+                  >
+                    {en}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
 
-            <p className="font-ar-ui text-sm text-cream-45 text-center border border-gold-faint rounded-lg px-3 py-2 bg-ink-80">
-              {challengesEnabled && challengeCount === 2 && (
-                <>
-                  خليّتان مخفيّتان تتحوّلان إلى تحديَّين بنقاط مضاعفة ·{' '}
-                  <span lang="en" className="font-en-body">2 hidden cells become double-point challenges</span>
-                </>
-              )}
-              {challengesEnabled && challengeCount === 4 && (
-                <>
-                  ٤ خلايا مخفية تتحوّل إلى تحدّيات بنقاط مضاعفة ·{' '}
-                  <span lang="en" className="font-en-body">4 hidden cells become double-point challenges</span>
-                </>
-              )}
-              {!challengesEnabled && (
-                <>
-                  لا توجد جولات تحدّي في هذه اللعبة ·{' '}
-                  <span lang="en" className="font-en-body">No challenge rounds this game</span>
-                </>
-              )}
+        {/* B + C — Difficulty and Timer share a row on the sheet */}
+        <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 22 }}>
+          <Section badge="B" labelAr="الصعوبة" labelEn="Difficulty">
+            <Segments
+              options={DIFFICULTIES.map((d) => ({ value: d.value, ar: d.ar, en: d.en }))}
+              value={difficulty}
+              onChange={setDifficulty}
+            />
+          </Section>
+
+          <Section badge="C" labelAr="الوقت" labelEn="Timer">
+            <div
+              className="flex items-center flex-wrap"
+              style={{ gap: 16, padding: '14px 16px', background: 'var(--panel)', border: '4px solid var(--line)' }}
+            >
+              <span
+                className="font-ar-body font-extrabold leading-none shrink-0"
+                style={{ fontSize: 56, color: 'var(--gold-ink)' }}
+                dir="ltr"
+              >
+                {timerSecs}
+                <span style={{ fontSize: 22 }}>S</span>
+              </span>
+              <div className="flex-1 min-w-[140px] flex flex-col" style={{ gap: 8 }}>
+                <div className="flex" style={{ gap: 4 }} aria-hidden="true">
+                  {Array.from({ length: TIMER_SEGMENTS }, (_, i) => (
+                    <span
+                      key={i}
+                      className="flex-1"
+                      style={{ height: 26, background: i < timerFilled ? 'var(--gold)' : 'var(--line)' }}
+                    />
+                  ))}
+                </div>
+                {/* The meter is the readout; this stays the control so the value
+                    is still keyboard- and screen-reader-operable. */}
+                <input
+                  type="range"
+                  min={15}
+                  max={60}
+                  step={5}
+                  value={timerSecs}
+                  onChange={(e) => setTimerSecs(Number(e.target.value))}
+                  className="w-full cursor-pointer h-2 appearance-none"
+                  style={{ background: 'var(--line)', accentColor: 'var(--gold)' }}
+                  aria-label="وقت الإجابة · Answer time in seconds"
+                />
+              </div>
+              <span
+                className="font-en-body shrink-0 text-center"
+                style={{ fontSize: 10, color: 'var(--muted)', lineHeight: 1.6 }}
+                lang="en"
+              >
+                P2 GETS
+                <br />
+                {Math.round(timerSecs / 2)}S
+              </span>
+            </div>
+          </Section>
+        </div>
+
+        {/* D — Teams */}
+        <Section badge="D" labelAr="الفرق" labelEn="Choose your fighters">
+          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 18 }}>
+            {teams.map((team, idx) => (
+              <TeamCard
+                key={idx}
+                team={team}
+                index={idx}
+                onChange={(patch) => updateTeam(idx, patch)}
+              />
+            ))}
+          </div>
+        </Section>
+
+        {/* E — Challenge rounds (no sheet screen; styled to match B) */}
+        <Section badge="E" labelAr="جولات التحدّي" labelEn="Challenge rounds">
+          <div className="flex flex-col" style={{ gap: 12 }}>
+            <Segments
+              options={[
+                { value: true, ar: 'مُفعّلة', en: 'Enabled' },
+                { value: false, ar: 'مُعطّلة', en: 'Disabled' },
+              ]}
+              value={challengesEnabled}
+              onChange={setChallengesEnabled}
+            />
+            <Segments
+              options={ALLOWED_CHALLENGE_COUNTS.map((n) => ({
+                value: n,
+                ar: n === 2 ? '٢' : '٤',
+                en: String(n),
+              }))}
+              value={challengeCount}
+              onChange={setChallengeCount}
+              disabled={!challengesEnabled}
+            />
+            <p
+              className="font-en-body text-center"
+              style={{
+                fontSize: 10,
+                color: 'var(--muted)',
+                lineHeight: 1.8,
+                background: 'var(--cleared-bg)',
+                border: '4px solid var(--line)',
+                padding: '8px 12px',
+              }}
+              lang="en"
+            >
+              {challengesEnabled
+                ? `${challengeCount} HIDDEN CELLS BECOME DOUBLE-POINT CHALLENGES`
+                : 'NO CHALLENGE ROUNDS THIS GAME'}
             </p>
           </div>
         </Section>
 
         {/* F — Categories (LAST step — depends on chosen mode) */}
         <Section
-          badge="و · F"
+          badge="F"
           labelAr="اختر الفئات"
-          labelEn="Pick Categories"
+          labelEn="Pick 6 stages"
           trailing={
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-en-body border transition-colors ${
-              selectionReady
-                ? 'bg-gold/15 border-gold text-gold'
-                : 'bg-cream-30/10 border-gold-faint text-cream-45'
-            }`}>
-              <span className="font-ar-ui">{effectiveSelected.length}</span>
-              <span>/ 6</span>
-              {selectionReady && <Check size={11} />}
-            </div>
+            <CountChip ready={selectionReady}>
+              {effectiveSelected.length}/{CATEGORIES_PER_GAME} READY
+            </CountChip>
           }
         >
-          {/* Guest mode: read-only 6 tiles */}
           {isGuest ? (
             <>
-              <div className="rounded-xl border border-gold/30 bg-gold/8 px-4 py-2.5 mb-4">
-                <p className="font-ar-ui text-base text-gold">
-                  تم اختيار 6 فئات للضيف ·{' '}
-                  <span lang="en" className="font-en-body text-gold-light text-sm">6 categories pre-selected for guest mode</span>
-                </p>
-              </div>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <p
+                className="font-en-body"
+                style={{
+                  fontSize: 10,
+                  color: 'var(--gold-ink)',
+                  background: 'var(--panel)',
+                  border: '4px solid var(--gold-d)',
+                  padding: '8px 12px',
+                  marginBottom: 14,
+                  letterSpacing: '0.08em',
+                }}
+                lang="en"
+              >
+                6 STAGES PRE-SELECTED FOR GUEST MODE
+              </p>
+              <div className="grid grid-cols-3 sm:grid-cols-6" style={{ gap: 12 }}>
                 {CATEGORIES.filter((c) => guestSelected.includes(c.slug)).map((cat) => (
                   <CategoryTile key={cat.slug} cat={cat} isSelected asButton={false} />
                 ))}
@@ -334,20 +420,24 @@ export default function SetupScreen() {
             </>
           ) : mode === 'pick' ? (
             <>
-              {/* Search */}
-              <div className="relative mb-3">
-                <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-cream-45 pointer-events-none" />
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ابحث في الفئات · Search categories"
-                  className="w-full ps-9 pe-3 py-2 rounded-lg bg-ink-80 border border-gold-faint text-cream font-ar-ui text-sm placeholder:text-cream-45 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/40 transition"
-                />
-              </div>
-
-              {/* Category grid */}
-              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2">
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ابحث في الفئات"
+                aria-label="ابحث في الفئات · Search categories"
+                className="w-full font-ar-body font-bold"
+                style={{
+                  background: 'var(--input-bg)',
+                  border: '4px solid var(--blue)',
+                  boxShadow: 'inset 4px 4px 0 var(--inset)',
+                  padding: '8px 12px',
+                  color: 'var(--text)',
+                  fontSize: 26,
+                  marginBottom: 14,
+                }}
+              />
+              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6" style={{ gap: 12 }}>
                 {filteredCats.map((cat) => (
                   <CategoryTile
                     key={cat.slug}
@@ -358,19 +448,26 @@ export default function SetupScreen() {
                   />
                 ))}
                 {filteredCats.length === 0 && (
-                  <div className="col-span-3 sm:col-span-5 md:col-span-6 py-8 text-center">
-                    <p className="font-ar-ui text-base text-cream-45">لا توجد نتائج · <span lang="en">No results</span></p>
+                  <div
+                    className="col-span-3 sm:col-span-5 md:col-span-6 text-center font-en-body"
+                    style={{ padding: '32px 0', fontSize: 10, color: 'var(--muted2)' }}
+                    lang="en"
+                  >
+                    NO RESULTS
                   </div>
                 )}
               </div>
             </>
           ) : (
-            // Quick Pick or Surprise mode: show read-only selected tiles
             <>
-              <p className="font-ar-ui text-sm text-cream-45 mb-3">
-                {mode === 'quick' ? 'تم اختيار 6 فئات عشوائية · 6 random categories selected' : 'تم اختيار 6 فئات مفاجئة ✨ · Surprise selection ready'}
+              <p
+                className="font-en-body"
+                style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 14, letterSpacing: '0.08em' }}
+                lang="en"
+              >
+                {mode === 'quick' ? '6 RANDOM STAGES SELECTED' : 'SURPRISE SELECTION READY'}
               </p>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-6" style={{ gap: 12 }}>
                 {CATEGORIES.filter((c) => selected.includes(c.slug)).map((cat) => (
                   <CategoryTile key={cat.slug} cat={cat} isSelected asButton={false} />
                 ))}
@@ -380,51 +477,66 @@ export default function SetupScreen() {
         </Section>
       </div>
 
-      {/* ── Sticky bottom bar ──────────────────────────────────────── */}
-      <div className="fixed bottom-0 start-0 end-0 z-30 bg-ink/95 border-t border-gold-faint px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <div className={`flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-en-body shrink-0 transition-colors ${
-            selectionReady
-              ? 'border-gold bg-gold/15 text-gold'
-              : 'border-gold-faint bg-ink-80 text-cream-45'
-          }`}>
-            <span className="font-ar-ui font-semibold">{effectiveSelected.length}</span>
-            <span>/6</span>
-            {selectionReady && <Check size={13} />}
-          </div>
-          <button
-            type="button"
-            disabled={!selectionReady}
-            onClick={() => {
-              // Remember the challenge choices so they default the same next game.
-              writeSettings({ challengesEnabled, challengeCount });
-              startGame({
-                categorySlugs: effectiveSelected,
-                categories: effectiveCategories,
-                teams: teams.map((t, i) => ({
-                  id: i + 1,
-                  name: t.name || t.defaultNameAr,
-                  nameEn: t.defaultNameEn,
-                  color: t.color,
-                  players: t.players,
-                })),
-                difficulty,
-                timerSeconds: timerSecs,
-                challengesEnabled: challengesEnabled && anyChallengeType,
-                challengeCount,
-              });
-              navigate('/reveal');
-            }}
-            className={`flex-1 py-3 rounded-xl font-ar-ui font-bold text-base flex flex-col items-center gap-0.5 transition-all ${
-              selectionReady
-                ? 'btn-gold'
-                : 'bg-ink-80 border border-gold-faint text-cream-45 cursor-not-allowed opacity-50'
-            }`}
+      {/* ── Fixed bottom bar ───────────────────────────────────────── */}
+      <div
+        className="fixed bottom-0 start-0 end-0 z-30 flex items-center"
+        style={{
+          gap: 16,
+          padding: '16px 24px',
+          background: 'var(--panel)',
+          borderTop: '4px solid var(--gold-d)',
+        }}
+      >
+        <CountChip ready={selectionReady}>
+          {effectiveSelected.length}/{CATEGORIES_PER_GAME}
+        </CountChip>
+        <button
+          type="button"
+          disabled={!selectionReady}
+          onClick={() => {
+            // Remember the challenge choices so they default the same next game.
+            writeSettings({ challengesEnabled, challengeCount });
+            startGame({
+              categorySlugs: effectiveSelected,
+              categories: effectiveCategories,
+              teams: teams.map((t, i) => ({
+                id: i + 1,
+                name: t.name || t.defaultNameAr,
+                nameEn: t.defaultNameEn,
+                color: t.color,
+                players: t.players,
+              })),
+              difficulty,
+              timerSeconds: timerSecs,
+              challengesEnabled: challengesEnabled && anyChallengeType,
+              challengeCount,
+            });
+            navigate('/reveal');
+          }}
+          className="flex-1 text-center transition-transform duration-100 enabled:hover:-translate-y-[3px] enabled:active:translate-y-[3px]"
+          style={{
+            padding: 14,
+            background: selectionReady
+              ? 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)'
+              : 'var(--cleared-bg)',
+            border: `4px solid ${selectionReady ? 'var(--outline)' : 'var(--line)'}`,
+            boxShadow: selectionReady ? '0 8px 0 var(--gold-sh)' : 'none',
+            color: selectionReady ? 'var(--outline)' : 'var(--muted2)',
+            opacity: selectionReady ? 1 : 0.45,
+            cursor: selectionReady ? undefined : 'not-allowed',
+          }}
+        >
+          <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 38 }}>
+            ابدأ اللعبة
+          </span>
+          <span
+            className="font-en-body leading-none"
+            style={{ fontSize: 12, marginInlineStart: 12 }}
+            lang="en"
           >
-            <span>ابدأ اللعبة</span>
-            <span className="font-en-body text-sm font-medium opacity-75" lang="en">Start Game</span>
-          </button>
-        </div>
+            PRESS START
+          </span>
+        </button>
       </div>
     </div>
   );

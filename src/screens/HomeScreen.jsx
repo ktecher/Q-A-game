@@ -1,5 +1,4 @@
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { Volume2, LogOut } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -29,64 +28,117 @@ export default function HomeScreen() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* ── Sticky top header — mirrors SetupScreen so the chrome is consistent ── */}
-      <header className="sticky top-0 z-20 bg-ink/95 border-b border-gold-faint flex items-center justify-between px-4 py-3">
-        <span className="font-ar-body font-bold text-gold-light text-lg tracking-wide">
-          أم الهيمان ❖
+      <header
+        className="sticky top-0 z-20 flex items-center justify-between gap-3"
+        style={{
+          padding: '14px 20px',
+          background: 'var(--panel)',
+          borderBottom: '4px solid var(--gold-d)',
+        }}
+      >
+        <span
+          className="font-ar-body font-extrabold leading-none"
+          style={{ fontSize: 34, color: 'var(--gold-ink)' }}
+        >
+          أم الهيمان
         </span>
-        <div className="flex items-center gap-2">
-          <ThemeToggle size={16} />
-          <button
-            type="button"
-            aria-label="Toggle sound"
-            className="w-10 h-10 rounded-full surface flex items-center justify-center text-gold/80 hover:text-gold transition-colors duration-150"
+        <div className="flex items-center gap-3">
+          <span
+            className="font-en-body leading-none truncate uppercase max-w-[160px]"
+            style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.1em' }}
+            lang="en"
           >
-            <Volume2 size={16} />
-          </button>
-          <span className="flex items-center gap-2 bg-ink-80 border border-gold-faint rounded-full px-3 py-1">
-            <span className="font-ar-ui text-sm text-cream truncate max-w-[120px]">
-              {displayName}
-            </span>
+            {displayName}
           </span>
+          <ThemeToggle size={44} />
         </div>
       </header>
 
       {/* ── Centered hero ─────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6">
-        <div className="text-center">
-          <h1 className="font-ar-body font-bold text-3xl md:text-4xl text-cream">
-            أهلاً، {displayName} 👋
-          </h1>
-          <p className="font-en-display italic text-cream-45 text-base mt-2" lang="en">
-            Welcome back
-          </p>
+      <main className="flex-1 flex flex-col items-center justify-center text-center px-6 py-12">
+        <div
+          className="font-en-body leading-none"
+          style={{ fontSize: 13, color: 'var(--blue)', letterSpacing: '0.24em', marginBottom: 14 }}
+          lang="en"
+        >
+          ◄ PLAYER READY ►
         </div>
 
-        <div className="ornament-divider mt-8 mb-10" />
+        <h1
+          className="font-ar-body font-extrabold leading-none"
+          style={{
+            fontSize: 'clamp(38px, 6vw, 72px)',
+            color: 'var(--gold-ink)',
+            textShadow: '6px 6px 0 var(--gold-sh)',
+          }}
+        >
+          أهلاً {displayName}
+        </h1>
+        <div
+          className="font-en-body leading-none"
+          style={{ fontSize: 14, color: 'var(--text)', letterSpacing: '0.16em', marginTop: 14 }}
+          lang="en"
+        >
+          WELCOME BACK
+        </div>
+
+        <div className="flex" style={{ gap: 6, marginTop: 22 }} aria-hidden="true">
+          {['var(--gold-d)', 'var(--blue)', 'var(--red)', '#F4ECD8', 'var(--red)', 'var(--blue)', 'var(--gold-d)'].map(
+            (color, i) => (
+              <span key={i} style={{ width: 12, height: 12, background: color }} />
+            )
+          )}
+        </div>
 
         <Link
           to="/setup"
-          className="btn-gold px-10 py-5 rounded-2xl text-lg flex flex-col items-center gap-0.5 w-full max-w-sm"
+          className="flex items-center gap-3 w-full transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+          style={{
+            maxWidth: 420,
+            marginTop: 34,
+            padding: '14px 20px',
+            background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+            border: '4px solid var(--outline)',
+            boxShadow: '0 8px 0 var(--gold-sh), inset 4px 4px 0 rgba(255, 255, 255, 0.35)',
+            color: 'var(--outline)',
+          }}
         >
-          <span>ابدأ اللعبة</span>
-          <span className="font-en-body text-sm font-medium opacity-80" lang="en">
-            Start Game →
+          <span className="font-en-body leading-none" style={{ fontSize: 12 }} aria-hidden="true">
+            ▶
+          </span>
+          <span className="font-ar-body font-bold leading-none" style={{ fontSize: 32 }}>
+            ابدأ اللعبة
+          </span>
+          <span
+            className="font-en-body leading-none"
+            style={{ fontSize: 11, marginInlineStart: 'auto' }}
+            lang="en"
+          >
+            PRESS START
           </span>
         </Link>
       </main>
 
       {/* ── Sign out + footer ─────────────────────────────────────── */}
-      <footer className="text-center px-6 py-6 border-t border-gold-faint/40">
+      <footer
+        className="text-center"
+        style={{ padding: '18px 24px', borderTop: '4px solid var(--gold-d)', background: 'var(--panel)' }}
+      >
         <button
           type="button"
           onClick={handleSignOut}
-          className="text-cream-45 hover:text-crimson text-sm font-ar-ui transition inline-flex items-center gap-1.5"
+          className="font-en-body leading-none"
+          style={{ fontSize: 10, color: 'var(--red)', letterSpacing: '0.1em' }}
+          lang="en"
         >
-          <LogOut size={12} />
-          <span>تسجيل الخروج</span>
-          <span className="font-en-body" lang="en">· Sign out</span>
+          <span aria-hidden="true">✕ </span>SIGN OUT
         </button>
-        <p className="font-en-body text-cream-45 text-xs mt-3 tracking-wider" lang="en">
-          v0.1 · Built with care for diwaniya nights
+        <p
+          className="font-en-body leading-none"
+          style={{ fontSize: 10, color: 'var(--muted2)', letterSpacing: '0.1em', marginTop: 12 }}
+          lang="en"
+        >
+          V0.1 · BUILT FOR DIWANIYA NIGHTS
         </p>
       </footer>
     </div>

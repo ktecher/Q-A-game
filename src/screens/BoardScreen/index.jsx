@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Volume2, Pause } from 'lucide-react';
 import { useGame } from '../../contexts/GameContext';
 import { cellKey } from '../../lib/cellKey';
 import { seededShuffle, seededPickN, seedFrom } from '../../lib/random';
@@ -14,9 +13,10 @@ import {
 import ExitGameButton from '../../components/ExitGameButton';
 import ScoreAdjustDialog from '../../components/ScoreAdjustDialog';
 import ThemeToggle from '../../components/ThemeToggle';
-import TeamChip from './TeamChip';
+import HudTeam from './HudTeam';
 import CategoryHeader from './CategoryHeader';
 import BoardCell from './BoardCell';
+import { TIER_LEGEND } from './tierClasses';
 
 export default function BoardScreen() {
   const navigate = useNavigate();
@@ -138,84 +138,161 @@ export default function BoardScreen() {
   };
 
   const playedCount = picked.size;
+  const activeTeam = teams[activeTeamIdx];
 
   return (
-    <div className="min-h-screen px-4 py-5 md:px-8 md:py-8">
-      {/* Top bar */}
-      <header className="flex items-center justify-between gap-3 mb-5 md:mb-7">
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="font-ar-body text-gold text-base md:text-lg">أم الهيمان</span>
-          <span className="text-gold-light/60">❖</span>
+    <div className="min-h-screen">
+      {/* HUD bar — one flush row, hard-separated. Stacks below md. */}
+      <header
+        className="flex flex-col md:flex-row md:items-stretch"
+        style={{ background: 'var(--panel)', borderBottom: '4px solid var(--gold-d)' }}
+      >
+        <HudTeam
+          team={teams[0]}
+          index={0}
+          isActive={activeTeamIdx === 0}
+          lifelines={state.lifelinesUsed?.[0]}
+          onAdjust={() => setAdjustingTeamId(teams[0].id)}
+        />
+
+        {/* VS / round progress */}
+        <div
+          className="w-full md:w-[190px] shrink-0 flex flex-col items-center justify-center gap-2"
+          style={{
+            padding: 10,
+            background: 'var(--strip)',
+            borderInlineEnd: '4px solid var(--outline)',
+          }}
+        >
+          <span
+            className="font-en-body leading-none"
+            style={{
+              color: 'var(--gold-ink)',
+              fontSize: 26,
+              textShadow: '4px 4px 0 var(--red-d)',
+            }}
+            lang="en"
+          >
+            VS
+          </span>
+          <span
+            className="font-en-body leading-none"
+            style={{ color: 'var(--muted)', fontSize: 10, letterSpacing: '0.1em' }}
+            lang="en"
+          >
+            ROUND {playedCount}/{totalCells}
+          </span>
+          <div className="w-full" style={{ height: 14, background: 'var(--line)' }}>
+            <div
+              className="h-full"
+              style={{
+                width: `${(playedCount / totalCells) * 100}%`,
+                background: 'var(--green)',
+              }}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2 md:gap-3">
-          <TeamChip
-            team={teams[0]}
-            isActive={activeTeamIdx === 0}
-            onAdjust={() => setAdjustingTeamId(teams[0].id)}
-          />
-          <span className="font-en-display italic text-gold/60 text-base md:text-lg">vs</span>
-          <TeamChip
-            team={teams[1]}
-            isActive={activeTeamIdx === 1}
-            onAdjust={() => setAdjustingTeamId(teams[1].id)}
-          />
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <ThemeToggle size={14} />
+
+        <HudTeam
+          team={teams[1]}
+          index={1}
+          isActive={activeTeamIdx === 1}
+          lifelines={state.lifelinesUsed?.[1]}
+          onAdjust={() => setAdjustingTeamId(teams[1].id)}
+        />
+
+        {/* Cabinet controls */}
+        <div className="flex items-center justify-center gap-2 px-4 py-2">
+          <ThemeToggle size={44} />
           <button
             type="button"
             aria-label="Toggle sound"
-            className="w-10 h-10 rounded-full surface flex items-center justify-center text-gold/70 hover:text-gold transition-colors duration-150"
+            className="font-en-body flex items-center justify-center"
+            style={{
+              width: 44,
+              height: 44,
+              background: 'var(--panel2)',
+              border: '4px solid var(--line)',
+              color: 'var(--gold-ink)',
+              fontSize: 12,
+            }}
           >
-            <Volume2 size={16} />
+            <span aria-hidden="true">♪</span>
           </button>
           <button
             type="button"
             aria-label="Pause"
-            className="w-10 h-10 rounded-full surface flex items-center justify-center text-gold/70 hover:text-gold transition-colors duration-150"
+            className="font-en-body flex items-center justify-center"
+            style={{
+              width: 44,
+              height: 44,
+              background: 'var(--panel2)',
+              border: '4px solid var(--line)',
+              color: 'var(--gold-ink)',
+              fontSize: 12,
+            }}
           >
-            <Pause size={16} />
+            <span aria-hidden="true">II</span>
           </button>
           <ExitGameButton variant="icon" />
         </div>
       </header>
 
-      {/* Progress meta */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="font-en-body text-cream-45 text-sm" lang="en">
-          {playedCount} / {totalCells} questions answered
+      <div className="px-4 pt-5 pb-7 md:px-6">
+        {/* Status row */}
+        <div className="flex items-center justify-between gap-3 font-en-body" style={{ fontSize: 11, marginBottom: 14 }}>
+          <span style={{ color: 'var(--muted)', letterSpacing: '0.08em' }} lang="en">
+            SELECT A BLOCK · {playedCount}/{totalCells} CLEARED
+          </span>
+          <span style={{ color: 'var(--gold-ink)', letterSpacing: '0.08em' }}>
+            <span lang="en">▶ P{activeTeamIdx + 1} TURN · </span>
+            <span className="font-ar-body font-bold" style={{ fontSize: 24 }}>
+              دور {activeTeam?.name}
+            </span>
+          </span>
         </div>
-        <span className="font-en-body text-cream-45 text-xs uppercase tracking-wider" lang="en">
-          {teams[activeTeamIdx]?.nameEn} picks
-        </span>
-      </div>
 
-      {/* The Board */}
-      <div
-        className="grid gap-1 md:gap-1.5"
-        style={{ gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))` }}
-      >
-        {/* Row 0: category headers */}
-        {categories.map((cat) => (
-          <CategoryHeader key={`hdr-${cat.slug}`} category={cat} />
-        ))}
+        {/* The Board */}
+        <div
+          className="grid gap-2 md:gap-2.5"
+          style={{ gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))` }}
+        >
+          {/* Row 0: category headers */}
+          {categories.map((cat) => (
+            <CategoryHeader key={`hdr-${cat.slug}`} category={cat} />
+          ))}
 
-        {/* Body rows: 6 difficulty tiers × 6 categories */}
-        {rowValues.map((value, rowIdx) =>
-          categories.map((cat) => {
-            const key = cellKey(cat.slug, value, rowIdx);
-            const isPicked = picked.has(key);
-            return (
-              <BoardCell
-                key={key}
-                category={cat}
-                value={value}
-                isPicked={isPicked}
-                onPick={(c, v) => handlePick(c, v, rowIdx)}
-              />
-            );
-          })
-        )}
+          {/* Body rows: 6 difficulty tiers × 6 categories */}
+          {rowValues.map((value, rowIdx) =>
+            categories.map((cat) => {
+              const key = cellKey(cat.slug, value, rowIdx);
+              const isPicked = picked.has(key);
+              return (
+                <BoardCell
+                  key={key}
+                  category={cat}
+                  value={value}
+                  isPicked={isPicked}
+                  onPick={(c, v) => handlePick(c, v, rowIdx)}
+                />
+              );
+            })
+          )}
+        </div>
+
+        {/* Legend */}
+        <div
+          className="flex flex-wrap items-center gap-x-[22px] gap-y-2 font-en-body"
+          style={{ color: 'var(--muted2)', fontSize: 9, letterSpacing: '0.08em', marginTop: 18 }}
+          lang="en"
+        >
+          {TIER_LEGEND.map(({ label, bg, border }) => (
+            <span key={label} className="flex items-center gap-2">
+              <span style={{ width: 16, height: 16, background: bg, border: `3px solid ${border}` }} />
+              {label}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Score-adjust modal */}

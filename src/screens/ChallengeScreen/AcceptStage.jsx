@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion';
-import { Sparkles, Zap, AlertTriangle, Hourglass, Trophy } from 'lucide-react';
 
 /* ─── ACCEPT STAGE · full-screen redesign of the challenge offer ─────── */
 
@@ -8,162 +6,200 @@ export default function AcceptStage({ cellValue, team, variant, onAccept, onDecl
   const rules = isSketch
     ? [
         {
-          icon: <Sparkles size={20} />,
+          square: 'var(--purple)',
           ar: 'كلا الفريقين يرسمان معًا — رسّام واحد لكل فريق',
           en: 'Both teams draw at once — one drawer per team',
         },
         {
-          icon: <Zap size={20} />,
+          square: 'var(--gold)',
           ar: 'كل فريق يمسح رمزه ويرسم كلمته السرية المختلفة',
           en: 'Each team scans its own QR and draws its own secret word',
         },
         {
-          icon: <Hourglass size={20} />,
+          square: 'var(--blue)',
           ar: '٦٠ ثانية — أول فريق يخمّن كلمته يفوز',
           en: '60 seconds — first team to guess its word wins',
         },
         {
-          icon: <Trophy size={20} />,
+          square: 'var(--green)',
           ar: `الفائز يحصل على ضعف النقاط (${cellValue * 2})`,
           en: `Winner takes 2× points (${cellValue * 2})`,
         },
       ]
     : [
         {
-          icon: <Sparkles size={20} />,
+          square: 'var(--purple)',
           ar: 'لاعب من كل فريق يتنافس وجهًا لوجه',
           en: 'One player from each team faces off',
         },
         {
-          icon: <Hourglass size={20} />,
+          square: 'var(--blue)',
           ar: '٣٠ ثانية مشتركة، يتبادلان الإجابة كلمة بكلمة',
           en: '30 seconds shared, alternating word-by-word',
         },
         {
-          icon: <AlertTriangle size={20} />,
+          square: 'var(--red)',
           ar: 'من يعجز عن الإجابة في دوره يخسر',
           en: 'If you choke on your turn, you lose',
         },
         {
-          icon: <Trophy size={20} />,
+          square: 'var(--green)',
           ar: `الفائز يحصل على ضعف النقاط (${cellValue * 2})`,
           en: `Winner takes 2× points (${cellValue * 2})`,
         },
       ];
   return (
-    <motion.div
-      key="accept"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.35 }}
+    <div
       className="min-h-screen flex items-center justify-center px-4 py-8"
+      style={{
+        backgroundColor: 'var(--bg)',
+        backgroundImage:
+          'linear-gradient(var(--grid-alt) 2px, transparent 2px), linear-gradient(90deg, var(--grid-alt) 2px, transparent 2px)',
+        backgroundSize: '32px 32px, 32px 32px',
+      }}
     >
       <div
-        className="relative w-full max-w-2xl px-8 py-10 md:px-12 md:py-14 text-center rounded-3xl"
+        className="w-full text-center"
         style={{
-          background: 'var(--card-gold-soft-grad)',
-          border: '2px solid var(--color-gold)',
-          boxShadow: 'var(--card-gold-soft-shadow)',
+          maxWidth: 720,
+          background: 'var(--panel)',
+          border: '6px solid var(--purple)',
+          boxShadow: 'inset 0 0 0 4px var(--outline), 0 10px 0 var(--shadow)',
+          padding: '36px 40px',
         }}
       >
-        {/* Sparkle decoration */}
-        <div className="absolute inset-0 pointer-events-none opacity-40 rounded-3xl overflow-hidden" aria-hidden="true">
-          <span className="absolute top-4 start-6 text-gold-light text-3xl">✦</span>
-          <span className="absolute top-10 end-8 text-gold-light text-base">◇</span>
-          <span className="absolute bottom-8 start-10 text-cream text-xl">·</span>
-          <span className="absolute bottom-16 end-6 text-gold text-3xl">✦</span>
+        <div
+          className="font-en-body leading-none animate-blink"
+          style={{ fontSize: 14, color: 'var(--purple)', letterSpacing: '0.22em' }}
+          lang="en"
+        >
+          ! BONUS DUEL !
         </div>
 
-        <div className="relative z-10">
-          {/* Big icon at top — tinted with the challenged team's color */}
-          <motion.div
-            initial={{ scale: 0, rotate: -20 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', stiffness: 280, damping: 14, delay: 0.15 }}
-            className="inline-flex items-center justify-center w-24 h-24 rounded-full border mb-6"
+        <h1
+          className="font-ar-body font-extrabold leading-none"
+          style={{
+            fontSize: 'clamp(34px, 5vw, 62px)',
+            color: 'var(--gold-ink)',
+            marginTop: 10,
+            textShadow: '6px 6px 0 var(--purple-d)',
+          }}
+        >
+          جولة التحدّي
+        </h1>
+        <p
+          className="font-en-body leading-none"
+          style={{ fontSize: 11, color: 'var(--text)', letterSpacing: '0.14em', marginTop: 12 }}
+          lang="en"
+        >
+          {isSketch ? 'SKETCH DUEL' : 'NAMING DUEL'} · {cellValue * 2} PTS
+        </p>
+
+        {/* Which team tripped the cell */}
+        <div
+          className="inline-flex items-center justify-center"
+          style={{
+            gap: 12,
+            marginTop: 22,
+            padding: '10px 16px',
+            background: 'var(--cleared-bg)',
+            border: '4px solid var(--line)',
+          }}
+        >
+          <span
+            className="shrink-0"
+            style={{ width: 22, height: 22, background: team.color, border: '3px solid var(--outline)' }}
+          />
+          <span
+            className="font-ar-body font-bold leading-none"
+            style={{ fontSize: 26, color: 'var(--text)' }}
+          >
+            {team.name} وقع على تحدٍ
+          </span>
+        </div>
+
+        {/* Rules */}
+        <div className="flex flex-col text-start" style={{ gap: 10, marginTop: 26 }}>
+          {rules.map((r, i) => (
+            <Rule key={i} square={r.square} ar={r.ar} en={r.en} />
+          ))}
+        </div>
+
+        {/* CTAs */}
+        <div className="flex" style={{ gap: 14, marginTop: 28 }}>
+          <button
+            type="button"
+            onClick={onDecline}
+            className="flex-1 text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
             style={{
-              background: `linear-gradient(135deg, ${team.color}55, var(--color-ink-50))`,
-              borderColor: `${team.color}aa`,
-              boxShadow: 'var(--chip-active-shadow)',
+              padding: 16,
+              background: 'var(--panel2)',
+              border: '4px solid var(--blue)',
+              boxShadow: '0 8px 0 var(--shadow)',
+              color: 'var(--text)',
             }}
           >
-            <Zap size={44} className="text-gold" strokeWidth={2.5} />
-          </motion.div>
-
-          <h1
-            className="font-ar-body font-bold text-4xl md:text-5xl text-gold mb-1"
-            style={{ textShadow: 'var(--glow-text-gold-wide)' }}
-          >
-            جولة التحدي!
-          </h1>
-          <p className="font-en-display italic text-gold-light text-xl md:text-2xl mb-7" lang="en">
-            Challenge Round!
-          </p>
-
-          {/* Team context — bordered with the challenged team's color */}
-          <div
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-ink-80 border mb-7"
-            style={{ borderColor: `${team.color}aa` }}
-          >
+            <span className="font-ar-body font-bold leading-none" style={{ fontSize: 30 }}>
+              رفض
+            </span>{' '}
             <span
-              className="w-2.5 h-2.5 rounded-full shrink-0"
-              style={{ background: team.color }}
-              aria-hidden="true"
-            />
-            <p className="font-ar-ui text-base md:text-lg text-cream">
-              صندوق سحري · {team.name} وقع على تحدٍ خاص
-            </p>
-          </div>
-          <p className="font-en-body text-sm text-cream-60 -mt-5 mb-7" lang="en">
-            Mystery box · {team.name} landed on a challenge
-          </p>
-
-          {/* Rules */}
-          <div className="grid gap-3 mb-8 text-start">
-            {rules.map((r, i) => (
-              <Rule key={i} icon={r.icon} ar={r.ar} en={r.en} />
-            ))}
-          </div>
-
-          {/* CTAs */}
-          <div className="grid grid-cols-[1fr_2fr] gap-3 md:gap-4">
-            <button
-              type="button"
-              onClick={onDecline}
-              className="btn-outline px-4 py-4 md:py-5 rounded-2xl"
+              className="font-en-body leading-none"
+              style={{ fontSize: 10, color: 'var(--muted)' }}
+              lang="en"
             >
-              <div className="font-ar-ui text-lg md:text-xl font-semibold">رفض</div>
-              <div className="font-en-body text-xs md:text-sm opacity-70 mt-0.5" lang="en">
-                Decline · normal Q
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={onAccept}
-              className="btn-gold px-4 py-4 md:py-5 rounded-2xl"
-            >
-              <div className="font-ar-ui text-lg md:text-xl font-bold">قبول</div>
-              <div className="font-en-body text-xs md:text-sm font-medium opacity-80 mt-0.5" lang="en">
-                Accept · 2× points
-              </div>
-            </button>
-          </div>
+              NORMAL Q
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={onAccept}
+            className="text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+            style={{
+              flex: 1.5,
+              padding: 16,
+              background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+              border: '4px solid var(--outline)',
+              boxShadow: '0 8px 0 var(--gold-sh)',
+              color: 'var(--outline)',
+            }}
+          >
+            <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 34 }}>
+              قبول
+            </span>{' '}
+            <span className="font-en-body leading-none" style={{ fontSize: 11 }} lang="en">
+              2× POINTS
+            </span>
+          </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
-function Rule({ icon, ar, en }) {
+function Rule({ square, ar, en }) {
   return (
-    <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-ink-80 border border-gold-faint">
-      <span className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-gold/15 text-gold">
-        {icon}
-      </span>
-      <div className="text-start">
-        <div className="font-ar-ui text-base font-semibold text-cream">{ar}</div>
-        <div className="font-en-body text-xs italic text-cream-60 mt-0.5" lang="en">
+    <div
+      className="flex items-center"
+      style={{
+        gap: 12,
+        padding: '10px 12px',
+        background: 'var(--panel2)',
+        border: '4px solid var(--line)',
+      }}
+    >
+      <span className="shrink-0" style={{ width: 22, height: 22, background: square }} />
+      <div className="min-w-0">
+        <div
+          className="font-ar-body font-bold leading-none"
+          style={{ fontSize: 26, color: 'var(--text)' }}
+        >
+          {ar}
+        </div>
+        <div
+          className="font-en-body leading-none uppercase"
+          style={{ fontSize: 9, color: 'var(--muted)', marginTop: 6 }}
+          lang="en"
+        >
           {en}
         </div>
       </div>

@@ -1,10 +1,9 @@
-export const TEAM_COLORS = [
-  '#D63A47', // red
-  '#E07A2B', // orange
-  '#E8B23A', // yellow
-  '#3FA968', // green
-  '#3A7BC8', // blue
-  '#7B3FB8', // purple
+// Per-team swatch rows, straight off the handoff sheet. The first entry in each
+// row is the team's default colour from lib/teams.js, so a freshly-opened Setup
+// always shows one swatch already selected.
+export const TEAM_SWATCHES = [
+  ['#3A7BC8', '#4FB477', '#D4A24C', '#8E6BC8'],
+  ['#9B2D3A', '#E07A2F', '#8E6BC8', '#4FB477'],
 ];
 
 export const DIFFICULTIES = [

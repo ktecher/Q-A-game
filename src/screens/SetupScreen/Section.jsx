@@ -1,18 +1,32 @@
+// A lettered setup section: a gold letter chip, the Arabic label, its Latin
+// tag, and an optional trailing status chip.
 export default function Section({ badge, labelAr, labelEn, trailing, children }) {
   return (
-    <div className="border-b border-gold-faint last:border-b-0">
-      <div className="px-5 pt-3.5 pb-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="font-en-body text-sm text-gold bg-gold/10 border border-gold/20 rounded px-1.5 py-0.5 shrink-0">
-            {badge}
-          </span>
-          <span className="font-ar-ui text-base text-cream-60 truncate">
-            {labelAr} <span className="opacity-60" lang="en">· {labelEn}</span>
-          </span>
-        </div>
-        {trailing}
+    <div>
+      <div className="flex items-center gap-3 flex-wrap" style={{ marginBottom: 12 }}>
+        <span
+          className="font-en-body leading-none shrink-0"
+          style={{ fontSize: 11, color: 'var(--outline)', background: 'var(--gold)', padding: '6px 8px' }}
+          lang="en"
+        >
+          {badge}
+        </span>
+        <span
+          className="font-ar-body font-bold leading-none"
+          style={{ fontSize: 32, color: 'var(--text)' }}
+        >
+          {labelAr}
+        </span>
+        <span
+          className="font-en-body leading-none uppercase"
+          style={{ fontSize: 10, color: 'var(--muted2)' }}
+          lang="en"
+        >
+          {labelEn}
+        </span>
+        {trailing && <span className="ms-auto">{trailing}</span>}
       </div>
-      <div className="px-5 pb-5 pt-1">{children}</div>
+      {children}
     </div>
   );
 }

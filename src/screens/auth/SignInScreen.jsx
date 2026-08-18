@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Loader2 } from 'lucide-react';
 import { z } from 'zod';
-import BrandHeader from '../../components/BrandHeader';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { emailField, passwordField } from './authSchemas';
+import AuthCard from './AuthCard';
 import AuthInput from './AuthInput';
 import MockBypassButton from './MockBypassButton';
 import SubmitAlert from './SubmitAlert';
@@ -71,6 +70,11 @@ export default function SignInScreen() {
     }
   };
 
+  const handleGuest = () => {
+    continueAsGuest();
+    navigate('/home');
+  };
+
   const handleMockSignIn = () => {
     const name = email.trim().split('@')[0] || 'مستخدم تجريبي';
     continueAsGuest({ name, mock: true });
@@ -78,90 +82,99 @@ export default function SignInScreen() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
-      <div className="surface px-8 py-10 w-full max-w-md">
-        <BrandHeader subtitle={false} />
+    <AuthCard titleAr="تسجيل الدخول" titleEn="CONTINUE?">
+      <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: 20 }} noValidate>
+        <AuthInput
+          id="signin-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          labelAr="البريد"
+          labelEn="Email"
+          error={errors.email}
+          lang="en"
+          autoComplete="email"
+        />
+        <AuthInput
+          id="signin-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          labelAr="كلمة السر"
+          labelEn="Password"
+          error={errors.password}
+          autoComplete="current-password"
+        />
 
-        <h2 className="text-center font-ar-body text-2xl text-cream mt-6">تسجيل الدخول</h2>
-        <p className="text-center font-en-display italic text-cream-60 text-base" lang="en">
-          Sign In
-        </p>
+        <SubmitAlert message={submitError} />
 
-        <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4" noValidate>
-          <AuthInput
-            id="signin-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            labelAr="البريد الإلكتروني"
-            labelEn="Email"
-            icon={Mail}
-            error={errors.email}
-            dir="ltr"
-            lang="en"
-            autoComplete="email"
-          />
-          <AuthInput
-            id="signin-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            labelAr="كلمة المرور"
-            labelEn="Password"
-            icon={Lock}
-            error={errors.password}
-            dir="ltr"
-            autoComplete="current-password"
-          />
-
-          <SubmitAlert message={submitError} />
-
+        <div className="flex items-stretch" style={{ gap: 14 }}>
           <button
             type="submit"
             disabled={submitting}
             aria-busy={submitting}
-            className="btn-gold px-6 py-3 rounded-xl text-base flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-wait"
+            className="flex-1 text-center transition-transform duration-100 enabled:hover:-translate-y-[3px] enabled:active:translate-y-[3px] disabled:cursor-wait disabled:opacity-60"
+            style={{
+              padding: 14,
+              background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+              border: '4px solid var(--outline)',
+              boxShadow: '0 8px 0 var(--gold-sh)',
+              color: 'var(--outline)',
+            }}
           >
-            {submitting ? (
-              <>
-                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                <span className="font-ar-ui">جارٍ الدخول...</span>
-              </>
-            ) : (
-              <span className="flex flex-col items-center gap-0.5">
-                <span>تسجيل الدخول</span>
-                <span className="font-en-body text-sm font-medium opacity-80" lang="en">
-                  Sign In
-                </span>
-              </span>
-            )}
+            <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 32 }}>
+              {submitting ? 'جارٍ الدخول…' : 'دخول'}
+            </span>{' '}
+            <span className="font-en-body leading-none" style={{ fontSize: 11 }} lang="en">
+              {submitting ? 'LOADING…' : 'START'}
+            </span>
           </button>
+          <button
+            type="button"
+            onClick={handleGuest}
+            className="text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+            style={{
+              padding: '14px 20px',
+              background: 'var(--panel2)',
+              border: '4px solid var(--blue)',
+              boxShadow: '0 8px 0 var(--shadow)',
+              color: 'var(--text)',
+            }}
+          >
+            <span className="font-ar-body font-bold leading-none" style={{ fontSize: 28 }}>
+              ضيف
+            </span>{' '}
+            <span
+              className="font-en-body leading-none"
+              style={{ fontSize: 10, color: 'var(--muted)' }}
+              lang="en"
+            >
+              GUEST
+            </span>
+          </button>
+        </div>
 
-          {IS_DEV_MOCK && (
-            <MockBypassButton
-              labelEn="Skip · Mock sign-in (DEV only)"
-              onClick={handleMockSignIn}
-            />
-          )}
-        </form>
+        {IS_DEV_MOCK && (
+          <MockBypassButton labelEn="MOCK SIGN-IN (DEV)" onClick={handleMockSignIn} />
+        )}
 
-        <div className="mt-6 flex flex-col items-center gap-2 text-sm">
-          <Link to="/forgot-password" className="text-cream-60 hover:text-gold transition font-en-body" lang="en">
-            Forgot password?
+        <div
+          className="flex flex-wrap items-center justify-center text-center font-en-body leading-none"
+          style={{ gap: 14, fontSize: 10, color: 'var(--muted2)', letterSpacing: '0.08em' }}
+        >
+          <Link to="/forgot-password">
+            <span lang="en">FORGOT PASSWORD? · </span>نسيت كلمة السر
           </Link>
-          <p className="text-cream-45 font-en-body" lang="en">
-            Don&apos;t have an account?{' '}
-            <Link to="/signup" className="text-gold hover:text-gold-light underline-offset-4 hover:underline">
-              Sign Up
-            </Link>
-          </p>
-          <Link to="/" className="text-cream-45 hover:text-cream-60 transition mt-3 font-en-body" lang="en">
-            ← Back to Home
+          <Link to="/signup">
+            <span lang="en">NEW PLAYER? · </span>إنشاء حساب
+          </Link>
+          <Link to="/">
+            <span lang="en">◄ TITLE</span>
           </Link>
         </div>
-      </div>
-    </div>
+      </form>
+    </AuthCard>
   );
 }

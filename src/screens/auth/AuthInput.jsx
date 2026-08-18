@@ -1,12 +1,14 @@
-import { AlertCircle } from 'lucide-react';
-
-// Labeled input row used by SignIn/SignUp. Wraps a leading icon, a bilingual
-// label, the input, and an aria-described error span. Four previously
-// hand-coded copies (email × 2, password × 2, display name × 1) collapsed
-// into this single primitive.
+// Labeled input row used by SignIn/SignUp. Wraps a bilingual Press Start label,
+// the field, and an aria-described error span. Four previously hand-coded
+// copies (email × 2, password × 2, display name × 1) collapsed into this single
+// primitive.
 //
-// `inputFontClass` lets the caller pick Arabic vs English typography for the
-// input value (display-name uses font-ar-body; email/password use font-en-body).
+// The leading Lucide icon is gone — the arcade theme states the field in its
+// label instead, and a 16px glyph fights the pixel grid.
+//
+// `inputFontClass` / `inputFontSize` let the caller pick Arabic vs Latin
+// typography for the value: Press Start has no Arabic coverage, so the
+// display-name field switches to Handjet.
 export default function AuthInput({
   id,
   type = 'text',
@@ -15,53 +17,54 @@ export default function AuthInput({
   placeholder,
   labelAr,
   labelEn,
-  icon: Icon,
   error,
-  dir,
+  dir = 'ltr',
   lang,
   autoComplete,
-  inputFontClass = 'font-en-body text-sm',
+  inputFontClass = 'font-en-body',
+  inputFontSize = 13,
 }) {
   const errorId = `${id}-error`;
   return (
-    <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor={id}
-        className="font-ar-ui text-sm text-cream-60 flex items-center gap-1"
+    <label htmlFor={id} className="flex flex-col" style={{ gap: 8 }}>
+      <span
+        className="font-en-body leading-none"
+        style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.1em' }}
       >
-        {labelAr} <span className="opacity-60" lang="en">· {labelEn}</span>
-      </label>
-      <div className="relative">
-        <Icon
-          size={16}
-          className="absolute start-3 top-1/2 -translate-y-1/2 text-cream-45 pointer-events-none"
-          aria-hidden="true"
-        />
-        <input
-          id={id}
-          type={type}
-          dir={dir}
-          lang={lang}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          aria-invalid={!!error}
-          aria-describedby={error ? errorId : undefined}
-          autoComplete={autoComplete}
-          className={`w-full ps-10 pe-3 py-2.5 rounded-lg bg-ink-80 border ${
-            error ? 'border-crimson' : 'border-gold-faint'
-          } text-cream ${inputFontClass} focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/40 transition`}
-        />
-      </div>
+        <span lang="en">{labelEn.toUpperCase()} · </span>
+        {labelAr}
+      </span>
+      <input
+        id={id}
+        type={type}
+        dir={dir}
+        lang={lang}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        aria-invalid={!!error}
+        aria-describedby={error ? errorId : undefined}
+        autoComplete={autoComplete}
+        className={`w-full ${inputFontClass}`}
+        style={{
+          background: 'var(--input-bg)',
+          border: `4px solid ${error ? 'var(--red)' : 'var(--blue)'}`,
+          boxShadow: 'inset 4px 4px 0 var(--inset)',
+          padding: '12px 14px',
+          color: 'var(--text)',
+          fontSize: inputFontSize,
+        }}
+      />
       {error && (
         <span
           id={errorId}
           role="alert"
-          className="text-crimson text-xs font-ar-ui flex items-center gap-1"
+          className="font-ar-body font-bold leading-none"
+          style={{ fontSize: 24, color: 'var(--red-ink)' }}
         >
-          <AlertCircle size={12} aria-hidden="true" /> {error}
+          {error}
         </span>
       )}
-    </div>
+    </label>
   );
 }

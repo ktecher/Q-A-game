@@ -1,44 +1,49 @@
-import TeamIdentity from '../../components/TeamIdentity';
-
-// Rail team card for the split-stage question screen. Shows the team's name +
-// running score. Whose turn it is is conveyed purely by the active highlight
-// (gold border + glow) — no status text needed, since only one card lights up.
+// Rail team card for the split-stage question screen: a colour block, the team
+// name, and a one-word state. Replaces the old gradient chip.
 //
 // status: 'answering' | 'waiting' | 'done'
-export default function TeamCell({ team, status }) {
+const STATUS = {
+  answering: { en: 'ANSWERING…', color: 'var(--gold-ink)', blink: true },
+  waiting: { en: 'WAITING', color: 'var(--muted2)', blink: false },
+  done: { en: 'DONE', color: 'var(--muted2)', blink: false },
+};
+
+export default function TeamCell({ team, status, accent }) {
   const isAnswering = status === 'answering';
-  const isWaiting = status === 'waiting';
-  const isDone = status === 'done';
-
-  const bg = isAnswering
-    ? `linear-gradient(135deg, ${team.color}99, var(--color-ink-50))`
-    : 'var(--color-ink-50)';
-
-  const border = isAnswering
-    ? 'var(--color-gold)'
-    : isDone
-      ? `${team.color}aa`
-      : 'var(--color-gold-faint)';
+  const s = STATUS[status] ?? STATUS.done;
 
   return (
     <div
-      className="flex flex-col gap-1 px-3 py-2.5 rounded-lg border transition-all"
+      className="flex items-center gap-2.5"
       style={{
-        background: bg,
-        borderColor: border,
-        opacity: isWaiting ? 0.55 : 1,
-        boxShadow: isAnswering ? 'var(--chip-active-shadow)' : 'none',
+        padding: 10,
+        background: isAnswering ? 'var(--blue-p)' : 'var(--panel)',
+        border: `4px solid ${isAnswering ? accent : 'var(--line)'}`,
       }}
     >
-      <TeamIdentity team={team} size="sm" truncate />
-      <div className="flex items-baseline gap-1.5">
-        <span
-          className="font-en-display font-bold text-xl leading-none"
-          style={{ color: isAnswering ? 'var(--color-gold)' : team.color }}
+      <span
+        className="shrink-0"
+        style={{
+          width: 34,
+          height: 34,
+          background: team.color,
+          border: '3px solid var(--outline)',
+        }}
+      />
+      <div className="min-w-0">
+        <div
+          className="font-ar-body font-bold leading-none truncate"
+          style={{ fontSize: 24, color: isAnswering ? 'var(--text)' : 'var(--muted)' }}
         >
-          {team.score}
-        </span>
-        <span className="font-ar-ui text-[10px] text-cream-45">نقطة</span>
+          {team.name}
+        </div>
+        <div
+          className={`font-en-body leading-none ${s.blink ? 'animate-blink' : ''}`}
+          style={{ fontSize: 9, color: s.color, marginTop: 4 }}
+          lang="en"
+        >
+          {s.en}
+        </div>
       </div>
     </div>
   );

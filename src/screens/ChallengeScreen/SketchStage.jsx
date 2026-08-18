@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { QRCode } from 'react-qr-code';
-import { Zap, X as XIcon, Play } from 'lucide-react';
 import { buildSketchUrl } from '../../lib/sketchEncoding';
-import { useTheme } from '../../contexts/ThemeContext';
+import { formatTime } from '../../lib/format';
 import { CANVAS_PAPER } from '../../lib/sketchTheme';
 import useSketchSession from './useSketchSession';
 
@@ -17,8 +15,14 @@ const END_HOLD_MS = 900; // hold on the ended screen so the 'end' broadcast land
    watches both canvases — the team whose word their group guesses first wins
    (the host awards on the result screen). */
 
+// The handoff pins the sketch surface to cream paper (#F4ECD8 with a #D8CFB8
+// inset) on both screens, so the canvas no longer follows the app theme. Ink
+// therefore has to stay dark everywhere — useSketchSession's dark fallback is
+// #ffffff, which would be invisible on this paper — and the phone is sent the
+// light theme for the same reason.
+const CANVAS_IS_DARK = false;
+
 export default function SketchStage({ teams, challenge, onEnd }) {
-  const { isDark } = useTheme();
   const sketch = challenge.sketch ?? [];
 
   const [running, setRunning] = useState(false);
@@ -40,9 +44,10 @@ export default function SketchStage({ teams, challenge, onEnd }) {
     connected: connectedA,
   } = useSketchSession({
     sessionId: sketch[0]?.sessionId,
-    isDark,
+    isDark: CANVAS_IS_DARK,
     timeLeft: phase === 'running' ? timeLeft : null,
     ended,
+    canvasMounted: phase !== 'waiting',
   });
   const {
     canvasRef: canvasRefB,
@@ -51,9 +56,10 @@ export default function SketchStage({ teams, challenge, onEnd }) {
     connected: connectedB,
   } = useSketchSession({
     sessionId: sketch[1]?.sessionId,
-    isDark,
+    isDark: CANVAS_IS_DARK,
     timeLeft: phase === 'running' ? timeLeft : null,
     ended,
+    canvasMounted: phase !== 'waiting',
   });
 
   // Both drawers are on — the host may now press Start. The round never
@@ -99,66 +105,60 @@ export default function SketchStage({ teams, challenge, onEnd }) {
   }, [ended, onEnd]);
 
   const urgent = phase === 'running' && timeLeft <= 10;
+  // Start stays locked until both phones are attached — the round is unplayable
+  // for a team whose drawer never joined.
+  const startDisabled = phase === 'waiting' && !bothConnected;
 
   return (
-    <motion.div
-      key="sketch"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="min-h-screen flex flex-col px-3 py-3 md:px-6 md:py-5"
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        // The bonus screen swaps the blue tilemap for the purple one.
+        backgroundColor: 'var(--bg)',
+        backgroundImage:
+          'linear-gradient(var(--grid-alt) 2px, transparent 2px), linear-gradient(90deg, var(--grid-alt) 2px, transparent 2px)',
+        backgroundSize: '32px 32px, 32px 32px',
+      }}
     >
-      {/* Header — title + the shared timer */}
-      <header className="flex items-center justify-between gap-3 mb-3">
+      <div className="text-center shrink-0" style={{ padding: '18px 16px 4px' }}>
         <div
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-ar-ui font-semibold bg-gold/15 border border-gold-faint"
-          style={{ color: 'var(--color-gold)' }}
+          className="font-en-body leading-none animate-blink"
+          style={{ fontSize: 14, color: 'var(--purple)', letterSpacing: '0.22em' }}
+          lang="en"
         >
-          <Zap size={15} />
-          تحدي الرسم
-          <span className="font-en-body normal-case opacity-80" lang="en">
-            · Sketch Duel
-          </span>
+          ! BONUS DUEL !
         </div>
-        {phase === 'running' ? (
-          <div
-            className="font-en-display font-bold leading-none shrink-0"
-            style={{
-              fontSize: 'clamp(36px, 6vw, 68px)',
-              letterSpacing: '-0.04em',
-              color: urgent ? '#C44150' : 'var(--color-gold)',
-              textShadow: urgent ? 'var(--glow-text-crimson-wide)' : 'var(--glow-text-gold-deep)',
-            }}
-          >
-            {timeLeft}
-          </div>
-        ) : (
-          <span className="font-ar-ui text-sm text-cream-60 text-end">
-            {phase === 'ended'
-              ? 'انتهت الجولة'
-              : bothConnected
-                ? 'الفريقان جاهزان'
-                : 'في انتظار الرسّامين'}
-            <span className="font-en-body italic text-xs opacity-70 ms-1" lang="en">
-              ·{' '}
-              {phase === 'ended'
-                ? 'Round over'
-                : bothConnected
-                  ? 'Both teams ready'
-                  : 'Waiting for drawers'}
-            </span>
-          </span>
-        )}
-      </header>
+        <div
+          className="font-ar-body font-extrabold leading-none"
+          style={{
+            fontSize: 'clamp(34px, 5vw, 62px)',
+            color: 'var(--gold-ink)',
+            marginTop: 10,
+            textShadow: '6px 6px 0 var(--purple-d)',
+          }}
+        >
+          جولة التحدّي
+        </div>
+        <div
+          className="font-en-body leading-none"
+          style={{ fontSize: 11, color: 'var(--text)', letterSpacing: '0.14em', marginTop: 12 }}
+          lang="en"
+        >
+          DOUBLE POINTS · {challenge.value * 2} PTS · DRAW IT ON YOUR PHONE
+        </div>
+      </div>
 
-      {/* Split canvases — one panel per team */}
-      <div className="flex-1 grid grid-cols-1 grid-rows-2 md:grid-cols-2 md:grid-rows-1 gap-3 md:gap-4 min-h-0">
+      <div
+        className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2"
+        style={{ gap: 24, padding: '20px 32px 8px' }}
+      >
         <TeamPanel
           team={teams[0]}
+          index={0}
           word={sketch[0]}
-          isDark={isDark}
-          started={phase !== 'waiting'}
+          timeLabel={formatTime(timeLeft)}
+          urgent={urgent}
+          scanning={phase === 'waiting'}
           canvasRef={canvasRefA}
           boxRef={boxRefA}
           subscribed={subscribedA}
@@ -166,9 +166,11 @@ export default function SketchStage({ teams, challenge, onEnd }) {
         />
         <TeamPanel
           team={teams[1]}
+          index={1}
           word={sketch[1]}
-          isDark={isDark}
-          started={phase !== 'waiting'}
+          timeLabel={formatTime(timeLeft)}
+          urgent={urgent}
+          scanning={phase === 'waiting'}
           canvasRef={canvasRefB}
           boxRef={boxRefB}
           subscribed={subscribedB}
@@ -176,80 +178,85 @@ export default function SketchStage({ teams, challenge, onEnd }) {
         />
       </div>
 
-      {/* Footer — host controls */}
-      <footer className="mt-3 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          {phase === 'waiting' ? (
-            <>
-              <p className="font-ar-ui text-sm text-cream">
-                بعد أن يمسح الفريقان الرمزين، اضغط «ابدأ الجولة»
-              </p>
-              <p className="font-en-body text-xs text-cream-60 italic" lang="en">
-                Once both teams have scanned their QR, press Start round.
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="font-ar-ui text-sm text-cream">
-                كل فريق يخمّن رسمته — أول فريق يعرف كلمته يفوز!
-              </p>
-              <p className="font-en-body text-xs text-cream-60 italic" lang="en">
-                Each team guesses its own drawing — first team to get it wins.
-              </p>
-            </>
-          )}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {phase === 'waiting' ? (
-            <>
-              <button
-                type="button"
-                onClick={endRound}
-                className="btn-outline inline-flex items-center gap-2 px-4 py-2.5 rounded-xl"
-              >
-                <XIcon size={15} />
-                <span className="font-ar-ui text-sm font-semibold">تخطّي</span>
-                <span className="font-en-body text-xs opacity-70" lang="en">
-                  · Skip
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={beginRound}
-                className="btn-gold inline-flex items-center gap-2 px-5 py-2.5 rounded-xl"
-              >
-                <Play size={15} />
-                <span className="font-ar-ui text-sm font-semibold">ابدأ الجولة</span>
-                <span className="font-en-body text-xs opacity-80" lang="en">
-                  · Start round
-                </span>
-              </button>
-            </>
-          ) : (
+      {/* Host controls — not on the sheet, but the round needs a start/end. */}
+      <footer
+        className="shrink-0 flex items-center justify-between gap-4 flex-wrap"
+        style={{ padding: '14px 32px 22px' }}
+      >
+        <span
+          className="font-en-body"
+          style={{ fontSize: 10, color: 'var(--muted)', lineHeight: 1.8, letterSpacing: '0.08em' }}
+          lang="en"
+        >
+          {phase !== 'waiting'
+            ? 'EACH TEAM GUESSES ITS OWN DRAWING — FIRST TO GET IT WINS'
+            : bothConnected
+              ? 'BOTH DRAWERS CONNECTED · PRESS START'
+              : 'BOTH TEAMS SCAN THEIR QR · THEN PRESS START'}
+        </span>
+        <div className="flex items-center" style={{ gap: 14 }}>
+          {phase === 'waiting' && (
             <button
               type="button"
               onClick={endRound}
-              className="btn-gold inline-flex items-center gap-2 px-5 py-2.5 rounded-xl"
+              className="transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+              style={{
+                padding: '12px 20px',
+                background: 'var(--panel2)',
+                border: '4px solid var(--line)',
+                boxShadow: '0 8px 0 var(--shadow)',
+                color: 'var(--text)',
+              }}
             >
-              <XIcon size={15} />
-              <span className="font-ar-ui text-sm font-semibold">إنهاء الجولة</span>
-              <span className="font-en-body text-xs opacity-80" lang="en">
-                · End round
+              <span className="font-ar-body font-bold leading-none" style={{ fontSize: 26 }}>
+                تخطّي
+              </span>{' '}
+              <span
+                className="font-en-body leading-none"
+                style={{ fontSize: 10, color: 'var(--muted)' }}
+                lang="en"
+              >
+                SKIP
               </span>
             </button>
           )}
+          <button
+            type="button"
+            onClick={phase === 'waiting' ? beginRound : endRound}
+            disabled={phase === 'waiting' && !bothConnected}
+            className="transition-transform duration-100 enabled:hover:-translate-y-[3px] enabled:active:translate-y-[3px] disabled:cursor-not-allowed"
+            style={{
+              padding: '12px 24px',
+              background: startDisabled
+                ? 'var(--cleared-bg)'
+                : 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+              border: `4px solid ${startDisabled ? 'var(--line)' : 'var(--outline)'}`,
+              boxShadow: startDisabled ? 'none' : '0 8px 0 var(--gold-sh)',
+              color: startDisabled ? 'var(--muted2)' : 'var(--outline)',
+              opacity: startDisabled ? 0.45 : 1,
+            }}
+          >
+            <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 30 }}>
+              {phase === 'waiting' ? 'ابدأ الجولة' : 'إنهاء الجولة'}
+            </span>{' '}
+            <span className="font-en-body leading-none" style={{ fontSize: 11 }} lang="en">
+              {phase === 'waiting' ? 'START' : 'END'}
+            </span>
+          </button>
         </div>
       </footer>
-    </motion.div>
+    </div>
   );
 }
 
-/* One half of the split screen: a team's QR (before its drawer connects) or
-   its live canvas (after). */
-function TeamPanel({ team, word, isDark, started, canvasRef, boxRef, subscribed, connected }) {
-  // Show the QR only until the round is under way; once it starts keep the
-  // canvas up even if this team's presence briefly flickers.
-  const showCanvas = started || connected;
+/* One half of the split screen. Two states, switched together by the host:
+   - scanning: a full-panel QR for that team's drawer to scan
+   - drawing:  the live canvas, from the moment the host presses Start
+   The sheet draws both at once, but that's a mock of the mid-round state — it
+   never showed the scan step, and a footer-sized QR is unscannable across a
+   room. */
+function TeamPanel({ team, index, word, timeLabel, urgent, scanning, canvasRef, boxRef, subscribed, connected }) {
+  const accent = index === 0 ? 'var(--blue)' : 'var(--red)';
   const qrUrl = word
     ? buildSketchUrl({
         origin: window.location.origin,
@@ -259,76 +266,120 @@ function TeamPanel({ team, word, isDark, started, canvasRef, boxRef, subscribed,
         sessionId: word.sessionId,
         catAr: word.catAr,
         catEn: word.catEn,
-        theme: isDark ? 'dark' : 'light',
+        theme: 'light',
       })
     : '';
 
   return (
     <div
-      className="flex flex-col min-h-0 rounded-2xl p-3"
+      className="flex flex-col min-h-0"
       style={{
-        background: `linear-gradient(150deg, ${team.color}26, var(--color-ink-50))`,
-        border: `2px solid ${team.color}aa`,
+        gap: 14,
+        padding: 18,
+        background: 'var(--panel)',
+        border: `4px solid ${accent}`,
+        boxShadow: '0 8px 0 var(--shadow)',
       }}
     >
-      {/* Team label + connection status */}
-      <div className="flex items-center justify-between gap-2 mb-2 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <span
-            className="w-3 h-3 rounded-full shrink-0"
-            style={{ background: team.color }}
-            aria-hidden="true"
-          />
-          <span className="font-ar-ui text-base text-cream truncate">{team.name}</span>
-          <span className="font-en-body text-xs text-cream-60 italic truncate" lang="en">
-            · {team.nameEn}
+      <div className="flex items-center justify-between gap-3 shrink-0">
+        <span className="font-en-body leading-none truncate" style={{ fontSize: 11, color: accent }}>
+          <span lang="en">P{index + 1} · </span>
+          <span className="font-ar-body font-bold" style={{ fontSize: 24 }}>
+            {team.name}
           </span>
-        </div>
-        {connected ? (
-          <span
-            className="px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0"
-            style={{ background: `${team.color}33`, border: `1px solid ${team.color}`, color: team.color }}
-          >
-            ● يرسم
+        </span>
+        {scanning ? (
+          <span className="flex items-center gap-2 shrink-0">
+            <span
+              className={connected ? '' : 'animate-blink'}
+              style={{ width: 12, height: 12, background: connected ? 'var(--green)' : 'var(--line)' }}
+              aria-hidden="true"
+            />
+            <span
+              className="font-en-body leading-none"
+              style={{ fontSize: 10, color: connected ? 'var(--green)' : 'var(--muted2)' }}
+              lang="en"
+            >
+              {connected ? 'READY' : 'WAITING'}
+            </span>
           </span>
         ) : (
-          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0 bg-ink-80 border border-gold-faint text-cream-45">
-            ○ في الانتظار
+          <span
+            className={`font-en-body leading-none shrink-0 ${urgent ? 'animate-flash' : ''}`}
+            style={{ fontSize: 11, color: urgent ? 'var(--red-ink)' : 'var(--gold-ink)' }}
+            lang="en"
+          >
+            {timeLabel}
           </span>
         )}
       </div>
 
-      {/* Live canvas once the round is under way; the QR to scan before that */}
-      <div className="flex-1 flex items-center justify-center min-h-0">
-        {showCanvas ? (
+      {scanning ? (
+        <>
+          {/* Full-panel scan target */}
+          <div
+            className="flex-1 min-h-0 grid place-items-center"
+            style={{
+              background: '#F4ECD8',
+              border: '4px solid var(--outline)',
+              boxShadow: 'inset 0 0 0 4px #D8CFB8',
+              padding: 16,
+            }}
+          >
+            {subscribed && qrUrl ? (
+              <QRCode
+                value={qrUrl}
+                size={320}
+                bgColor="#F4ECD8"
+                fgColor="#070A12"
+                level="M"
+                viewBox="0 0 320 320"
+                style={{ width: '100%', height: '100%', maxWidth: 340, maxHeight: '100%' }}
+              />
+            ) : (
+              <span
+                className="font-en-body leading-none animate-blink"
+                style={{ fontSize: 11, color: 'var(--outline)' }}
+                lang="en"
+              >
+                PREPARING…
+              </span>
+            )}
+          </div>
+          <div className="text-center shrink-0">
+            <div
+              className="font-ar-body font-bold leading-none"
+              style={{ fontSize: 28, color: 'var(--text)' }}
+            >
+              امسح للرسم
+            </div>
+            <div
+              className="font-en-body leading-none"
+              style={{ fontSize: 9, color: connected ? 'var(--green)' : 'var(--muted)', marginTop: 6 }}
+              lang="en"
+            >
+              {connected ? 'DRAWER CONNECTED' : 'ONE PLAYER SCANS · SEES THE WORD · DRAWS IT'}
+            </div>
+          </div>
+        </>
+      ) : (
+        // useSketchSession measures `box.parentElement` and then sets an explicit
+        // width/height on the box itself, so the box needs a plain flex wrapper
+        // to measure against — it can't be the flex child directly.
+        <div className="flex-1 min-h-0 flex items-center justify-center">
           <div
             ref={boxRef}
-            className="rounded-xl overflow-hidden"
+            className="overflow-hidden"
             style={{
-              background: isDark ? CANVAS_PAPER.dark : CANVAS_PAPER.light,
-              boxShadow: '0 10px 32px rgba(0, 0, 0, 0.45)',
+              background: CANVAS_PAPER.light,
+              border: '4px solid var(--outline)',
+              boxShadow: 'inset 0 0 0 4px #D8CFB8',
             }}
           >
             <canvas ref={canvasRef} className="block w-full h-full" />
           </div>
-        ) : (
-          <div className="flex flex-col items-center gap-3 text-center">
-            {subscribed && qrUrl ? (
-              <div className="bg-white rounded-2xl p-3 inline-block">
-                <QRCode value={qrUrl} size={168} bgColor="#FFFFFF" fgColor="#0A0F1A" level="M" />
-              </div>
-            ) : (
-              <div className="w-[192px] h-[192px] rounded-2xl bg-ink-80 border border-gold-faint flex items-center justify-center">
-                <span className="font-ar-ui text-sm text-cream-45">جارٍ التحضير…</span>
-              </div>
-            )}
-            <p className="font-ar-ui text-sm text-cream">لاعب واحد يمسح الرمز ويرسم الكلمة</p>
-            <p className="font-en-body text-xs text-cream-60 italic" lang="en">
-              One player scans · sees the word · draws it
-            </p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

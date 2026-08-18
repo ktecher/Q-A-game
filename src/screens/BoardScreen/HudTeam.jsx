@@ -1,41 +1,81 @@
-import { Pencil } from 'lucide-react';
-import TeamIdentity from '../../components/TeamIdentity';
+import { formatScore } from '../../lib/format';
 
-export default function TeamChip({ team, isActive, onAdjust }) {
+// Order matches the three 16×16 squares in the HUD, left to right.
+const LIFELINE_KEYS = ['extraTime', 'hint', 'steal'];
+
+/**
+ * One team's block in the board HUD bar. Replaces the old rounded TeamChip:
+ * a flush panel that fills with the team's tint while it's their turn.
+ * Still clickable — that's how the host adjusts a score.
+ */
+export default function HudTeam({ team, index, isActive, lifelines, onAdjust }) {
+  const isP1 = index === 0;
+  const accent = isP1 ? 'var(--blue)' : 'var(--red)';
+
   return (
     <button
       type="button"
       onClick={onAdjust}
       title="Click to adjust score"
       aria-label={`Adjust ${team.nameEn} score (currently ${team.score})`}
-      className={`group relative flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all cursor-pointer ${
-        isActive
-          ? 'bg-gold/10 border-gold shadow-gold-glow scale-105'
-          : 'bg-ink-50 border-gold-faint hover:border-gold/60'
-      }`}
-      style={isActive ? { boxShadow: 'var(--chip-active-shadow)' } : undefined}
+      className="flex-1 min-w-0 text-start"
+      style={{
+        padding: '14px 18px',
+        background: isActive ? (isP1 ? 'var(--blue-p)' : 'var(--red-p)') : 'transparent',
+        // Only P1 and the VS block carry a separator; P2 runs into the controls.
+        borderInlineEnd: isP1 ? '4px solid var(--outline)' : undefined,
+      }}
     >
-      <TeamIdentity team={team} size="md" truncate />
-      <div className="flex items-center gap-1 ms-2">
+      <div className="flex items-center gap-2.5">
         <span
-          className="font-en-display font-bold text-2xl leading-none"
-          style={{ color: isActive ? 'var(--color-gold)' : team.color }}
+          className="font-en-body leading-none"
+          style={{ color: accent, fontSize: 11 }}
+          lang="en"
         >
-          {team.score}
+          {isP1 ? 'P1' : 'P2'}
+        </span>
+        <span
+          className="font-ar-body font-bold leading-none truncate"
+          style={{ color: 'var(--text)', fontSize: 30 }}
+        >
+          {team.name}
+        </span>
+        {isActive && (
+          <span
+            className="animate-blink shrink-0"
+            style={{ width: 12, height: 12, background: 'var(--gold)' }}
+            aria-label="Active team"
+          />
+        )}
+      </div>
+
+      <div
+        className="font-ar-body font-extrabold leading-none tabular-nums"
+        style={{ color: accent, fontSize: 52, textShadow: '4px 4px 0 var(--shadow)' }}
+        dir="ltr"
+      >
+        {formatScore(team.score)}
+      </div>
+
+      <div className="flex items-center" style={{ gap: 5, marginTop: 6 }}>
+        {LIFELINE_KEYS.map((key) => (
+          <span
+            key={key}
+            style={{
+              width: 16,
+              height: 16,
+              background: lifelines?.[key] ? 'var(--line)' : 'var(--gold)',
+            }}
+          />
+        ))}
+        <span
+          className="font-en-body leading-none"
+          style={{ color: 'var(--muted2)', fontSize: 9, marginInlineStart: 6 }}
+          lang="en"
+        >
+          LIFELINES
         </span>
       </div>
-      {isActive && (
-        <span
-          className="w-2 h-2 rounded-full bg-gold animate-pulse-dot ms-1 shrink-0"
-          aria-label="Active team"
-        />
-      )}
-      {/* Hover hint (pencil icon) — appears only on hover */}
-      <Pencil
-        size={11}
-        className="absolute top-1.5 end-1.5 text-cream-45 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-        aria-hidden="true"
-      />
     </button>
   );
 }

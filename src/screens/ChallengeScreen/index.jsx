@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
 import { useGame } from '../../contexts/GameContext';
-import SwordIntro from './SwordIntro';
+import DuelIntro from './DuelIntro';
 import AcceptStage from './AcceptStage';
 import NamingStage from './NamingStage';
 import SketchStage from './SketchStage';
@@ -21,6 +20,10 @@ export default function ChallengeScreen() {
   const { currentChallenge, teams, activeTeamIdx } = state;
 
   const [phase, setPhase] = useState('intro'); // 'intro' | 'accept' | 'naming' | 'sketch' | 'result'
+  // The intro outlives its own phase: it flips to `accept` while its pixel wipe
+  // covers the screen, then stays mounted on top until the blocks finish
+  // clearing — so they uncover AcceptStage instead of uncovering the intro.
+  const [introVisible, setIntroVisible] = useState(true);
   const [challengeResult, setChallengeResult] = useState(null);
 
   // Bounce back to /play if there's no challenge in flight (refresh, direct URL hit, post-award)
@@ -33,6 +36,13 @@ export default function ChallengeScreen() {
   // Sketch rounds have no choke/count — the host judges the result manually.
   // Memoised (a hook, so it must precede the early return): SketchStage holds
   // it in an effect dependency while ending the round.
+  // Both intro callbacks are memoised for the same reason handleSketchEnd is:
+  // DuelIntro holds them in an effect dependency that owns its beat timers, so
+  // a fresh identity on every parent render would tear those timers down and
+  // restart the 3.5s timeline — onCover flipping the phase is itself a render.
+  const handleIntroCover = useCallback(() => setPhase('accept'), []);
+  const handleIntroDone = useCallback(() => setIntroVisible(false), []);
+
   const handleSketchEnd = useCallback(() => {
     setChallengeResult({ counts: [0, 0], chokeTeamIdx: null, mode: 'sketch' });
     setPhase('result');
@@ -61,51 +71,58 @@ export default function ChallengeScreen() {
 
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto bg-transparent">
-      <AnimatePresence mode="wait">
-        {phase === 'intro' && (
-          <SwordIntro key="intro-phase" onComplete={() => setPhase('accept')} />
-        )}
-        {phase === 'accept' && (
-          <AcceptStage
-            key="accept-phase"
-            cellValue={cellValue}
-            team={activeTeam}
-            variant={currentChallenge.variant}
-            onAccept={handleAccept}
-            onDecline={handleDecline}
-          />
-        )}
-        {phase === 'naming' && (
-          <NamingStage
-            key="naming-phase"
-            prompt={currentChallenge.prompt}
-            teams={teams}
-            startingTeamIdx={activeTeamIdx}
-            cellValue={cellValue}
-            onEnd={handleNamingEnd}
-          />
-        )}
-        {phase === 'sketch' && (
-          <SketchStage
-            key="sketch-phase"
-            teams={teams}
-            challenge={currentChallenge}
-            onEnd={handleSketchEnd}
-          />
-        )}
-        {phase === 'result' && challengeResult && (
-          <ResultStage
-            key="result-phase"
-            teams={teams}
-            counts={challengeResult.counts}
-            chokeTeamIdx={challengeResult.chokeTeamIdx}
-            cellValue={cellValue}
-            mode={challengeResult.mode}
-            sketchWords={currentChallenge.sketch?.map((s) => s.prompt)}
-            onAward={handleAward}
-          />
-        )}
-      </AnimatePresence>
+      {introVisible && (
+        <DuelIntro
+          key="intro-phase"
+          onCover={handleIntroCover}
+          onComplete={handleIntroDone}
+          duration={3.5}
+          variant={currentChallenge.variant}
+          teams={teams}
+          activeTeamIdx={activeTeamIdx}
+          points={cellValue * 2}
+        />
+      )}
+      {phase === 'accept' && (
+        <AcceptStage
+          key="accept-phase"
+          cellValue={cellValue}
+          team={activeTeam}
+          variant={currentChallenge.variant}
+          onAccept={handleAccept}
+          onDecline={handleDecline}
+        />
+      )}
+      {phase === 'naming' && (
+        <NamingStage
+          key="naming-phase"
+          prompt={currentChallenge.prompt}
+          teams={teams}
+          startingTeamIdx={activeTeamIdx}
+          cellValue={cellValue}
+          onEnd={handleNamingEnd}
+        />
+      )}
+      {phase === 'sketch' && (
+        <SketchStage
+          key="sketch-phase"
+          teams={teams}
+          challenge={currentChallenge}
+          onEnd={handleSketchEnd}
+        />
+      )}
+      {phase === 'result' && challengeResult && (
+        <ResultStage
+          key="result-phase"
+          teams={teams}
+          counts={challengeResult.counts}
+          chokeTeamIdx={challengeResult.chokeTeamIdx}
+          cellValue={cellValue}
+          mode={challengeResult.mode}
+          sketchWords={currentChallenge.sketch?.map((s) => s.prompt)}
+          onAward={handleAward}
+        />
+      )}
     </div>
   );
 }
