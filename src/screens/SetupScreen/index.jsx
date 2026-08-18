@@ -308,6 +308,7 @@ export default function SetupScreen() {
                   key={idx}
                   team={team}
                   index={idx}
+                  otherColor={teams[1 - idx]?.color}
                   onChange={(patch) => updateTeam(idx, patch)}
                 />
               ))}

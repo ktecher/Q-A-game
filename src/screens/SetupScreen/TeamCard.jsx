@@ -1,14 +1,13 @@
 import { useState, useRef } from 'react';
-import { TEAM_SWATCHES } from './constants';
+import { TEAM_COLORS } from './constants';
 
-export default function TeamCard({ team, index, onChange }) {
+export default function TeamCard({ team, index, otherColor, onChange }) {
   const [playersOpen, setPlayersOpen] = useState(false);
   const [playerInput, setPlayerInput] = useState('');
   const inputRef = useRef(null);
 
   const isP1 = index === 0;
   const accent = isP1 ? 'var(--blue)' : 'var(--red)';
-  const swatches = TEAM_SWATCHES[index] ?? TEAM_SWATCHES[0];
 
   const addPlayer = () => {
     const name = playerInput.trim();
@@ -65,22 +64,32 @@ export default function TeamCard({ team, index, onChange }) {
         }}
       />
 
-      <div className="flex" style={{ gap: 6 }}>
-        {swatches.map((hex) => (
-          <button
-            key={hex}
-            type="button"
-            aria-label={`اختر اللون ${hex}`}
-            aria-pressed={team.color === hex}
-            onClick={() => onChange({ color: hex })}
-            style={{
-              width: 22,
-              height: 22,
-              background: hex,
-              border: team.color === hex ? '3px solid #F4ECD8' : '3px solid transparent',
-            }}
-          />
-        ))}
+      <div className="flex flex-wrap" style={{ gap: 6 }}>
+        {TEAM_COLORS.map((hex) => {
+          const isMine = team.color === hex;
+          // Held by the other team — still selectable, just marked.
+          const isTaken = !isMine && otherColor === hex;
+          return (
+            <button
+              key={hex}
+              type="button"
+              aria-label={`اختر اللون ${hex}${isTaken ? ' — مستخدم من الفريق الآخر' : ''}`}
+              aria-pressed={isMine}
+              title={isTaken ? 'مستخدم من الفريق الآخر · Used by the other team' : undefined}
+              onClick={() => onChange({ color: hex })}
+              style={{
+                width: 22,
+                height: 22,
+                background: hex,
+                border: isMine
+                  ? '3px solid #F4ECD8'
+                  : isTaken
+                    ? '3px solid var(--muted2)'
+                    : '3px solid transparent',
+              }}
+            />
+          );
+        })}
       </div>
 
       {/* Player roster — not on the handoff sheet, but the game already
