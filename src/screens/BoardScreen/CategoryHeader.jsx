@@ -4,52 +4,66 @@ export default function CategoryHeader({ category }) {
   const Icon = ICON_MAP[category.icon] ?? FALLBACK_ICON;
   return (
     <div
-      className="accent-card relative flex flex-col items-center justify-end gap-0.5 px-1.5 py-2 rounded-t-lg text-center overflow-hidden min-h-[70px] sm:min-h-[120px]"
+      className="accent-card relative overflow-hidden h-[92px] md:h-[132px]"
       style={{
-        background: `linear-gradient(180deg, ${category.accent} 0%, ${category.accent}cc 100%)`,
-        boxShadow: 'var(--tier-category-header-shadow)',
+        background: category.accent,
+        border: '4px solid var(--gold)',
+        boxShadow: '0 6px 0 var(--gold-sh)',
       }}
     >
-      {category.imageUrl ? (
-        <>
-          <img
-            src={category.imageUrl}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div
-            className="absolute inset-0 mix-blend-multiply opacity-45"
-            style={{ background: category.accent }}
-            aria-hidden="true"
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 h-2/3 pointer-events-none"
-            style={{
-              background:
-                'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.35) 55%, transparent 100%)',
-            }}
-            aria-hidden="true"
-          />
-        </>
-      ) : (
-        Icon && (
-          <Icon
-            size={24}
-            className="text-cream/95"
-            strokeWidth={1.6}
-            aria-hidden="true"
-          />
-        )
-      )}
-      <div className="relative font-ar-body font-bold text-cream text-sm sm:text-base leading-tight drop-shadow">
-        {category.ar}
+      {/* Image fills the tile; the label plate overlays its bottom edge. */}
+      <div className="absolute inset-0">
+        {category.imageUrl ? (
+          <>
+            <img
+              src={category.imageUrl}
+              alt=""
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Accent wash — pushes the photo toward the category's own hue */}
+            <div
+              className="absolute inset-0 mix-blend-multiply opacity-50"
+              style={{ background: category.accent }}
+              aria-hidden="true"
+            />
+            {/* Dither stripes — the pixel-era stand-in for a gradient */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  'repeating-linear-gradient(var(--dither) 0 3px, transparent 3px 6px)',
+              }}
+              aria-hidden="true"
+            />
+          </>
+        ) : (
+          Icon && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Icon size={24} className="text-cream/95" strokeWidth={2} aria-hidden="true" />
+            </div>
+          )
+        )}
       </div>
+
+      {/* Label plate */}
       <div
-        className="relative font-en-body text-cream/80 text-[11px] sm:text-xs leading-tight tracking-wide drop-shadow"
-        lang="en"
+        className="absolute inset-x-0 bottom-0 text-center"
+        style={{ background: 'var(--strip)', borderTop: '4px solid var(--gold)', padding: '6px 4px' }}
       >
-        {category.en}
+        <div
+          className="font-ar-body font-bold leading-none truncate"
+          style={{ color: 'var(--gold-ink)', fontSize: 26 }}
+        >
+          {category.ar}
+        </div>
+        <div
+          className="font-en-body leading-none truncate uppercase"
+          style={{ color: 'var(--muted)', fontSize: 8, marginTop: 4 }}
+          lang="en"
+        >
+          {category.en}
+        </div>
       </div>
     </div>
   );

@@ -1,10 +1,8 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { RotateCcw, Settings, Save, Home } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
 import { makeDemoTeams } from '../lib/teams';
+import { toArabicDigits } from '../lib/format';
 
 // Demo state for direct-URL access (when no game has been played)
 const DEMO_TEAMS = makeDemoTeams([1800, 1400]);
@@ -14,95 +12,38 @@ const DEMO_STATS = {
   longestStreak: 4,
 };
 
-/* ─── FIREWORKS ───────────────────────────────────────────────────────── */
+/* ─── PIXEL CONFETTI ──────────────────────────────────────────────────── */
 
-// Each firework = a centered dot + radial ring of "particles" via box-shadow.
-// 4 visual variants (gold / crimson / blue / cream).
-function fireworkBoxShadow(coreColor, ringColor) {
-  return [
-    `0 -36px 0 -1px ${coreColor}`,  `0 36px 0 -1px ${coreColor}`,
-    `36px 0 0 -1px ${coreColor}`,   `-36px 0 0 -1px ${coreColor}`,
-    `26px -26px 0 -1px ${ringColor}`, `-26px -26px 0 -1px ${ringColor}`,
-    `26px 26px 0 -1px ${ringColor}`,  `-26px 26px 0 -1px ${ringColor}`,
-    `0 -52px 0 -2px ${ringColor}`,  `0 52px 0 -2px ${ringColor}`,
-    `52px 0 0 -2px ${ringColor}`,   `-52px 0 0 -2px ${ringColor}`,
-  ].join(', ');
-}
-
-const FIREWORKS = [
-  { top: '12%', left: '18%', delay: 0,    bg: '#D4A24C', shadow: fireworkBoxShadow('#D4A24C', '#E8B968') },
-  { top: '22%', left: '78%', delay: 0.6,  bg: '#C44150', shadow: fireworkBoxShadow('#C44150', '#D4A24C') },
-  { top: '38%', left: '12%', delay: 1.2,  bg: '#3A7BC8', shadow: fireworkBoxShadow('#3A7BC8', '#F4ECD8') },
-  { top: '18%', left: '50%', delay: 1.8,  bg: '#D4A24C', shadow: fireworkBoxShadow('#D4A24C', '#E8B968') },
-  { top: '58%', left: '84%', delay: 2.4,  bg: '#F4ECD8', shadow: fireworkBoxShadow('#F4ECD8', '#E8B968') },
-  { top: '64%', left: '24%', delay: 0.9,  bg: '#D4A24C', shadow: fireworkBoxShadow('#D4A24C', '#E8B968') },
-  { top: '8%',  left: '88%', delay: 1.5,  bg: '#C44150', shadow: fireworkBoxShadow('#C44150', '#D4A24C') },
-  { top: '48%', left: '60%', delay: 2.1,  bg: '#3A7BC8', shadow: fireworkBoxShadow('#3A7BC8', '#F4ECD8') },
+// 30 square sprites falling on `pixfall`. Built once at module load from an
+// index-based sequence rather than Math.random, so a re-render never reshuffles
+// them mid-fall.
+const CONFETTI_COLORS = [
+  'var(--gold)', 'var(--blue)', 'var(--red)', '#F4ECD8', 'var(--green)', 'var(--purple)',
 ];
+const CONFETTI_SIZES = [8, 12, 16];
 
-function FireworksLayer() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden z-10" aria-hidden="true">
-      {FIREWORKS.map((fw, i) => (
-        <span
-          key={i}
-          className="absolute w-1.5 h-1.5 rounded-full animate-firework-burst"
-          style={{
-            top: fw.top,
-            left: fw.left,
-            background: fw.bg,
-            boxShadow: fw.shadow,
-            animationDelay: `${fw.delay}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ─── FALLING PAPER CONFETTI ──────────────────────────────────────────── */
-
-const PAPER_COLORS = ['#D4A24C', '#C44150', 'var(--confetti-cream)', '#E8B968', '#3A7BC8'];
-const PAPER_SHAPES = [
-  { w: 4,  h: 18, br: '1px' },   // strip
-  { w: 10, h: 10, br: '0px' },   // square
-  { w: 8,  h: 8,  br: '50%' },   // circle
-];
+const CONFETTI = Array.from({ length: 30 }, (_, i) => ({
+  left: `${(i * 97) % 100}%`,
+  size: CONFETTI_SIZES[i % CONFETTI_SIZES.length],
+  color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+  delay: `${((i * 7) % 41) / 10}s`,
+  duration: `${3.2 + ((i * 3) % 25) / 10}s`,
+}));
 
 function ConfettiLayer() {
-  // Generate 25 pieces with deterministic-but-varied props
-  const pieces = useMemo(() => {
-    return Array.from({ length: 25 }, (_, i) => {
-      const left = (i * 4 + (i % 7) * 13) % 100; // spread across viewport width
-      const color = PAPER_COLORS[i % PAPER_COLORS.length];
-      const shape = PAPER_SHAPES[i % PAPER_SHAPES.length];
-      const delay = (i * 0.27) % 5;
-      const drift = (i % 2 === 0 ? 1 : -1) * (16 + (i * 7) % 30);
-      const duration = 4.5 + (i % 4) * 0.5;
-      return { i, left, color, shape, delay, drift, duration };
-    });
-  }, []);
-
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden z-20" aria-hidden="true">
-      {pieces.map((p) => (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {CONFETTI.map((p, i) => (
         <span
-          key={p.i}
-          className="absolute animate-paper-fall"
+          key={i}
+          className="absolute top-0 animate-pixfall"
           style={{
-            top: '-30px',
-            left: `${p.left}%`,
-            width: `${p.shape.w}px`,
-            height: `${p.shape.h}px`,
+            left: p.left,
+            width: p.size,
+            height: p.size,
             background: p.color,
-            borderRadius: p.shape.br,
-            opacity: 0.95,
-            animationDelay: `${p.delay}s`,
-            animationDuration: `${p.duration}s`,
-            transform: `translateX(0)`,
-            // CSS variable consumed by paper-fall keyframe end translateX
-            // (Falls back to default drift in keyframe.)
-            ['--drift']: `${p.drift}px`,
+            animationDelay: p.delay,
+            animationDuration: p.duration,
           }}
         />
       ))}
@@ -110,39 +51,39 @@ function ConfettiLayer() {
   );
 }
 
-/* ─── STATIC PARTICLES (subtle background sparkle) ────────────────────── */
+/* ─── TROPHY ──────────────────────────────────────────────────────────── */
 
-const PARTICLES = [
-  { top: '8%',  left: '12%', size: 18, op: 0.22, glyph: '✦' },
-  { top: '14%', left: '78%', size: 10, op: 0.14, glyph: '◇' },
-  { top: '22%', left: '55%', size: 8,  op: 0.16, glyph: '·' },
-  { top: '30%', left: '5%',  size: 14, op: 0.20, glyph: '❖' },
-  { top: '35%', left: '88%', size: 9,  op: 0.18, glyph: '✦' },
-  { top: '52%', left: '42%', size: 22, op: 0.10, glyph: '•', color: 'var(--color-cream)' },
-  { top: '60%', left: '8%',  size: 11, op: 0.18, glyph: '✦' },
-  { top: '68%', left: '92%', size: 14, op: 0.16, glyph: '◇' },
-  { top: '78%', left: '38%', size: 10, op: 0.20, glyph: '❖' },
-  { top: '86%', left: '70%', size: 16, op: 0.14, glyph: '✦' },
+// The sheet leaves a 120px art slot here and offers "a pixel-block trophy drawn
+// in divs" as the alternative to shipping a sprite. No sprite exists, so this
+// is that: an 8×8 bitmap, one span per lit pixel.
+const TROPHY_ROWS = [
+  '.######.',
+  '.######.',
+  '.######.',
+  '#.####.#',
+  '..####..',
+  '...##...',
+  '..####..',
+  '.######.',
 ];
 
-function ParticlesLayer() {
+function Trophy() {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
-      {PARTICLES.map((p, i) => (
-        <span
-          key={i}
-          className="absolute select-none"
-          style={{
-            top: p.top,
-            left: p.left,
-            fontSize: `${p.size}px`,
-            opacity: p.op,
-            color: p.color || 'var(--color-gold)',
-          }}
-        >
-          {p.glyph}
-        </span>
-      ))}
+    <div
+      className="shrink-0 grid place-items-center animate-bob"
+      style={{ width: 120, height: 120, background: 'var(--panel)', border: '4px solid var(--gold)' }}
+      aria-hidden="true"
+    >
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(8, 12px)' }}>
+        {TROPHY_ROWS.flatMap((row, y) =>
+          row.split('').map((cell, x) => (
+            <span
+              key={`${x}-${y}`}
+              style={{ width: 12, height: 12, background: cell === '#' ? 'var(--gold)' : 'transparent' }}
+            />
+          ))
+        )}
+      </div>
     </div>
   );
 }
@@ -154,200 +95,233 @@ export default function ResultsScreen() {
   const { state, reset } = useGame();
 
   // Use real game state if a game was played; otherwise show demo for direct URL hits
-  const teams = state.gameOver || state.stats.questionsAnswered > 0 ? state.teams : DEMO_TEAMS;
-  const stats = state.gameOver || state.stats.questionsAnswered > 0 ? state.stats : DEMO_STATS;
+  const played = state.gameOver || state.stats.questionsAnswered > 0;
+  const teams = played ? state.teams : DEMO_TEAMS;
+  const stats = played ? state.stats : DEMO_STATS;
 
   const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
   const winner = sortedTeams[0];
   const runnerUp = sortedTeams[1];
   const isTie = winner.score === runnerUp.score;
+  const margin = winner.score - runnerUp.score;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Background ambient particles (lowest layer) */}
-      <ParticlesLayer />
-      {/* Animated fireworks (middle) */}
-      <FireworksLayer />
-      {/* Falling paper confetti (top) */}
       <ConfettiLayer />
 
-      {/* Content */}
-      <div className="relative z-30 max-w-3xl mx-auto px-5 py-12 md:py-16 text-center">
-        {/* Brand */}
-        <p className="font-ar-body text-gold/60 text-base">أم الهيمان</p>
-        <p className="font-en-display italic text-gold-light/70 text-sm mt-1" lang="en">
-          Umm Al Hayman City
-        </p>
-
-        {/* Wreath */}
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 220, damping: 20, delay: 0.2 }}
-          className="mt-8 mb-3 text-4xl md:text-5xl flex items-center justify-center gap-3 select-none"
-        >
-          <span>🌿</span>
-          <span className="text-5xl md:text-7xl drop-shadow">🏆</span>
-          <span className="scale-x-[-1] inline-block">🌿</span>
-        </motion.div>
-
-        {/* Winner banner */}
-        <motion.h1
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45, duration: 0.5 }}
-          className="font-ar-body font-bold text-3xl md:text-5xl text-gold drop-shadow"
-          style={{ textShadow: 'var(--glow-text-gold-xl)' }}
-        >
-          {isTie ? 'تعادل!' : `${winner.name} فاز`}
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-          className="font-en-display italic text-gold-light/85 text-lg md:text-2xl mt-1"
+      <div
+        className="relative z-[2] min-h-screen flex flex-col items-center justify-center text-center"
+        style={{ gap: 8, padding: 40 }}
+      >
+        <div
+          className="font-en-body leading-none animate-flash"
+          style={{
+            fontSize: 'clamp(20px, 3.4vw, 34px)',
+            color: 'var(--red)',
+            letterSpacing: '0.16em',
+            textShadow: '5px 5px 0 var(--outline)',
+          }}
           lang="en"
         >
-          {isTie ? 'A Tie!' : `${winner.nameEn} Wins!`}
-        </motion.p>
-
-        {/* Cards row */}
-        <div className="mt-10 flex flex-col md:flex-row items-stretch justify-center gap-4 md:gap-5">
-          {/* Winner card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 220, damping: 20, delay: 0.7 }}
-            className="relative rounded-2xl px-8 py-7 flex-1 max-w-sm mx-auto md:mx-0"
-            style={{
-              background: 'var(--card-gold-winner-grad)',
-              border: '2px solid var(--color-gold)',
-              boxShadow: 'var(--card-gold-winner-shadow)',
-            }}
-          >
-            <div className="flex flex-col items-center mb-2 text-right">
-              <div className="font-ar-body font-bold text-cream text-base leading-tight">
-                {winner.name}
-              </div>
-              <div className="font-en-body text-cream-60 text-xs leading-tight" lang="en">
-                {winner.nameEn}
-              </div>
-            </div>
-            <div className="font-ar-ui text-xs text-gold-light tracking-wider uppercase mt-2">
-              النتيجة النهائية · <span lang="en">Final Score</span>
-            </div>
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 1.0 }}
-              className="font-en-display font-bold text-gold leading-none mt-1"
-              style={{
-                fontSize: '88px',
-                textShadow: 'var(--glow-text-gold-xxl)',
-              }}
-            >
-              {winner.score}
-            </motion.div>
-            {/* Stats breakdown line */}
-            <div
-              className="mt-3 font-en-body text-cream-60 text-xs tracking-wide"
-              lang="en"
-            >
-              {stats.questionsAnswered} answered · {stats.lifelinesUsed} lifelines · longest streak: {stats.longestStreak}
-            </div>
-          </motion.div>
-
-          {/* Runner-up card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85, y: 20 }}
-            animate={{ opacity: 1, scale: 0.88, y: 0 }}
-            transition={{ type: 'spring', stiffness: 220, damping: 20, delay: 0.85 }}
-            className="relative rounded-xl px-6 py-5 flex-1 max-w-sm mx-auto md:mx-0 self-center"
-            style={{
-              background: 'var(--award-team-bg)',
-              border: `1px solid ${runnerUp.color}aa`,
-              filter: 'saturate(0.55) opacity(0.78)',
-            }}
-          >
-            <div className="flex flex-col items-center text-right">
-              <div className="font-ar-body font-bold text-cream text-sm leading-tight">
-                {runnerUp.name}
-              </div>
-              <div className="font-en-body text-cream-60 text-xs leading-tight" lang="en">
-                {runnerUp.nameEn}
-              </div>
-            </div>
-            <div className="font-ar-ui text-xs text-cream-45 tracking-wider uppercase mt-2">
-              النتيجة · <span lang="en">Score</span>
-            </div>
-            <div
-              className="font-en-display font-bold leading-none mt-1"
-              style={{
-                fontSize: '52px',
-                color: runnerUp.color,
-              }}
-            >
-              {runnerUp.score}
-            </div>
-          </motion.div>
+          GAME OVER
         </div>
 
-        {/* Score gap line */}
-        {!isTie && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.4, duration: 0.4 }}
-            className="mt-8 font-en-body text-cream-45 text-sm"
-            lang="en"
+        <div className="flex items-center flex-wrap justify-center" style={{ gap: 22, marginTop: 18 }}>
+          <Trophy />
+          <div className="text-center">
+            <div
+              className="font-ar-body font-extrabold leading-none"
+              style={{
+                fontSize: 'clamp(40px, 7vw, 88px)',
+                color: 'var(--gold-ink)',
+                textShadow: '6px 6px 0 var(--gold-sh)',
+              }}
+            >
+              {isTie ? 'تعادل' : `${winner.name} فاز`}
+            </div>
+            <div
+              className="font-en-body leading-none uppercase"
+              style={{ fontSize: 16, color: 'var(--text)', letterSpacing: '0.16em', marginTop: 14 }}
+              lang="en"
+            >
+              {isTie ? 'A TIE!' : `${winner.nameEn} WINS!`}
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="font-en-body leading-none"
+          style={{ fontSize: 12, color: 'var(--muted)', letterSpacing: '0.2em', marginTop: 28 }}
+          lang="en"
+        >
+          — HIGH SCORE —
+        </div>
+
+        <div
+          className="w-full flex flex-col"
+          style={{ maxWidth: 840, gap: 12, marginTop: 14 }}
+        >
+          {/* 1st place */}
+          <div
+            className="flex items-center"
+            style={{
+              gap: 20,
+              padding: '16px 20px',
+              background: 'var(--panel3)',
+              border: '4px solid var(--gold)',
+              boxShadow: '0 8px 0 var(--gold-sh)',
+            }}
           >
-            Margin of victory: <span className="text-gold-light">+{winner.score - runnerUp.score}</span>
-          </motion.p>
+            <span
+              className="font-en-body leading-none shrink-0"
+              style={{ fontSize: 20, color: 'var(--gold-ink)' }}
+              lang="en"
+            >
+              1ST
+            </span>
+            <span
+              className="shrink-0"
+              style={{ width: 44, height: 44, background: winner.color, border: '4px solid var(--outline)' }}
+            />
+            <div className="flex-1 min-w-0 text-start">
+              <div
+                className="font-ar-body font-bold leading-none truncate"
+                style={{ fontSize: 36, color: 'var(--text)' }}
+              >
+                {winner.name}
+              </div>
+              <div
+                className="font-en-body leading-none truncate"
+                style={{ fontSize: 9, color: 'var(--muted)', marginTop: 6 }}
+                lang="en"
+              >
+                {stats.questionsAnswered} ANSWERED · {stats.lifelinesUsed} LIFELINES · STREAK{' '}
+                {stats.longestStreak}
+              </div>
+            </div>
+            <span
+              className="font-ar-body font-extrabold leading-none shrink-0"
+              style={{ fontSize: 64, color: 'var(--gold-ink)', textShadow: '4px 4px 0 var(--gold-sh)' }}
+              dir="ltr"
+            >
+              {winner.score}
+            </span>
+          </div>
+
+          {/* 2nd place */}
+          <div
+            className="flex items-center"
+            style={{
+              gap: 20,
+              padding: '14px 20px',
+              background: 'var(--cleared-bg)',
+              border: '4px solid var(--line)',
+            }}
+          >
+            <span
+              className="font-en-body leading-none shrink-0"
+              style={{ fontSize: 16, color: 'var(--muted2)' }}
+              lang="en"
+            >
+              2ND
+            </span>
+            <span
+              className="shrink-0"
+              style={{ width: 38, height: 38, background: runnerUp.color, border: '4px solid var(--outline)' }}
+            />
+            <div className="flex-1 min-w-0 text-start">
+              <div
+                className="font-ar-body font-bold leading-none truncate"
+                style={{ fontSize: 30, color: 'var(--muted)' }}
+              >
+                {runnerUp.name}
+              </div>
+            </div>
+            <span
+              className="font-ar-body font-extrabold leading-none shrink-0"
+              style={{ fontSize: 48, color: 'var(--red)' }}
+              dir="ltr"
+            >
+              {runnerUp.score}
+            </span>
+          </div>
+        </div>
+
+        {!isTie && (
+          <div
+            className="font-en-body leading-none"
+            style={{ fontSize: 11, color: 'var(--green)', letterSpacing: '0.12em', marginTop: 18 }}
+          >
+            <span lang="en">MARGIN +{margin} · </span>
+            <span className="font-ar-body font-bold" style={{ fontSize: 24 }}>
+              فارق {toArabicDigits(margin)}
+            </span>
+          </div>
         )}
 
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.5, duration: 0.5 }}
-          className="mt-10 flex flex-wrap justify-center gap-3"
-        >
+        <div className="flex flex-wrap justify-center" style={{ gap: 16, marginTop: 26 }}>
           <Link
             to="/setup"
             onClick={() => reset()}
-            className="btn-gold px-6 py-3 rounded-xl text-sm flex items-center gap-2"
+            className="transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+            style={{
+              padding: '16px 26px',
+              background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+              border: '4px solid var(--outline)',
+              boxShadow: '0 8px 0 var(--gold-sh)',
+              color: 'var(--outline)',
+            }}
           >
-            <RotateCcw size={16} />
-            <span className="flex flex-col items-center gap-0">
-              <span>إعادة اللعب</span>
-              <span className="font-en-body text-xs font-medium opacity-80" lang="en">
-                Play Again
-              </span>
+            <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 34 }}>
+              إعادة اللعب
+            </span>{' '}
+            <span className="font-en-body leading-none" style={{ fontSize: 11 }} lang="en">
+              PLAY AGAIN
             </span>
           </Link>
           <Link
             to="/setup"
             onClick={() => reset()}
-            className="btn-outline px-5 py-3 rounded-xl text-sm flex items-center gap-2"
+            className="transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+            style={{
+              padding: '16px 22px',
+              background: 'var(--panel2)',
+              border: '4px solid var(--blue)',
+              boxShadow: '0 8px 0 var(--shadow)',
+              color: 'var(--text)',
+            }}
           >
-            <Settings size={14} />
-            <span className="flex flex-col items-center gap-0">
-              <span>العودة للإعداد</span>
-              <span className="font-en-body text-xs opacity-80" lang="en">
-                Back to Setup
-              </span>
+            <span className="font-ar-body font-bold leading-none" style={{ fontSize: 30 }}>
+              الإعداد
+            </span>{' '}
+            <span
+              className="font-en-body leading-none"
+              style={{ fontSize: 10, color: 'var(--muted)' }}
+              lang="en"
+            >
+              SETUP
             </span>
           </Link>
           <Link
             to="/"
-            className="btn-outline px-5 py-3 rounded-xl text-sm flex items-center gap-2"
+            className="transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+            style={{
+              padding: '16px 22px',
+              background: 'var(--panel2)',
+              border: '4px solid var(--line)',
+              boxShadow: '0 8px 0 var(--shadow)',
+              color: 'var(--text)',
+            }}
           >
-            <Home size={14} />
-            <span className="flex flex-col items-center gap-0">
-              <span>الرئيسية</span>
-              <span className="font-en-body text-xs opacity-80" lang="en">
-                Home
-              </span>
+            <span className="font-ar-body font-bold leading-none" style={{ fontSize: 30 }}>
+              الرئيسية
+            </span>{' '}
+            <span
+              className="font-en-body leading-none"
+              style={{ fontSize: 10, color: 'var(--muted)' }}
+              lang="en"
+            >
+              HOME
             </span>
           </Link>
           {isAuthenticated && (
@@ -355,18 +329,31 @@ export default function ResultsScreen() {
               type="button"
               disabled
               title="Saving game results requires Supabase setup"
-              className="btn-outline px-5 py-3 rounded-xl text-sm flex items-center gap-2 opacity-50 cursor-not-allowed"
+              style={{
+                padding: '16px 22px',
+                background: 'var(--cleared-bg)',
+                border: '4px solid var(--line)',
+                color: 'var(--muted2)',
+                cursor: 'not-allowed',
+              }}
             >
-              <Save size={14} />
-              <span className="flex flex-col items-center gap-0">
-                <span>حفظ النتيجة</span>
-                <span className="font-en-body text-xs opacity-80" lang="en">
-                  Save Score (coming soon)
-                </span>
+              <span className="font-ar-body font-bold leading-none" style={{ fontSize: 30 }}>
+                حفظ النتيجة
+              </span>{' '}
+              <span className="font-en-body leading-none" style={{ fontSize: 10 }} lang="en">
+                SAVE — SOON
               </span>
             </button>
           )}
-        </motion.div>
+        </div>
+
+        <div
+          className="font-en-body leading-none animate-blink"
+          style={{ fontSize: 10, color: 'var(--muted2)', letterSpacing: '0.14em', marginTop: 24 }}
+          lang="en"
+        >
+          INSERT COIN TO CONTINUE
+        </div>
       </div>
     </div>
   );

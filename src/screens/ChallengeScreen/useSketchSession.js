@@ -60,15 +60,31 @@ function paintStrokes(ctx, w, h, strokes, fallbackInk) {
   }
 }
 
+// Every point that reaches paintStrokes must be a finite [x, y] pair: the
+// painter dereferences pts[i][0] with no guard, and a throw inside the rAF
+// callback stops the loop permanently (the next requestAnimationFrame never
+// runs). Both broadcast paths — 'p' and 'sync' — are untrusted wire input and
+// must funnel through here; they previously drifted, with only 'p' validating.
+function sanitizePoints(raw, limit) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (const pt of raw) {
+    if (out.length >= limit) break;
+    if (Array.isArray(pt) && Number.isFinite(pt[0]) && Number.isFinite(pt[1])) out.push(pt);
+  }
+  return out;
+}
+
 /**
  * @param {object}  opts
  * @param {string}  opts.sessionId — realtime channel id for this team
  * @param {boolean} opts.isDark    — host theme (drives the fallback ink)
+ * @param {boolean} opts.canvasMounted — whether the <canvas> is currently in the tree
  * @param {number|null} opts.timeLeft — shared countdown; null while waiting.
  *   Broadcast to the phone whenever it changes so the drawer sees the clock.
  * @param {boolean} opts.ended     — once true, tells the phone to lock.
  */
-export default function useSketchSession({ sessionId, isDark, timeLeft, ended }) {
+export default function useSketchSession({ sessionId, isDark, timeLeft, ended, canvasMounted }) {
   const canvasRef = useRef(null);
   const boxRef = useRef(null);
   const [subscribed, setSubscribed] = useState(false);
@@ -126,12 +142,8 @@ export default function useSketchSession({ sessionId, isDark, timeLeft, ended })
           }
           if (Array.isArray(m.pts)) {
             const room = Math.max(0, MAX_POINTS_PER_STROKE - stroke.points.length);
-            for (const pt of m.pts.slice(0, Math.min(MAX_PTS_PER_MSG, room))) {
-              // reject non-numeric coords so NaN never reaches the canvas
-              if (Array.isArray(pt) && Number.isFinite(pt[0]) && Number.isFinite(pt[1])) {
-                stroke.points.push(pt);
-              }
-            }
+            const capped = Math.min(MAX_PTS_PER_MSG, room);
+            for (const pt of sanitizePoints(m.pts, capped)) stroke.points.push(pt);
           }
           break;
         }
@@ -154,7 +166,7 @@ export default function useSketchSession({ sessionId, isDark, timeLeft, ended })
           strokesRef.current = incoming.map((s) => ({
             id: s.id,
             color: s.color,
-            points: Array.isArray(s.points) ? s.points.slice(0, MAX_POINTS_PER_STROKE) : [],
+            points: sanitizePoints(s.points, MAX_POINTS_PER_STROKE),
           }));
           strokeById.current.clear();
           for (const s of strokesRef.current) strokeById.current.set(s.id, s);
@@ -223,11 +235,18 @@ export default function useSketchSession({ sessionId, isDark, timeLeft, ended })
     return () => clearInterval(id);
   }, [ended]);
 
-  // ── Canvas sizing + rAF paint loop (runs once this team's drawer connects) ──
+  // ── Canvas sizing + rAF paint loop ──
   // Gated on `everConnected` (latched) not `connected` (live) — a presence
   // flicker mid-round must not tear down the loop and blank the drawing.
+  // Also gated on `canvasMounted`, because the canvas only enters the tree when
+  // the host starts the round — after `everConnected` has already latched. A
+  // dep on `everConnected` alone would run this once against a null ref, bail,
+  // and never fire again, leaving the canvas permanently blank. Strokes that
+  // arrive before the mount are safe: the subscription effect keys on
+  // `sessionId` and keeps filling `strokesRef`, and the first paint below
+  // flushes the whole backlog.
   useEffect(() => {
-    if (!everConnected) return undefined;
+    if (!everConnected || !canvasMounted) return undefined;
     const canvas = canvasRef.current;
     const box = boxRef.current;
     if (!canvas || !box) return undefined;
@@ -295,7 +314,7 @@ export default function useSketchSession({ sessionId, isDark, timeLeft, ended })
         window.removeEventListener('orientationchange', size);
       }
     };
-  }, [everConnected]);
+  }, [everConnected, canvasMounted]);
 
   return { canvasRef, boxRef, subscribed, connected };
 }

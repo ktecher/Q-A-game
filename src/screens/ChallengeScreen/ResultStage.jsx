@@ -1,11 +1,13 @@
-import { motion } from 'framer-motion';
-import { Trophy, X as XIcon } from 'lucide-react';
-import TeamIdentity from '../../components/TeamIdentity';
-
 /* ─── RESULT STAGE · full-screen winner reveal ─────────────────────────
    Two big team cards side-by-side. Clicking a card awards that team.
-   The other-team card gets a 👑 + glow when auto-winner (opponent choked).
-   A smaller "No winner" button below allows host to deny the award. */
+   The other-team card is crowned when it wins automatically (opponent choked).
+   A smaller "No award" button below lets the host deny the award. */
+
+// P1 is the blue side of the cabinet, P2 the red one — same as the board HUD.
+const SIDES = [
+  { border: 'var(--blue)', panel: 'var(--blue-p)', ink: 'var(--blue)', label: 'P1' },
+  { border: 'var(--red)', panel: 'var(--red-p)', ink: 'var(--red)', label: 'P2' },
+];
 
 export default function ResultStage({
   teams,
@@ -21,77 +23,96 @@ export default function ResultStage({
   const isSketch = mode === 'sketch';
 
   return (
-    <motion.div
-      key="result"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
-      className="min-h-screen flex flex-col px-4 py-6 md:px-8 md:py-10"
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        padding: '26px 32px 30px',
+        backgroundColor: 'var(--bg)',
+        backgroundImage:
+          'linear-gradient(var(--grid-alt) 2px, transparent 2px), linear-gradient(90deg, var(--grid-alt) 2px, transparent 2px)',
+        backgroundSize: '32px 32px, 32px 32px',
+      }}
     >
       {/* Header */}
-      <div className="text-center mb-6 md:mb-10">
-        <motion.div
-          initial={{ scale: 0, rotate: -20 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', stiffness: 240, damping: 14 }}
-          className="mb-2"
-          style={{ filter: 'drop-shadow(0 0 22px rgba(212,162,76,0.7))' }}
+      <div className="text-center shrink-0">
+        <div
+          className="font-en-body leading-none"
+          style={{ fontSize: 12, color: 'var(--purple)', letterSpacing: '0.22em' }}
+          lang="en"
         >
-          <Trophy size={72} className="text-gold mx-auto" strokeWidth={1.5} />
-        </motion.div>
+          BONUS DUEL · {award} PTS
+        </div>
         <h1
-          className="font-ar-body font-bold text-3xl md:text-4xl text-gold"
-          style={{ textShadow: 'var(--glow-text-gold-wide)' }}
+          className="font-ar-body font-extrabold leading-none"
+          style={{
+            fontSize: 'clamp(34px, 5vw, 62px)',
+            color: 'var(--gold-ink)',
+            marginTop: 12,
+            textShadow: '6px 6px 0 var(--purple-d)',
+          }}
+        >
+          {autoWinnerIdx !== null ? `${teams[autoWinnerIdx].name} فاز` : 'من يستحق الفوز؟'}
+        </h1>
+        <p
+          className="font-en-body leading-none uppercase"
+          style={{ fontSize: 11, color: 'var(--text)', letterSpacing: '0.14em', marginTop: 12 }}
+          lang="en"
         >
           {autoWinnerIdx !== null
-            ? `${teams[autoWinnerIdx].name} يفوز!`
-            : 'من يستحق الفوز؟'}
-        </h1>
-        <p className="font-en-display italic text-gold-light text-base md:text-lg mt-1" lang="en">
-          {autoWinnerIdx !== null
-            ? `${teams[autoWinnerIdx].nameEn} wins — opponent choked`
-            : `Who wins the challenge? · ${award} pts on the line`}
+            ? `${teams[autoWinnerIdx].nameEn} WINS — OPPONENT CHOKED`
+            : 'ONE TEAM TAKES THE BLOCK'}
         </p>
+
         {isSketch && sketchWords && (
-          <motion.div
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 240, damping: 16, delay: 0.15 }}
-            className="mt-4 flex flex-wrap justify-center gap-3"
-          >
+          <div className="flex flex-wrap justify-center" style={{ gap: 14, marginTop: 18 }}>
             {teams.map((t, i) =>
               sketchWords[i] ? (
                 <div
                   key={t.id}
-                  className="inline-flex flex-col items-center px-5 py-2 rounded-2xl bg-ink-80 border"
-                  style={{ borderColor: `${t.color}aa` }}
+                  className="text-center"
+                  style={{
+                    padding: '10px 16px',
+                    background: 'var(--cleared-bg)',
+                    border: `4px solid ${SIDES[i].border}`,
+                  }}
                 >
-                  <span
-                    className="font-en-body text-[10px] uppercase tracking-[0.2em] text-cream-45"
+                  <div
+                    className="font-en-body leading-none uppercase"
+                    style={{ fontSize: 9, color: 'var(--muted2)', letterSpacing: '0.2em' }}
                     lang="en"
                   >
-                    {t.nameEn}'s word
-                  </span>
-                  <span className="font-ar-body text-xl md:text-2xl font-bold text-cream leading-tight">
+                    {SIDES[i].label} WORD
+                  </div>
+                  <div
+                    className="font-ar-body font-bold leading-none"
+                    style={{ fontSize: 30, color: 'var(--text)', marginTop: 8 }}
+                  >
                     {sketchWords[i].ar}
-                  </span>
-                  <span className="font-en-display italic text-gold-light text-sm" lang="en">
+                  </div>
+                  <div
+                    className="font-en-body leading-none uppercase"
+                    style={{ fontSize: 9, color: 'var(--muted)', marginTop: 6 }}
+                    lang="en"
+                  >
                     {sketchWords[i].en}
-                  </span>
+                  </div>
                 </div>
-              ) : null,
+              ) : null
             )}
-          </motion.div>
+          </div>
         )}
       </div>
 
       {/* Team cards */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 max-w-5xl mx-auto w-full items-stretch">
+      <div
+        className="flex-1 grid grid-cols-1 md:grid-cols-2 w-full mx-auto items-stretch"
+        style={{ maxWidth: 1000, gap: 18, marginTop: 22 }}
+      >
         {teams.map((team, idx) => (
           <TeamResultCard
             key={team.id}
             team={team}
+            side={SIDES[idx]}
             count={counts[idx]}
             choked={chokeTeamIdx === idx}
             isAutoWinner={autoWinnerIdx === idx}
@@ -102,83 +123,128 @@ export default function ResultStage({
         ))}
       </div>
 
-      {/* No-winner option */}
-      <div className="mt-6 md:mt-8 flex justify-center">
+      {/* No-award option */}
+      <div className="flex justify-center shrink-0" style={{ marginTop: 18 }}>
         <button
           type="button"
           onClick={() => onAward(null)}
-          className="btn-outline inline-flex items-center gap-2 px-5 py-3 rounded-xl"
+          className="text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+          style={{
+            minWidth: 150,
+            padding: 18,
+            background: 'var(--cleared-bg)',
+            border: '4px solid var(--line)',
+          }}
         >
-          <XIcon size={16} />
-          <span className="font-ar-ui text-sm font-semibold">بلا منح</span>
-          <span className="font-en-body text-xs opacity-70 uppercase tracking-wide" lang="en">
-            · No winner
-          </span>
+          <div className="font-en-body leading-none" style={{ fontSize: 16, color: 'var(--muted2)' }}>
+            <span aria-hidden="true">✕</span>
+          </div>
+          <div
+            className="font-ar-body font-bold leading-none"
+            style={{ fontSize: 30, color: 'var(--muted)', marginTop: 8 }}
+          >
+            بلا منح
+          </div>
+          <div
+            className="font-en-body leading-none"
+            style={{ fontSize: 9, color: 'var(--muted2)', marginTop: 8 }}
+            lang="en"
+          >
+            NO AWARD
+          </div>
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
-function TeamResultCard({ team, count, choked, isAutoWinner, award, hideCount, onClick }) {
+function TeamResultCard({ team, side, count, choked, isAutoWinner, award, hideCount, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="relative rounded-3xl px-6 py-8 md:px-8 md:py-10 text-center border flex flex-col items-center transition-all duration-200 hover:-translate-y-1"
+      className="relative flex flex-col items-center justify-center text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
       style={{
-        borderColor: isAutoWinner ? 'var(--color-gold)' : `${team.color}aa`,
-        // Both result cards are interactive winner-choice buttons, so both stay
-        // fully tinted — unlike TeamCell, which tints only the active answerer.
-        background: `linear-gradient(135deg, ${team.color}99, var(--color-ink-50))`,
-        boxShadow: isAutoWinner ? 'var(--chip-active-shadow)' : 'none',
+        gap: 10,
+        padding: 22,
+        background: side.panel,
+        border: `4px solid ${isAutoWinner ? 'var(--gold)' : side.border}`,
+        boxShadow: isAutoWinner ? '0 8px 0 var(--gold-sh)' : '0 8px 0 var(--shadow)',
       }}
     >
       {isAutoWinner && (
         <span
-          className="absolute -top-6 left-1/2 -translate-x-1/2 text-4xl"
-          style={{ filter: 'drop-shadow(0 0 12px rgba(212,162,76,0.6))' }}
-          aria-hidden="true"
+          className="absolute font-en-body leading-none"
+          style={{
+            top: -14,
+            insetInlineStart: 12,
+            fontSize: 10,
+            background: 'var(--gold)',
+            color: 'var(--outline)',
+            padding: '4px 6px',
+          }}
+          lang="en"
         >
-          👑
+          WINNER
         </span>
       )}
 
-      <div className="mb-4 mt-1">
-        <TeamIdentity team={team} size="lg" />
-      </div>
+      <span
+        className="font-en-body leading-none"
+        style={{ fontSize: 10, color: side.ink, letterSpacing: '0.1em' }}
+        lang="en"
+      >
+        AWARD {side.label}
+      </span>
+      <span
+        className="font-ar-body font-bold leading-none truncate max-w-full"
+        style={{ fontSize: 34, color: 'var(--text)' }}
+      >
+        {team.name}
+      </span>
 
       {!hideCount && (
         <>
-          <div
-            className="font-en-display font-bold text-6xl md:text-7xl leading-none"
-            style={{ color: team.color }}
+          <span
+            className="font-ar-body font-extrabold leading-none"
+            style={{ fontSize: 64, color: side.ink }}
+            dir="ltr"
           >
             {count}
-          </div>
-          <div
-            className="font-en-body text-xs uppercase tracking-wider text-cream-45 mt-1"
+          </span>
+          <span
+            className="font-en-body leading-none"
+            style={{ fontSize: 9, color: 'var(--muted)' }}
             lang="en"
           >
-            named
-          </div>
+            NAMED
+          </span>
         </>
       )}
 
       {choked && (
-        <div className="mt-4 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-crimson/20 border border-crimson text-crimson">
-          ✕ عجز · choked
-        </div>
+        <span
+          className="font-en-body leading-none"
+          style={{
+            fontSize: 9,
+            color: 'var(--red-ink)',
+            background: 'var(--cleared-bg)',
+            border: '4px solid var(--red)',
+            padding: '6px 10px',
+          }}
+          lang="en"
+        >
+          ✕ CHOKED
+        </span>
       )}
 
-      <div
-        className="mt-6 w-full max-w-xs px-4 py-3 rounded-xl btn-gold font-bold text-base md:text-lg flex flex-col items-center"
+      <span
+        className="font-ar-body font-extrabold leading-none"
+        style={{ fontSize: 46, color: side.ink }}
+        dir="ltr"
       >
-        <span className="font-ar-ui">✓ امنح {team.name}</span>
-        <span className="font-en-body text-xs opacity-80 italic mt-0.5" lang="en">
-          Award {award} pts to {team.nameEn}
-        </span>
-      </div>
+        +{award}
+      </span>
     </button>
   );
 }

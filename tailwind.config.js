@@ -51,47 +51,41 @@ export default {
         },
       },
       fontFamily: {
-        'ar-body': ['Amiri', 'Segoe UI Arabic', 'Geeza Pro', 'Noto Naskh Arabic', 'serif'],
-        'ar-ui': ['Tajawal', 'Segoe UI', 'SF Arabic', 'system-ui', 'sans-serif'],
-        'en-display': ['Cormorant Garamond', 'Georgia', 'serif'],
-        'en-body': ['Manrope', 'Inter', 'system-ui', 'sans-serif'],
-      },
-      boxShadow: {
-        'gold-glow': '0 0 24px rgba(212, 162, 76, 0.35)',
-        // Capped from 60px to 32px — large shadows cause expensive repaints on hover.
-        'gold-glow-lg': '0 0 32px rgba(212, 162, 76, 0.5)',
-        'majlis': '0 8px 32px rgba(0, 0, 0, 0.45)',
-        'inset-gold': 'inset 0 0 0 1px rgba(212, 162, 76, 0.3)',
-      },
-      borderColor: {
-        'gold-faint': 'var(--color-gold-faint)',
+        // Class names are unchanged so the ~240 existing font-ar-*/font-en-* usages
+        // re-skin without edits. Handjet covers Arabic AND numerals in a pixel face;
+        // Press Start 2P has no Arabic coverage so it is Latin-only.
+        'ar-body': ['Handjet', 'Tajawal', 'Segoe UI Arabic', 'Geeza Pro', 'sans-serif'],
+        'ar-ui': ['Handjet', 'Tajawal', 'Segoe UI', 'SF Arabic', 'sans-serif'],
+        // MUST stay quoted: `2P` is not a valid CSS identifier (it starts with a
+        // digit), so an unquoted `Press Start 2P` is an invalid family name and
+        // the browser silently skips it — every Latin label was falling through
+        // to Handjet, which is far narrower at the same px size.
+        'en-body': ['"Press Start 2P"', 'Handjet', 'monospace'],
       },
       keyframes: {
-        'pulse-dot': {
-          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
-          '50%':       { opacity: '0.4', transform: 'scale(1.4)' },
+        // Arcade motion — every one uses steps(), never smooth easing.
+        blink: {
+          '0%, 49%':   { opacity: '1' },
+          '50%, 100%': { opacity: '0' },
         },
-        'firework-burst': {
-          '0%':   { transform: 'scale(0.2)', opacity: '0' },
-          '10%':  { transform: 'scale(0.6)', opacity: '1' },
-          '55%':  { transform: 'scale(2.4)', opacity: '0.95' },
-          '100%': { transform: 'scale(3.6)', opacity: '0' },
+        flash: {
+          '0%, 100%': { opacity: '1' },
+          '50%':      { opacity: '0.45' },
         },
-        'paper-fall': {
-          '0%':   { transform: 'translateY(-30px) translateX(0) rotate(0deg) rotateX(0deg)', opacity: '0' },
-          '8%':   { opacity: '1' },
-          '90%':  { opacity: '1' },
-          '100%': {
-            transform:
-              'translateY(720px) translateX(var(--drift, 30px)) rotate(720deg) rotateX(540deg)',
-            opacity: '0',
-          },
+        bob: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%':      { transform: 'translateY(-6px)' },
+        },
+        pixfall: {
+          '0%':   { transform: 'translateY(-40px)' },
+          '100%': { transform: 'translateY(820px)' },
         },
       },
       animation: {
-        'pulse-dot': 'pulse-dot 1.4s ease-in-out infinite',
-        'firework-burst': 'firework-burst 2.4s ease-out infinite',
-        'paper-fall': 'paper-fall 5.5s linear infinite',
+        blink: 'blink 1.1s steps(1) infinite',
+        flash: 'flash 1.2s steps(2) infinite',
+        bob: 'bob 2s steps(6) infinite',
+        pixfall: 'pixfall 4.4s steps(20) infinite',
       },
     },
   },

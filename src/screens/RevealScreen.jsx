@@ -1,17 +1,24 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CATEGORIES, ICON_MAP, FALLBACK_ICON, pickRandomSix, getCategoryBySlug } from '../data/categories';
+import { CATEGORIES, pickRandomSix, getCategoryBySlug } from '../data/categories';
 import { useGame } from '../contexts/GameContext';
 import { usePrefetchQuestions } from '../lib/queries';
 import { CATEGORIES_PER_GAME } from '../lib/gameDefaults';
 
 const SETTLE_INTERVAL_MS = 550; // time between each card settling
 const POST_SETTLE_PAUSE_MS = 1400; // hold after the 6th card settles before auto-advance
-const SPIN_POOL = CATEGORIES; // pool of icons/colors to flicker through during spin
+const SPIN_POOL = CATEGORIES; // pool of accents to flicker through during spin
+
+// Card art treatment shared by the spinning and settled states, so a reel
+// column doesn't change shape as it locks.
+const CARD_FRAME = {
+  position: 'relative',
+  overflow: 'hidden',
+  border: '4px solid var(--gold)',
+  boxShadow: 'inset 0 0 0 4px var(--outline)',
+};
 
 function SpinningCard() {
-  // Visual: rapidly cycle through different categories' accent colors + icons
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -20,80 +27,73 @@ function SpinningCard() {
   }, []);
 
   const blurred = SPIN_POOL[tick % SPIN_POOL.length];
-  const Icon = ICON_MAP[blurred.icon] ?? FALLBACK_ICON;
 
   return (
-    <div
-      className="accent-card relative w-full h-full rounded-lg overflow-hidden flex items-center justify-center"
-      style={{ background: blurred.accent }}
-    >
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-ink/20 to-ink/40" />
-      {/* Vertical motion-blur scanlines */}
+    <div className="w-full h-full" style={{ ...CARD_FRAME, background: blurred.accent }}>
+      {blurred.imageUrl && (
+        <img
+          src={blurred.imageUrl}
+          alt=""
+          className="pixel-art absolute inset-0 w-full h-full object-cover"
+        />
+      )}
       <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(to bottom, var(--spinning-scanline) 0 2px, transparent 2px 6px)',
-        }}
+        className="absolute inset-0 mix-blend-multiply opacity-50"
+        style={{ background: blurred.accent }}
+        aria-hidden="true"
       />
-      <div className="relative z-10 opacity-50 blur-[2px] scale-90">
-        {Icon && <Icon size={36} className="text-cream" strokeWidth={1.5} />}
-      </div>
+      {/* Vertical smear — the reel is still turning. */}
+      <div
+        className="absolute inset-0 opacity-70"
+        style={{
+          background: 'repeating-linear-gradient(var(--scan) 0 3px, transparent 3px 8px)',
+        }}
+        aria-hidden="true"
+      />
     </div>
   );
 }
 
-function SettledCard({ category, isLatest }) {
-  const Icon = ICON_MAP[category.icon] ?? FALLBACK_ICON;
-
+function SettledCard({ category }) {
   return (
-    <motion.div
-      initial={{ scale: 1.18, y: -6, opacity: 0 }}
-      animate={{ scale: isLatest ? 1.06 : 1, y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 22 }}
-      className="accent-card relative w-full h-full rounded-lg overflow-hidden flex flex-col items-center justify-end px-1.5 py-2 gap-0.5"
-      style={{
-        background: `linear-gradient(155deg, ${category.accent} 0%, ${category.accent}cc 60%, ${category.accent}88 100%)`,
-        boxShadow: isLatest ? 'var(--settled-card-shadow-latest)' : 'var(--settled-card-shadow)',
-      }}
-    >
-      {/* Category image fills the card; accent gradient overlay on top keeps
-          the accent identity and adds a darker bottom band so text reads. */}
-      {category.imageUrl ? (
-        <>
-          <img
-            src={category.imageUrl}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div
-            className="absolute inset-0 mix-blend-multiply opacity-40"
-            style={{ background: category.accent }}
-            aria-hidden="true"
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none"
-            style={{
-              background:
-                'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.32) 60%, transparent 100%)',
-            }}
-            aria-hidden="true"
-          />
-        </>
-      ) : (
-        Icon && <Icon size={26} className="text-cream drop-shadow" strokeWidth={1.6} />
+    <div className="w-full h-full" style={{ ...CARD_FRAME, background: category.accent }}>
+      {category.imageUrl && (
+        <img
+          src={category.imageUrl}
+          alt=""
+          loading="lazy"
+          className="pixel-art absolute inset-0 w-full h-full object-cover"
+        />
       )}
-      <div className="relative font-ar-body font-bold text-cream text-[13px] leading-tight text-center drop-shadow">
-        {category.ar}
-      </div>
       <div
-        className="relative font-en-body text-cream-60 text-[9px] leading-tight tracking-wide drop-shadow"
-        lang="en"
+        className="absolute inset-0 mix-blend-multiply opacity-50"
+        style={{ background: category.accent }}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-0"
+        style={{ background: 'repeating-linear-gradient(var(--dither) 0 3px, transparent 3px 6px)' }}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-x-0 bottom-0 text-center"
+        style={{ background: 'var(--strip)', borderTop: '4px solid var(--gold)', padding: '6px 4px' }}
       >
-        {category.en}
+        <div
+          className="font-ar-body font-bold leading-none truncate"
+          style={{ fontSize: 24, color: 'var(--gold-ink)' }}
+        >
+          {category.ar}
+        </div>
+        <div
+          className="font-en-body leading-none truncate uppercase"
+          style={{ fontSize: 7, color: 'var(--muted)', marginTop: 4 }}
+          lang="en"
+        >
+          {category.en}
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -141,7 +141,8 @@ export default function RevealScreen() {
 
   return (
     <div
-      className="fixed inset-0 bg-ink flex flex-col items-center justify-center z-50 cursor-pointer select-none"
+      className="fixed inset-0 flex flex-col items-center justify-center z-40 cursor-pointer select-none px-4"
+      style={{ background: 'var(--bg)', gap: 26 }}
       onClick={skip}
       role="button"
       aria-label="Skip reveal"
@@ -150,101 +151,77 @@ export default function RevealScreen() {
         if (e.key === 'Enter' || e.key === ' ') skip();
       }}
     >
-      {/* Caption */}
-      <AnimatePresence mode="wait">
-        {!allSettled ? (
-          <motion.div
-            key="get-ready"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-8 text-center"
-          >
-            <div className="font-ar-body font-bold text-3xl md:text-5xl text-gold-light tracking-wide">
-              إستعدوا
-            </div>
-            <div className="font-en-display italic text-gold/70 text-lg md:text-2xl mt-1" lang="en">
-              Get Ready
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="here-they-are"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 240, damping: 18 }}
-            className="mb-8 text-center"
-          >
-            <div className="font-ar-body font-bold text-3xl md:text-5xl text-gold tracking-wide drop-shadow">
-              ✦ هذه فئاتكم ✦
-            </div>
-            <div className="font-en-display italic text-gold-light/80 text-lg md:text-2xl mt-1" lang="en">
-              Your Categories
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Brushed-brass frame around the strip */}
-      <div
-        className="relative px-4 py-5 md:px-6 md:py-7 rounded-2xl"
-        style={{
-          background: 'var(--frame-brass-bg)',
-          border: '2px solid var(--color-gold-dark)',
-          boxShadow: 'var(--frame-brass-shadow)',
-        }}
-      >
-        {/* Horizontal gold "winner line" across the middle */}
+      <div className="text-center">
         <div
-          className="absolute start-2 end-2 top-1/2 -translate-y-1/2 h-px pointer-events-none"
+          className={`font-ar-body font-extrabold leading-none ${allSettled ? 'animate-flash' : ''}`}
           style={{
-            background:
-              'linear-gradient(to right, transparent 0%, rgba(212,162,76,0.7) 20%, rgba(232,185,104,0.95) 50%, rgba(212,162,76,0.7) 80%, transparent 100%)',
-            boxShadow: '0 0 12px rgba(212,162,76,0.7)',
+            fontSize: 'clamp(40px, 7vw, 84px)',
+            color: 'var(--gold-ink)',
+            textShadow: '6px 6px 0 var(--gold-sh)',
           }}
-        />
-
-        {/* The strip of 6 cards */}
-        <div className="grid grid-cols-6 gap-2 md:gap-3">
-          {categories.map((cat, i) => {
-            const isSettled = i < settledCount;
-            const isLatest = !allSettled && i === settledCount - 1;
-            return (
-              <div
-                key={cat.slug}
-                className="relative w-[58px] sm:w-[80px] md:w-[110px] h-[80px] sm:h-[110px] md:h-[140px]"
-              >
-                {isSettled ? (
-                  <SettledCard category={cat} isLatest={isLatest} />
-                ) : (
-                  <SpinningCard />
-                )}
-              </div>
-            );
-          })}
+        >
+          {allSettled ? 'هذه فئاتكم' : 'إستعدوا'}
+        </div>
+        <div
+          className="font-en-body leading-none"
+          style={{ fontSize: 14, color: 'var(--text)', letterSpacing: '0.2em', marginTop: 14 }}
+          lang="en"
+        >
+          {allSettled ? 'YOUR STAGES' : 'GET READY'}
         </div>
       </div>
 
-      {/* Skip hint */}
-      <div className="mt-8 flex flex-col items-center gap-1">
-        <p className="font-ar-ui text-cream-45 text-sm md:text-base">
-          {allSettled ? 'يبدأ خلال لحظات...' : 'انقر للتخطي'}
-        </p>
-        <p className="font-en-body text-cream-45 text-sm" lang="en">
-          {allSettled ? 'Starting soon...' : 'Tap anywhere to skip'}
-        </p>
+      {/* Reel housing */}
+      <div
+        className="relative"
+        style={{
+          padding: 26,
+          background: 'var(--panel)',
+          border: '6px solid var(--gold-d)',
+          boxShadow: '0 12px 0 var(--shadow), inset 0 0 0 4px var(--outline)',
+        }}
+      >
+        {/* Dashed gold payline */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            insetInline: 14,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            height: 6,
+            background: 'repeating-linear-gradient(90deg, var(--gold) 0 12px, transparent 12px 24px)',
+          }}
+          aria-hidden="true"
+        />
+
+        <div className="grid grid-cols-6" style={{ gap: 14 }}>
+          {categories.map((cat, i) => (
+            <div
+              key={cat.slug}
+              className="w-[46px] sm:w-[86px] md:w-[140px] h-[60px] sm:h-[112px] md:h-[180px]"
+            >
+              {i < settledCount ? <SettledCard category={cat} /> : <SpinningCard />}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Subtle progress indicator (6 dots at bottom) */}
-      <div className="mt-4 flex gap-1.5">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div
+      {/* Reel-stopped indicators */}
+      <div className="flex" style={{ gap: 8 }} aria-hidden="true">
+        {Array.from({ length: CATEGORIES_PER_GAME }, (_, i) => (
+          <span
             key={i}
-            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-              i < settledCount ? 'bg-gold scale-110' : 'bg-cream-30'
-            }`}
+            style={{ width: 14, height: 14, background: i < settledCount ? 'var(--gold)' : 'var(--line)' }}
           />
         ))}
+      </div>
+
+      <div
+        className="font-en-body leading-none animate-blink text-center"
+        style={{ fontSize: 13, color: 'var(--muted)', letterSpacing: '0.14em' }}
+        lang="en"
+      >
+        {allSettled ? 'STARTING…' : 'STARTING… PRESS ANY KEY TO SKIP'}
       </div>
     </div>
   );

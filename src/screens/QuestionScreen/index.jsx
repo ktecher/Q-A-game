@@ -1,11 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Timer, Lightbulb, Sparkles, ArrowRight, Eye, Pause, Play,
-} from 'lucide-react';
 import { QRCode } from 'react-qr-code';
-import { ICON_MAP, FALLBACK_ICON } from '../../data/categories';
 import { useGame } from '../../contexts/GameContext';
 import { useQuestion } from '../../lib/queries';
 import ExitGameButton from '../../components/ExitGameButton';
@@ -26,6 +21,58 @@ function getTeamStatus(teamIdx, activeTeamIdx, phase) {
   if (phase === 'active-answering') return isPicker ? 'answering' : 'waiting';
   if (phase === 'opposing-answering') return isPicker ? 'done' : 'answering';
   return 'done';
+}
+
+// The four 12×12 gold corner squares on the hero card — they replace the old
+// ❖ diamonds, whose curves fight the pixel grid.
+const CARD_CORNERS = [
+  { top: 8, insetInlineStart: 8 },
+  { top: 8, insetInlineEnd: 8 },
+  { bottom: 8, insetInlineStart: 8 },
+  { bottom: 8, insetInlineEnd: 8 },
+];
+
+// Rail lifeline rows. `pause` is a live toggle here, not the spent-state mock
+// the reference sheet shows.
+const LIFELINE_TONE = {
+  gold: { border: 'var(--gold)', square: 'var(--gold)', tag: 'var(--gold-ink)' },
+  green: { border: 'var(--green)', square: 'var(--green)', tag: 'var(--green)' },
+  spent: { border: 'var(--line)', square: 'var(--line)', tag: 'var(--muted2)' },
+};
+
+function LifelineRow({ ar, en, tone, disabled, onClick, pressed, title }) {
+  const t = LIFELINE_TONE[disabled ? 'spent' : tone];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={pressed}
+      title={title}
+      className="flex items-center gap-2.5 w-full transition-transform duration-100 disabled:cursor-not-allowed enabled:hover:-translate-y-[3px] enabled:active:translate-y-[3px]"
+      style={{
+        padding: '10px 12px',
+        background: disabled ? 'var(--cleared-bg)' : 'var(--panel2)',
+        border: `4px solid ${t.border}`,
+        boxShadow: disabled ? 'none' : '0 5px 0 var(--shadow)',
+      }}
+    >
+      <span className="shrink-0" style={{ width: 22, height: 22, background: t.square }} />
+      <span
+        className="font-ar-body font-bold leading-none"
+        style={{ fontSize: 26, color: disabled ? 'var(--muted2)' : 'var(--text)' }}
+      >
+        {ar}
+      </span>
+      <span
+        className="font-en-body leading-none"
+        style={{ fontSize: 9, color: t.tag, marginInlineStart: 'auto' }}
+        lang="en"
+      >
+        {en}
+      </span>
+    </button>
+  );
 }
 
 export default function QuestionScreen() {
@@ -60,7 +107,6 @@ export default function QuestionScreen() {
   );
   const cellValue = currentCell?.value ?? 0;
   const { data: Q } = useQuestion(category, cellValue, currentCell?.rowIdx ?? 0, gameSeed);
-  const CategoryIcon = category ? (ICON_MAP[category.icon] ?? FALLBACK_ICON) : null;
 
   const { phaseState, phaseDispatch } = useQuestionFlow({
     currentCell,
@@ -115,12 +161,12 @@ export default function QuestionScreen() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="flex flex-col items-center gap-3" aria-busy="true">
-          <span className="w-3 h-3 rounded-full bg-gold animate-pulse-dot" />
-          <span className="font-ar-ui text-sm text-cream-60">
-            جارٍ تحميل السؤال…{' '}
-            <span className="font-en-body opacity-70" lang="en">
-              Loading question…
-            </span>
+          <span className="animate-blink" style={{ width: 14, height: 14, background: 'var(--gold)' }} />
+          <span className="font-ar-body font-bold" style={{ fontSize: 26, color: 'var(--text)' }}>
+            جارٍ تحميل السؤال…
+          </span>
+          <span className="font-en-body" style={{ fontSize: 10, color: 'var(--muted)' }} lang="en">
+            LOADING QUESTION…
           </span>
         </div>
       </div>
@@ -128,274 +174,344 @@ export default function QuestionScreen() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-5 md:px-8 md:py-8 max-w-4xl mx-auto">
-      {/* Stage label + exit */}
-      <div className="flex items-center justify-between gap-2 mb-5">
+    <div className="min-h-screen flex flex-col">
+      {/* Stage bar */}
+      <div
+        className="flex items-center justify-between gap-3"
+        style={{
+          padding: '12px 20px',
+          background: 'var(--panel)',
+          borderBottom: '4px solid var(--gold-d)',
+        }}
+      >
         <span
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-ar-ui font-semibold uppercase tracking-wider"
+          className="font-en-body leading-none shrink-0"
           style={{
-            background: isReveal ? 'rgba(212,162,76,0.22)' : 'rgba(212,162,76,0.12)',
-            borderColor: 'var(--color-gold-faint)',
-            color: isReveal ? 'var(--color-gold)' : 'var(--color-gold-light)',
+            fontSize: 12,
+            color: 'var(--outline)',
+            background: isReveal ? 'var(--green)' : 'var(--gold)',
+            padding: '8px 10px',
           }}
+          lang="en"
         >
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: isReveal ? 'var(--color-gold-light)' : 'var(--color-gold)' }}
-          />
+          {isReveal ? 'STAGE 2 · AWARD' : 'STAGE 1 · ANSWER'}
+        </span>
+        <span
+          className="font-ar-body font-bold leading-none truncate"
+          style={{ fontSize: 30, color: 'var(--text)' }}
+        >
           {isReveal ? 'المرحلة الثانية — الكشف والمنح' : 'المرحلة الأولى — الإجابة'}
-          <span className="opacity-60 font-en-body normal-case tracking-normal" lang="en">
-            · {isReveal ? 'Stage 2 · Reveal & Award' : 'Stage 1 · Answer Phase'}
-          </span>
         </span>
         <ExitGameButton variant="text" />
       </div>
 
-      <AnimatePresence mode="wait">
-        {!isReveal && (
-          <motion.div
-            key="answer-stage"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-            className="grid gap-4 md:grid-cols-[172px_1fr] items-stretch"
-          >
-            {/* ── Rail: timer ring, team scores, lifelines, pause ── */}
-            <div className="flex flex-col gap-3">
-              <DualTimer
-                timeLeft={timeLeft}
-                max={PRIMARY_TIMER}
-                secondary={SECONDARY_TIMER}
-                opposingTeamNameEn={opposingTeam?.nameEn ?? 'Other team'}
+      {!isReveal && (
+        <div
+          className="flex-1 grid gap-5 md:grid-cols-[240px_1fr]"
+          style={{ padding: '22px 24px' }}
+        >
+          {/* ── Rail: timer, both teams, lifelines ── */}
+          <div className="flex flex-col gap-4">
+            <DualTimer
+              timeLeft={timeLeft}
+              max={PRIMARY_TIMER}
+              secondary={SECONDARY_TIMER}
+              opposingLabel={`P${opposingTeamIdx + 1}`}
+            />
+
+            <TeamCell
+              team={teams[0]}
+              status={getTeamStatus(0, activeTeamIdx, phase)}
+              accent="var(--blue)"
+            />
+            <TeamCell
+              team={teams[1]}
+              status={getTeamStatus(1, activeTeamIdx, phase)}
+              accent="var(--red)"
+            />
+
+            <div className="flex flex-col gap-2.5">
+              <LifelineRow
+                ar="وقت إضافي"
+                en="+30S"
+                tone="gold"
+                disabled={extraUsed}
+                onClick={handleExtraTime}
               />
-
-              <TeamCell team={teams[0]} status={getTeamStatus(0, activeTeamIdx, phase)} />
-              <TeamCell team={teams[1]} status={getTeamStatus(1, activeTeamIdx, phase)} />
-
-              <div className="flex flex-col gap-2 mt-0.5">
-                <button
-                  type="button"
-                  onClick={handleExtraTime}
-                  disabled={extraUsed}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition ${
-                    extraUsed
-                      ? 'opacity-30 cursor-not-allowed border-cream-30 bg-ink-50'
-                      : 'border-gold-faint bg-ink-50 hover:border-gold/60 hover:bg-gold/5'
-                  }`}
-                >
-                  <Timer size={16} className="text-gold shrink-0" />
-                  <span className="font-ar-ui text-xs text-cream font-semibold">وقت إضافي</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleHint}
-                  disabled={hintUsed}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition ${
-                    hintUsed
-                      ? 'opacity-30 cursor-not-allowed border-cream-30 bg-ink-50'
-                      : 'border-gold-faint bg-ink-50 hover:border-gold/60 hover:bg-gold/5'
-                  }`}
-                >
-                  <Lightbulb size={16} className="text-gold-light shrink-0" />
-                  <span className="font-ar-ui text-xs text-cream font-semibold">تلميح</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={togglePause}
-                  aria-pressed={paused}
-                  title={paused ? 'استئناف · Resume timer' : 'إيقاف · Pause timer'}
-                  className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition ${
-                    paused
-                      ? 'border-gold bg-gold/10 text-gold'
-                      : 'border-gold-faint bg-ink-50 text-cream-60 hover:border-gold/60 hover:text-gold'
-                  }`}
-                >
-                  {paused ? <Play size={15} /> : <Pause size={15} />}
-                  <span className="font-ar-ui text-xs font-semibold">
-                    {paused ? 'استئناف' : 'إيقاف'}
-                  </span>
-                </button>
-              </div>
+              <LifelineRow
+                ar="تلميح"
+                en="HINT"
+                tone="green"
+                disabled={hintUsed}
+                onClick={handleHint}
+              />
+              <LifelineRow
+                ar={paused ? 'استئناف' : 'إيقاف'}
+                en={paused ? 'RESUME' : 'PAUSE'}
+                tone={paused ? 'gold' : 'green'}
+                onClick={togglePause}
+                pressed={paused}
+                title={paused ? 'استئناف · Resume timer' : 'إيقاف · Pause timer'}
+              />
             </div>
+          </div>
 
-            {/* ── Main: category, question hero, actions ── */}
-            <div className="flex flex-col min-w-0">
-              {/* Category tag */}
-              <div className="flex items-center gap-2 mb-2.5">
-                <span
-                  className="accent-card inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-ar-body font-bold text-cream"
-                  style={{ background: category?.accent ?? '#173D6E' }}
-                >
-                  {CategoryIcon && <CategoryIcon size={14} aria-hidden="true" />}
-                  {category?.ar}
-                </span>
-                <span
-                  className="font-en-body text-cream-45 text-xs tracking-wide uppercase"
-                  lang="en"
-                  dir="ltr"
-                >
-                  {category?.en}
-                </span>
-                <span className="font-en-display text-gold font-bold text-lg ms-auto">· {cellValue}</span>
-              </div>
-
-              {/* Question card with ❖ corners — the hero. Fills the column height
-                  so it stays visually dominant. Padding tightens when an image or
-                  QR is present so everything still fits on a laptop viewport. */}
-              <div
-                className={`relative rounded-xl text-center flex-1 flex flex-col justify-center ${
-                  Q.imageUrl || Q.qrUrl
-                    ? 'px-5 py-5 md:px-7 md:py-6'
-                    : 'px-5 py-6 md:px-7 md:py-8'
-                }`}
+          {/* ── Main: category, question hero, actions ── */}
+          <div className="flex flex-col gap-3.5 min-w-0">
+            <div className="flex items-center gap-3">
+              <span
+                className="accent-card font-ar-body font-bold leading-none truncate"
                 style={{
-                  background: 'var(--card-sapphire-grad)',
-                  border: '1.5px solid var(--color-gold-faint)',
-                  boxShadow: 'var(--card-sapphire-inset)',
+                  fontSize: 26,
+                  color: 'var(--text)',
+                  background: category?.accent ?? '#0F2A4D',
+                  border: '4px solid var(--blue)',
+                  padding: '4px 12px',
                 }}
               >
-                <span className="absolute top-2 start-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
-                <span className="absolute top-2 end-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
-                <span className="absolute bottom-2 start-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
-                <span className="absolute bottom-2 end-2 text-gold-light/70 text-sm leading-none" aria-hidden="true">❖</span>
-
-                <div className="font-ar-body font-bold text-cream text-xl md:text-2xl leading-snug">
-                  {Q.ar}
-                </div>
-                <div className="font-en-display italic text-cream-60 text-sm md:text-base mt-2 leading-snug" lang="en">
-                  {Q.en}
-                </div>
-
-                {Q.qrUrl && (
-                  <div className="mt-3 flex justify-center">
-                    <div className="bg-white rounded-xl p-3 inline-block">
-                      <QRCode
-                        value={Q.qrUrl}
-                        size={180}
-                        bgColor="#FFFFFF"
-                        fgColor="#0A0F1A"
-                        level="M"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {Q.imageUrl && (
-                  <div className="mt-3 flex justify-center">
-                    <img
-                      src={Q.imageUrl}
-                      alt=""
-                      loading="lazy"
-                      className="max-h-[38vh] md:max-h-72 max-w-sm w-auto rounded-lg border border-gold-faint shadow-lg"
-                    />
-                  </div>
-                )}
-
-                {/* Hint reveal */}
-                <AnimatePresence>
-                  {hintShown && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-3 inline-block px-4 py-2 rounded-md border border-gold-faint bg-gold/10"
-                    >
-                      <div className="font-ar-ui text-sm text-gold-light flex items-center justify-center gap-1.5">
-                        <Lightbulb size={14} /> تلميح: {Q.hintAr}
-                      </div>
-                      <div className="font-en-body text-cream-60 text-sm italic" lang="en">
-                        {Q.hintEn}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Bottom CTAs — Reveal is the primary, weighted wider */}
-              <div className="flex gap-2.5 mt-4">
-                <button
-                  type="button"
-                  onClick={endTurn}
-                  className="btn-outline px-4 py-3 rounded-xl text-sm flex items-center justify-center gap-2 flex-1"
-                >
-                  <span>إنهاء دور {activeTurnTeamName}</span>
-                  <ArrowRight size={14} />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReveal}
-                  className="btn-gold px-5 py-3 rounded-xl text-sm flex items-center justify-center gap-2"
-                  style={{ flex: '1.4' }}
-                >
-                  <Eye size={16} />
-                  <span>كشف الإجابة</span>
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {isReveal && (
-          <motion.div
-            key="reveal-stage"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {/* Question (smaller, muted) */}
-            <div className="px-4 py-3 rounded-md bg-ink-50 border border-gold-faint mb-4">
-              <div className="font-ar-body text-cream-60 text-base">{Q.ar}</div>
-              <div className="font-en-display italic text-cream-45 text-base mt-0.5" lang="en">
-                {Q.en}
-              </div>
+                {category?.ar}
+              </span>
+              <span
+                className="font-en-body leading-none truncate uppercase"
+                style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.1em' }}
+                lang="en"
+                dir="ltr"
+              >
+                {category?.en}
+              </span>
+              <span
+                className="font-en-body leading-none shrink-0"
+                style={{
+                  fontSize: 12,
+                  color: 'var(--outline)',
+                  background: 'var(--gold)',
+                  padding: '8px 10px',
+                  marginInlineStart: 'auto',
+                }}
+                lang="en"
+              >
+                {cellValue} PTS
+              </span>
             </div>
 
-            {/* Correct answer reveal */}
-            <motion.div
-              initial={{ scale: 0.96, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 22, delay: 0.1 }}
-              className="rounded-xl px-6 py-5 mb-5 text-center"
+            {/* Question card — the hero */}
+            <div
+              className="relative flex-1 flex flex-col items-center justify-center gap-4 text-center"
               style={{
-                background: 'var(--card-gold-reveal-grad)',
-                border: '1.5px solid var(--color-gold)',
-                boxShadow: 'var(--card-gold-reveal-shadow)',
+                background: 'var(--panel)',
+                border: '6px solid var(--gold)',
+                boxShadow: 'inset 0 0 0 4px var(--outline), 0 10px 0 var(--shadow)',
+                padding: '36px 40px',
               }}
             >
-              <div className="font-ar-ui text-sm text-gold-light uppercase tracking-wider flex items-center justify-center gap-2 mb-1.5">
-                <Sparkles size={14} />
-                الإجابة الصحيحة
-                <span className="opacity-70 font-en-body normal-case tracking-normal" lang="en">
-                  · Correct Answer
-                </span>
+              {CARD_CORNERS.map((pos, i) => (
+                <span
+                  key={i}
+                  aria-hidden="true"
+                  className="absolute"
+                  style={{ ...pos, width: 12, height: 12, background: 'var(--gold)' }}
+                />
+              ))}
+
+              <div
+                className="font-ar-body font-bold"
+                style={{
+                  // The sheet sets a flat 62px against one short sample question.
+                  // Real rows vary in length, so this scales down rather than
+                  // overflowing the card.
+                  fontSize: 'clamp(32px, 3.4vw, 62px)',
+                  lineHeight: 1.1,
+                  color: 'var(--text)',
+                  textShadow: '4px 4px 0 var(--shadow)',
+                }}
+              >
+                {Q.ar}
               </div>
               <div
-                className="font-ar-body font-bold text-cream text-2xl md:text-3xl"
-                style={{ textShadow: 'var(--glow-text-gold-soft)' }}
+                className="font-en-body uppercase"
+                style={{
+                  fontSize: 'clamp(10px, 1vw, 14px)',
+                  lineHeight: 1.8,
+                  color: 'var(--muted)',
+                }}
+                lang="en"
               >
-                {Q.answerAr}
+                {Q.en}
               </div>
-              <div className="font-en-display italic text-cream-60 text-base mt-1" lang="en">
-                {Q.answerEn}
-              </div>
-            </motion.div>
 
-            {/* Award prompt */}
-            <div className="text-center mb-4">
-              <p className="font-ar-ui text-sm font-semibold text-gold-light">
-                من يستحق {cellValue} نقطة؟
-              </p>
-              <p className="font-en-body text-cream-45 text-sm mt-0.5" lang="en">
-                Who earns the {cellValue} points? Only one team wins this cell.
-              </p>
+              {Q.qrUrl && (
+                <div style={{ background: '#F4ECD8', border: '4px solid var(--outline)', padding: 12 }}>
+                  <QRCode value={Q.qrUrl} size={180} bgColor="#F4ECD8" fgColor="#070A12" level="M" />
+                </div>
+              )}
+
+              {Q.imageUrl && (
+                <img
+                  src={Q.imageUrl}
+                  alt=""
+                  loading="lazy"
+                  className="pixel-art max-h-[34vh] w-auto"
+                  style={{ border: '4px solid var(--outline)' }}
+                />
+              )}
+
+              {hintShown && (
+                <div
+                  className="flex items-center gap-2.5"
+                  style={{
+                    background: 'var(--cleared-bg)',
+                    border: '4px solid var(--green)',
+                    padding: '8px 14px',
+                  }}
+                >
+                  <span className="shrink-0" style={{ width: 14, height: 14, background: 'var(--green)' }} />
+                  <span
+                    className="font-ar-body font-bold leading-none"
+                    style={{ fontSize: 26, color: 'var(--green)' }}
+                  >
+                    تلميح: {Q.hintAr}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Award buttons */}
-            <AwardButtons teams={teams} value={cellValue} onAward={handleAward} variant="full" />
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {/* Action row */}
+            <div className="flex gap-3.5">
+              <button
+                type="button"
+                onClick={endTurn}
+                className="flex-1 text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+                style={{
+                  padding: 16,
+                  background: 'var(--panel2)',
+                  border: '4px solid var(--blue)',
+                  boxShadow: '0 8px 0 var(--shadow)',
+                }}
+              >
+                <span
+                  className="font-ar-body font-bold leading-none"
+                  style={{ fontSize: 30, color: 'var(--text)' }}
+                >
+                  إنهاء دور {activeTurnTeamName}
+                </span>{' '}
+                <span
+                  className="font-en-body leading-none"
+                  style={{ fontSize: 10, color: 'var(--muted)' }}
+                  lang="en"
+                >
+                  END TURN ▸
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={handleReveal}
+                className="text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+                style={{
+                  flex: 1.5,
+                  padding: 16,
+                  background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+                  border: '4px solid var(--outline)',
+                  boxShadow: '0 8px 0 var(--gold-sh)',
+                  color: 'var(--outline)',
+                }}
+              >
+                <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 34 }}>
+                  كشف الإجابة
+                </span>{' '}
+                <span className="font-en-body leading-none" style={{ fontSize: 11 }} lang="en">
+                  REVEAL
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isReveal && (
+        <div
+          className="flex-1 w-full mx-auto flex flex-col"
+          style={{ maxWidth: 1000, padding: '26px 32px', gap: 18 }}
+        >
+          {/* Question recap */}
+          <div
+            style={{
+              background: 'var(--cleared-bg)',
+              border: '4px solid var(--line)',
+              padding: '12px 16px',
+            }}
+          >
+            <div
+              className="font-ar-body font-semibold leading-none"
+              style={{ fontSize: 30, color: 'var(--muted)' }}
+            >
+              {Q.ar}
+            </div>
+            <div
+              className="font-en-body uppercase leading-none"
+              style={{ fontSize: 10, color: 'var(--muted2)', marginTop: 8 }}
+              lang="en"
+            >
+              {Q.en}
+            </div>
+          </div>
+
+          {/* Correct answer */}
+          <div
+            className="text-center"
+            style={{
+              background: 'var(--panel3)',
+              border: '6px solid var(--green)',
+              boxShadow: 'inset 0 0 0 4px var(--outline), 0 10px 0 var(--shadow)',
+              padding: 28,
+            }}
+          >
+            <div
+              className="font-en-body leading-none"
+              style={{ fontSize: 12, color: 'var(--green)', letterSpacing: '0.18em' }}
+            >
+              <span lang="en">CORRECT ANSWER · </span>الإجابة الصحيحة
+            </div>
+            <div
+              className="font-ar-body font-extrabold"
+              style={{
+                fontSize: 'clamp(44px, 5vw, 96px)',
+                lineHeight: 1,
+                color: 'var(--gold-ink)',
+                marginTop: 10,
+                textShadow: '6px 6px 0 var(--gold-sh)',
+              }}
+            >
+              {Q.answerAr}
+            </div>
+            <div
+              className="font-en-body uppercase"
+              style={{ fontSize: 'clamp(12px, 1.4vw, 20px)', color: 'var(--text)', marginTop: 10 }}
+              lang="en"
+            >
+              {Q.answerEn}
+            </div>
+          </div>
+
+          {/* Award prompt */}
+          <div className="text-center">
+            <div
+              className="font-ar-body font-bold leading-none"
+              style={{ fontSize: 40, color: 'var(--text)' }}
+            >
+              من يستحق {cellValue} نقطة؟
+            </div>
+            <div
+              className="font-en-body leading-none"
+              style={{ fontSize: 10, color: 'var(--muted)', marginTop: 8, letterSpacing: '0.1em' }}
+              lang="en"
+            >
+              ONE TEAM TAKES THE BLOCK
+            </div>
+          </div>
+
+          <AwardButtons teams={teams} value={cellValue} onAward={handleAward} />
+        </div>
+      )}
     </div>
   );
 }

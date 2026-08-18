@@ -1,5 +1,3 @@
-import { AlertCircle } from 'lucide-react';
-
 // Error banner shown below an auth form when submission fails. Identical
 // between SignIn and SignUp.
 export default function SubmitAlert({ message }) {
@@ -7,12 +5,20 @@ export default function SubmitAlert({ message }) {
   return (
     <div
       role="alert"
-      className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-2.5 text-xs"
+      className="flex items-center gap-2.5"
+      style={{
+        background: 'var(--cleared-bg)',
+        border: '4px solid var(--red)',
+        padding: '10px 14px',
+      }}
     >
-      <p className="text-crimson font-ar-ui flex items-start gap-2">
-        <AlertCircle size={14} className="flex-shrink-0 mt-0.5" aria-hidden="true" />
-        <span>{message}</span>
-      </p>
+      <span className="shrink-0" style={{ width: 14, height: 14, background: 'var(--red)' }} />
+      <span
+        className="font-ar-body font-bold leading-none"
+        style={{ fontSize: 24, color: 'var(--red-ink)' }}
+      >
+        {message}
+      </span>
     </div>
   );
 }

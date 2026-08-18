@@ -1,11 +1,14 @@
 import { useState, useRef } from 'react';
-import { ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
-import { TEAM_COLORS } from './constants';
+import { TEAM_SWATCHES } from './constants';
 
-export default function TeamCard({ team, onChange }) {
+export default function TeamCard({ team, index, onChange }) {
   const [playersOpen, setPlayersOpen] = useState(false);
   const [playerInput, setPlayerInput] = useState('');
   const inputRef = useRef(null);
+
+  const isP1 = index === 0;
+  const accent = isP1 ? 'var(--blue)' : 'var(--red)';
+  const swatches = TEAM_SWATCHES[index] ?? TEAM_SWATCHES[0];
 
   const addPlayer = () => {
     const name = playerInput.trim();
@@ -28,109 +31,130 @@ export default function TeamCard({ team, onChange }) {
 
   return (
     <div
-      className="surface p-4 flex flex-col gap-4 rounded-xl"
+      className="flex flex-col"
       style={{
-        background: `linear-gradient(135deg, ${team.color}99, var(--color-ink-50))`,
-        borderTopColor: team.color,
-        borderTopWidth: '3px',
+        gap: 10,
+        padding: 16,
+        background: 'var(--panel)',
+        border: `4px solid ${accent}`,
+        boxShadow: '0 6px 0 var(--shadow)',
       }}
     >
-      {/* Header */}
-      <div className="text-right">
-        <div className="font-ar-body font-bold text-cream text-lg">{team.name || team.defaultNameAr}</div>
-        <div className="font-en-body text-cream-45 text-sm" lang="en">{team.defaultNameEn}</div>
+      <span
+        className="font-en-body leading-none"
+        style={{ fontSize: 11, color: accent, letterSpacing: '0.1em' }}
+        lang="en"
+      >
+        {isP1 ? 'PLAYER 1' : 'PLAYER 2'}
+      </span>
+
+      <input
+        type="text"
+        value={team.name}
+        onChange={(e) => onChange({ name: e.target.value })}
+        placeholder={team.defaultNameAr}
+        aria-label={`اسم الفريق · ${team.defaultNameEn} name`}
+        className="w-full font-ar-body font-bold"
+        style={{
+          background: 'var(--input-bg)',
+          border: '4px solid var(--line)',
+          boxShadow: 'inset 4px 4px 0 var(--inset)',
+          padding: '8px 12px',
+          color: 'var(--text)',
+          fontSize: 28,
+        }}
+      />
+
+      <div className="flex" style={{ gap: 6 }}>
+        {swatches.map((hex) => (
+          <button
+            key={hex}
+            type="button"
+            aria-label={`اختر اللون ${hex}`}
+            aria-pressed={team.color === hex}
+            onClick={() => onChange({ color: hex })}
+            style={{
+              width: 22,
+              height: 22,
+              background: hex,
+              border: team.color === hex ? '3px solid #F4ECD8' : '3px solid transparent',
+            }}
+          />
+        ))}
       </div>
 
-      {/* Name input */}
-      <label className="flex flex-col gap-1">
-        <span className="font-ar-ui text-sm text-gold">
-          اسم الفريق · <span lang="en">Team Name</span>
-        </span>
-        <input
-          type="text"
-          value={team.name}
-          onChange={(e) => onChange({ name: e.target.value })}
-          placeholder={team.defaultNameAr}
-          className="w-full px-3 py-2 rounded-lg bg-ink-80 border border-gold-faint text-cream font-ar-ui text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/40 transition"
-        />
-      </label>
+      {/* Player roster — not on the handoff sheet, but the game already
+          supports named players, so it stays behind a disclosure. */}
+      <button
+        type="button"
+        onClick={() => setPlayersOpen((v) => !v)}
+        className="flex items-center gap-2 font-en-body leading-none text-start"
+        style={{ fontSize: 9, color: 'var(--muted2)' }}
+        lang="en"
+      >
+        <span aria-hidden="true">{playersOpen ? '▾' : '▸'}</span>
+        {team.players.length > 0 ? `${team.players.length} PLAYERS` : 'ADD PLAYERS'}
+      </button>
 
-      {/* Color swatches */}
-      <div>
-        <div className="font-ar-ui text-sm text-gold mb-2">
-          اللون · <span lang="en">Color</span>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {TEAM_COLORS.map((hex) => (
-            <button
-              key={hex}
-              type="button"
-              aria-label={`اختر اللون ${hex}`}
-              onClick={() => onChange({ color: hex })}
-              className="w-7 h-7 rounded-full transition-transform hover:scale-110 focus:outline-none"
-              style={{
-                background: hex,
-                outline: team.color === hex ? '2px solid var(--color-gold)' : '2px solid transparent',
-                outlineOffset: '2px',
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Player roster */}
-      <div>
-        <button
-          type="button"
-          onClick={() => setPlayersOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-sm font-ar-ui text-cream-60 hover:text-gold transition-colors"
-        >
-          {playersOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          <span>
-            {team.players.length > 0
-              ? `${team.players.length} لاعب · ${team.players.length} player${team.players.length !== 1 ? 's' : ''}`
-              : 'أضف اللاعبين · Add players'}
-          </span>
-        </button>
-
-        {playersOpen && (
-          <div className="mt-3 flex flex-col gap-2">
-            {team.players.map((p, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: team.color }} />
-                <span className="font-ar-ui text-base text-cream flex-1">{p}</span>
-                <button
-                  type="button"
-                  onClick={() => removePlayer(i)}
-                  aria-label="حذف اللاعب"
-                  className="text-cream-45 hover:text-crimson transition-colors"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ))}
-            <div className="flex gap-2 mt-1">
-              <input
-                ref={inputRef}
-                type="text"
-                value={playerInput}
-                onChange={(e) => setPlayerInput(e.target.value)}
-                onKeyDown={handlePlayerKeyDown}
-                placeholder="اسم اللاعب · Player name"
-                className="flex-1 px-3 py-1.5 rounded-lg bg-ink-80 border border-gold-faint text-cream font-ar-ui text-sm placeholder:text-cream-45 focus:outline-none focus:border-gold transition"
-              />
+      {playersOpen && (
+        <div className="flex flex-col" style={{ gap: 8 }}>
+          {team.players.map((p, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="shrink-0" style={{ width: 10, height: 10, background: team.color }} />
+              <span
+                className="flex-1 font-ar-body font-bold leading-none truncate"
+                style={{ fontSize: 24, color: 'var(--text)' }}
+              >
+                {p}
+              </span>
               <button
                 type="button"
-                onClick={addPlayer}
-                aria-label="إضافة لاعب"
-                className="px-2.5 py-1.5 rounded-lg bg-gold/10 border border-gold/30 text-gold hover:bg-gold/20 transition"
+                onClick={() => removePlayer(i)}
+                aria-label="حذف اللاعب"
+                className="font-en-body leading-none shrink-0"
+                style={{ fontSize: 12, color: 'var(--red)' }}
               >
-                <Plus size={14} />
+                <span aria-hidden="true">✕</span>
               </button>
             </div>
+          ))}
+          <div className="flex" style={{ gap: 8 }}>
+            <input
+              ref={inputRef}
+              type="text"
+              value={playerInput}
+              onChange={(e) => setPlayerInput(e.target.value)}
+              onKeyDown={handlePlayerKeyDown}
+              placeholder="اسم اللاعب"
+              aria-label="اسم اللاعب · Player name"
+              className="flex-1 min-w-0 font-ar-body font-bold"
+              style={{
+                background: 'var(--input-bg)',
+                border: '4px solid var(--line)',
+                boxShadow: 'inset 4px 4px 0 var(--inset)',
+                padding: '6px 10px',
+                color: 'var(--text)',
+                fontSize: 24,
+              }}
+            />
+            <button
+              type="button"
+              onClick={addPlayer}
+              aria-label="إضافة لاعب"
+              className="font-en-body leading-none shrink-0 grid place-items-center"
+              style={{
+                width: 44,
+                background: 'var(--panel2)',
+                border: '4px solid var(--gold)',
+                color: 'var(--gold-ink)',
+                fontSize: 12,
+              }}
+            >
+              <span aria-hidden="true">+</span>
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

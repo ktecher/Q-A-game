@@ -24,7 +24,11 @@ export function makeReducerTeams() {
 // in the team-name inputs.
 export function makeSetupTeams() {
   return TEAM_DEFAULTS.map((d) => ({
-    name: d.nameAr,
+    // Empty, not the default name: the Setup input shows defaultNameAr as a
+    // placeholder so tapping the field gives you a clean box instead of text
+    // you have to delete first. SetupScreen's startGame does
+    // `t.name || t.defaultNameAr`, so leaving it blank still names the team.
+    name: '',
     defaultNameAr: d.nameAr,
     defaultNameEn: d.nameEn,
     color: d.color,

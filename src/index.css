@@ -11,91 +11,71 @@
 :root:not([data-theme='light']),
 [data-theme='dark'] {
   color-scheme: dark;
-  /* RGB tuples power Tailwind's /<alpha-value> syntax (bg-ink/80, text-gold/40 etc.) */
-  --ink-rgb: 10 15 26;
+
+  /* ── Arcade tokens — the source of truth for the pixel theme ── */
+  --page: #05070d;
+  --bg: #070A12;
+  --panel: #101A2C;
+  --panel2: #16233A;
+  --panel3: #1A2440;
+  --line: #1D2C46;
+  --outline: #070A12;
+  --strip: #070A12;
+  --input-bg: #070A12;
+  --text: #F4ECD8;
+  --muted: #8FA6C8;
+  --muted2: #5F7799;
+  --gold: #FFD34E;
+  --gold-ink: #FFD34E;
+  --gold-d: #D4A24C;
+  --gold-sh: #8A6420;
+  --blue: #3A7BC8;
+  --blue-ink: #8FC0F5;
+  --blue-2: #2A5A98;
+  --blue-p: #122241;
+  --red: #C44150;
+  --red-ink: #FF8A96;
+  --red-d: #9B2D3A;
+  --red-p: #2A1220;
+  --green: #4FB477;
+  --purple: #8E6BC8;
+  /* Part of the handoff's canonical token sheet but not consumed yet:
+     --blue-2 has no assigned role, and --purple-ink is the bonus-cell '?'
+     glyph, which stays unrendered while challenge cells are a surprise.
+     Kept so this block does not drift from tokens.css. */
+  --purple-ink: #C9A8F5;
+  --purple-d: #6A3FA0;
+  --purple-p: #231338;
+  --cleared-bg: #0B1220;
+  --cleared-ink: #3D5170;
+  --grid: rgba(58,123,200,.08);
+  --grid-alt: rgba(142,107,200,.10);
+  --scan: rgba(0,0,0,.30);
+  --shadow: rgba(0,0,0,.6);
+  --inset: rgba(0,0,0,.5);
+  --dither: rgba(7,10,18,.5);
+  --scrim: rgba(7,10,18,.85);
+  --sun-bg: #16233A;
+  --sun-ink: #5F7799;
+  --moon-bg: #FFD34E;
+  --moon-ink: #070A12;
+
+  /* ── Legacy token names, remapped onto the arcade palette ──────
+     Every one of these is still referenced across the 41 screen/component
+     files. Repointing them here re-skins those files with no edits;
+     they get removed as each screen is rebuilt to the handoff spec. */
+  --ink-rgb: 7 10 18;
   --cream-rgb: 244 236 216;
-  --gold-rgb: 212 162 76;
-  --gold-light-rgb: 232 185 104;
-  --gold-dark-rgb: 168 124 46;
-  /* Resolved single-value vars (used in inline styles + named ink-50/60/80) */
-  --color-ink: rgb(10, 15, 26);
-  --color-ink-80: rgba(10, 15, 26, 0.8);
-  --color-ink-60: rgba(10, 15, 26, 0.6);
-  --color-ink-50: rgba(10, 15, 26, 0.5);
-  --color-cream: rgb(244, 236, 216);
-  --color-cream-60: rgba(244, 236, 216, 0.6);
-  --color-cream-45: rgba(244, 236, 216, 0.45);
-  --color-cream-30: rgba(244, 236, 216, 0.3);
-  --color-gold-faint: rgba(212, 162, 76, 0.25);
-  --color-gold-dark: #A87C2E;
-  --color-gold: #D4A24C;
-  --color-gold-light: #E8B968;
-  /* Geometric pattern — gold at 5% on dark */
-  --pattern-color: #D4A24C;
-  --pattern-opacity: 0.05;
-
-  /* ── Decorative theme tokens (board, dialogs, frames) ───────── */
-  /* Board tier cell backgrounds — deep navy gradients on dark */
-  --tier-easy-bg:   linear-gradient(155deg, rgba(15,42,77,0.9),  rgba(15,42,77,0.55));
-  --tier-mid-bg:    linear-gradient(155deg, rgba(23,61,110,0.9), rgba(23,61,110,0.55));
-  --tier-hard-bg:   linear-gradient(155deg, rgba(14,41,73,0.95), rgba(14,41,73,0.7));
-  --tier-easy-ring: inset 0 0 0 1px rgba(212,162,76,0.3);
-  --tier-mid-ring:  inset 0 0 0 1px rgba(212,162,76,0.55), inset 0 0 22px rgba(212,162,76,0.10);
-  --tier-hard-ring: inset 0 0 0 1.5px rgba(196,65,80,0.55), inset 0 0 28px rgba(155,45,58,0.18);
-  --tier-easy-hover: 0 0 28px rgba(58,123,200,0.45);
-  --tier-mid-hover:  0 0 32px rgba(212,162,76,0.45);
-  --tier-hard-hover: 0 0 36px rgba(196,65,80,0.55);
-  --tier-easy-text: #3A7BC8;
-  --tier-mid-text:  #D4A24C;
-  --tier-hard-text: #C44150;
-  --tier-easy-text-shadow: 0 1px 4px rgba(0,0,0,0.4);
-  --tier-mid-text-shadow:  0 1px 8px rgba(212,162,76,0.55);
-  --tier-hard-text-shadow: 0 2px 10px rgba(196,65,80,0.55);
-  --tier-category-header-shadow: inset 0 -1px 0 rgba(212,162,76,0.4), inset 0 0 0 1px rgba(244,236,216,0.06);
-
-  /* Decorative card gradients — used in dialogs, question card, results */
-  --card-sapphire-grad: linear-gradient(160deg, rgba(23,61,110,0.25), var(--color-ink-60));
-  --card-sapphire-inset: inset 0 0 0 6px var(--color-ink-50), 0 0 50px rgba(212,162,76,0.08);
-  --card-gold-soft-grad:   linear-gradient(160deg, rgba(212,162,76,0.18) 0%, var(--color-ink-80) 60%);
-  --card-gold-mid-grad:    linear-gradient(155deg, rgba(212,162,76,0.10), var(--color-ink-80));
-  --card-gold-strong-grad: linear-gradient(135deg, rgba(212,162,76,0.18), var(--color-ink-80));
-  --card-gold-reveal-grad: linear-gradient(135deg, rgba(212,162,76,0.18), rgba(23,61,110,0.25));
-  --card-gold-winner-grad: linear-gradient(135deg, rgba(212,162,76,0.25), rgba(232,185,104,0.1));
-  --card-gold-soft-shadow:   0 0 80px rgba(212,162,76,0.3), 0 0 0 1px rgba(232,185,104,0.4);
-  --card-gold-mid-shadow:    0 0 60px rgba(212,162,76,0.18);
-  --card-gold-mid-shadow-urgent: 0 0 60px rgba(196,65,80,0.35);
-  --card-gold-strong-shadow: 0 0 60px rgba(212,162,76,0.25);
-  --card-gold-reveal-shadow: 0 0 40px rgba(212,162,76,0.25);
-  --card-gold-winner-shadow: 0 0 80px rgba(212,162,76,0.2), inset 0 0 0 1px rgba(244,236,216,0.1);
-
-  /* Award/team button backgrounds in reveal stages */
-  --award-team-bg: var(--color-ink-50);
-
-  /* Brushed-brass frame for RevealScreen */
-  --frame-brass-bg: linear-gradient(180deg, rgba(168,124,46,0.18) 0%, rgba(168,124,46,0.08) 30%, rgba(168,124,46,0.04) 70%, rgba(168,124,46,0.18) 100%);
-  --frame-brass-shadow: inset 0 4px 30px rgba(0,0,0,0.7), 0 0 60px rgba(212,162,76,0.15), 0 12px 40px rgba(0,0,0,0.5);
-  --settled-card-shadow-latest: 0 0 0 1.5px rgba(212,162,76,0.6), 0 0 32px rgba(212,162,76,0.45), inset 0 0 0 1px rgba(244,236,216,0.08);
-  --settled-card-shadow:        0 0 0 1.5px rgba(212,162,76,0.6), 0 0 16px rgba(212,162,76,0.25), inset 0 0 0 1px rgba(244,236,216,0.08);
-  --spinning-scanline: rgba(0,0,0,0.4);
-  --spinning-overlay: linear-gradient(to bottom, transparent, rgba(10,15,26,0.2), rgba(10,15,26,0.4));
-
-  /* Confetti / celebration accent that needs to read on the page bg */
-  --confetti-cream: #F4ECD8;
-
-  /* Glow text shadows */
-  --glow-text-gold: 0 0 14px rgba(212,162,76,0.4);
-  --glow-text-gold-strong: 0 0 16px rgba(212,162,76,0.4);
-  --glow-text-gold-deep: 0 0 18px rgba(212,162,76,0.5);
-  --glow-text-gold-wide: 0 0 20px rgba(212,162,76,0.5);
-  --glow-text-gold-xl: 0 0 24px rgba(212,162,76,0.5);
-  --glow-text-gold-xxl: 0 0 30px rgba(212,162,76,0.6);
-  --glow-text-gold-soft: 0 0 12px rgba(212,162,76,0.4);
-  --glow-text-crimson: 0 0 16px rgba(196,65,80,0.6);
-  --glow-text-crimson-wide: 0 0 24px rgba(196,65,80,0.6);
-
-  /* Active-team chip glow shadow */
-  --chip-active-shadow: 0 0 0 2px rgba(212,162,76,0.18), 0 0 24px rgba(212,162,76,0.35);
-  --chip-active-shadow-soft: 0 0 18px rgba(212,162,76,0.35);
+  --gold-rgb: 255 211 78;
+  --gold-light-rgb: 255 211 78;
+  --gold-dark-rgb: 212 162 76;
+  --color-ink-80: var(--panel3);
+  --color-ink-60: var(--panel2);
+  --color-ink-50: var(--panel);
+  --color-cream-60: var(--muted);
+  --color-cream-45: var(--muted);
+  --color-cream-30: var(--muted2);
+  --surface-shadow: 0 6px 0 var(--shadow);
 }
 
 /* Use higher-specificity selector (html[data-theme='light']) so this block
@@ -105,114 +85,94 @@
    surprising. html + attribute = (0,1,1) > :root (0,1,0). */
 html[data-theme='light'] {
   color-scheme: light;
-  /* RGB tuples — used by Tailwind's /opacity classes */
-  --ink-rgb: 238 241 245;        /* light grey-blue body */
-  --cream-rgb: 10 18 38;         /* nearly-black text */
-  --gold-rgb: 139 104 34;        /* deeper gold for readable text */
-  --gold-light-rgb: 168 124 46;  /* what was gold-dark in dark mode */
-  --gold-dark-rgb: 92 69 22;     /* even darker bronze */
-  /* Resolved vars */
-  --color-ink: rgb(238, 241, 245);
-  /* In light mode the ink scale represents inset/recessed surface tints —
-     small buttons, chips, fields, accordion bodies that sit inside a white
-     .surface card need a subtle slate tint to read. Cards that should stay
-     solid white use the explicit `html[data-theme='light'] .surface` rule
-     below (or use #FFFFFF directly via the --award-team-bg / card grad vars). */
-  --color-ink-80: rgba(15, 23, 42, 0.06);   /* deepest tint — hover state, picked cells */
-  --color-ink-60: rgba(15, 23, 42, 0.035);  /* mid tint — accordion wrapper */
-  --color-ink-50: rgba(15, 23, 42, 0.045);  /* default tint — buttons, chips, inputs */
-  --color-cream: rgb(10, 18, 38);
-  /* Bumped all three steps so they clear 4.5:1 on the #FFFFFF .surface card.
-     cream-60: ~7.8:1 · cream-45: ~5.4:1 · cream-30: ~4.6:1 (was 3.2:1) */
-  --color-cream-60: rgba(10, 18, 38, 0.82);
-  --color-cream-45: rgba(10, 18, 38, 0.68);
-  --color-cream-30: rgba(10, 18, 38, 0.56);
-  --color-gold-faint: rgba(168, 124, 46, 0.35);
-  --color-gold-dark: #5C4516;
-  --color-gold: #8B6822;
-  --color-gold-light: #A87C2E;
-  /* Subtle sapphire pattern at very low opacity */
-  --pattern-color: #173D6E;
-  --pattern-opacity: 0.035;
-  /* Subtle card-elevation shadow used in light mode (no effect in dark) */
-  --surface-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 16px rgba(15, 23, 42, 0.04);
 
-  /* ── Decorative theme tokens — light variants ───────────────── */
-  /* Board tier tiles — solid pale tints with subtle elevation, much lighter
-     than dark mode. Gradient gives just enough variation to feel tactile. */
-  --tier-easy-bg:   linear-gradient(155deg, rgba(58,123,200,0.10), rgba(58,123,200,0.04));
-  --tier-mid-bg:    linear-gradient(155deg, rgba(168,124,46,0.18), rgba(168,124,46,0.08));
-  --tier-hard-bg:   linear-gradient(155deg, rgba(155,45,58,0.14),  rgba(155,45,58,0.06));
-  --tier-easy-ring: inset 0 0 0 1px rgba(23,61,110,0.18), 0 1px 2px rgba(15,23,42,0.06);
-  --tier-mid-ring:  inset 0 0 0 1px rgba(139,104,34,0.45), inset 0 0 22px rgba(212,162,76,0.06), 0 1px 2px rgba(15,23,42,0.06);
-  --tier-hard-ring: inset 0 0 0 1.5px rgba(155,45,58,0.5),  inset 0 0 22px rgba(155,45,58,0.05), 0 1px 2px rgba(15,23,42,0.06);
-  --tier-easy-hover: 0 4px 14px rgba(58,123,200,0.28);
-  --tier-mid-hover:  0 4px 18px rgba(168,124,46,0.32);
-  --tier-hard-hover: 0 4px 18px rgba(155,45,58,0.32);
-  --tier-easy-text: #0E2949;
-  --tier-mid-text:  #5C4516;
-  --tier-hard-text: #6E1F28;
-  --tier-easy-text-shadow: none;
-  --tier-mid-text-shadow:  none;
-  --tier-hard-text-shadow: none;
-  --tier-category-header-shadow: inset 0 -1px 0 rgba(168,124,46,0.55), inset 0 0 0 1px rgba(255,255,255,0.18);
+  /* ── Arcade tokens — day cabinet ─────────────────────────────── */
+  --page: #DED5BC;
+  --bg: #F2EFE2;
+  --panel: #FFFDF3;
+  --panel2: #EFE9D8;
+  --panel3: #FFF3C9;
+  --line: #C6BCA0;
+  --outline: #1D1F20;
+  --strip: #EDE6D0;
+  --input-bg: #FFFDF3;
+  --text: #1D1F20;
+  --muted: #6B6350;
+  --muted2: #918872;
+  --gold: #FFC427;
+  --gold-ink: #8F6104;
+  --gold-d: #D4A24C;
+  --gold-sh: #B0821F;
+  --blue: #2A5A98;
+  --blue-ink: #1E4272;
+  --blue-2: #2A5A98;
+  --blue-p: #DCE6F2;
+  --red: #9B2D3A;
+  --red-ink: #8A2531;
+  --red-d: #6E1F28;
+  --red-p: #F6E1E3;
+  --green: #2E8B55;
+  --purple: #6A3FA0;
+  /* Part of the handoff's canonical token sheet but not consumed yet:
+     --blue-2 has no assigned role, and --purple-ink is the bonus-cell '?'
+     glyph, which stays unrendered while challenge cells are a surprise.
+     Kept so this block does not drift from tokens.css. */
+  --purple-ink: #57318A;
+  --purple-d: #4A2A72;
+  --purple-p: #E9E1F6;
+  --cleared-bg: #E0D9C3;
+  --cleared-ink: #A79C80;
+  --grid: rgba(89,128,166,.18);
+  --grid-alt: rgba(106,63,160,.16);
+  --scan: rgba(89,128,166,.10);
+  --shadow: rgba(29,31,32,.35);
+  --inset: rgba(29,31,32,.18);
+  --dither: rgba(242,239,226,.30);
+  --scrim: rgba(29,31,32,.6);
+  --sun-bg: #FFC427;
+  --sun-ink: #1D1F20;
+  --moon-bg: #EFE9D8;
+  --moon-ink: #918872;
 
-  /* Decorative card gradients — light variants stay solid white with tints */
-  --card-sapphire-grad: linear-gradient(160deg, rgba(23,61,110,0.06), #FFFFFF);
-  --card-sapphire-inset: inset 0 0 0 6px #FFFFFF, 0 6px 24px rgba(15,23,42,0.05), 0 1px 3px rgba(15,23,42,0.06);
-  --card-gold-soft-grad:   linear-gradient(160deg, rgba(168,124,46,0.14) 0%, #FFFFFF 60%);
-  --card-gold-mid-grad:    linear-gradient(155deg, rgba(168,124,46,0.10), #FFFFFF);
-  --card-gold-strong-grad: linear-gradient(135deg, rgba(168,124,46,0.14), #FFFFFF);
-  --card-gold-reveal-grad: linear-gradient(135deg, rgba(168,124,46,0.18), rgba(23,61,110,0.08));
-  --card-gold-winner-grad: linear-gradient(135deg, rgba(168,124,46,0.22), rgba(168,124,46,0.06));
-  --card-gold-soft-shadow:   0 1px 3px rgba(15,23,42,0.06), 0 12px 32px rgba(168,124,46,0.18), 0 0 0 1px rgba(168,124,46,0.35);
-  --card-gold-mid-shadow:    0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(168,124,46,0.18);
-  --card-gold-mid-shadow-urgent: 0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(155,45,58,0.22);
-  --card-gold-strong-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 8px 28px rgba(168,124,46,0.20);
-  --card-gold-reveal-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(168,124,46,0.18);
-  --card-gold-winner-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 16px 40px rgba(168,124,46,0.22), inset 0 0 0 1px rgba(168,124,46,0.25);
-
-  /* Award/team button backgrounds: solid white card with elevation */
-  --award-team-bg: #FFFFFF;
-
-  /* Brushed-brass frame — softened on light page */
-  --frame-brass-bg: linear-gradient(180deg, rgba(168,124,46,0.16) 0%, rgba(168,124,46,0.06) 30%, rgba(168,124,46,0.04) 70%, rgba(168,124,46,0.16) 100%);
-  --frame-brass-shadow: inset 0 4px 18px rgba(168,124,46,0.18), 0 0 40px rgba(168,124,46,0.12), 0 12px 32px rgba(15,23,42,0.10);
-  --settled-card-shadow-latest: 0 0 0 1.5px rgba(168,124,46,0.7), 0 0 24px rgba(168,124,46,0.35), inset 0 0 0 1px rgba(255,255,255,0.25);
-  --settled-card-shadow:        0 0 0 1.5px rgba(168,124,46,0.6), 0 0 12px rgba(168,124,46,0.20), inset 0 0 0 1px rgba(255,255,255,0.20);
-  --spinning-scanline: rgba(15,23,42,0.16);
-  --spinning-overlay: linear-gradient(to bottom, transparent, rgba(15,23,42,0.08), rgba(15,23,42,0.18));
-
-  /* Cream confetti needs to read on a light page — use deep sapphire instead */
-  --confetti-cream: #0E2949;
-
-  /* Glow text shadows — much subtler on light backgrounds */
-  --glow-text-gold:        0 1px 1px rgba(15,23,42,0.10);
-  --glow-text-gold-strong: 0 1px 1px rgba(15,23,42,0.12);
-  --glow-text-gold-deep:   0 1px 2px rgba(168,124,46,0.30);
-  --glow-text-gold-wide:   0 1px 2px rgba(168,124,46,0.30);
-  --glow-text-gold-xl:     0 2px 4px rgba(168,124,46,0.35);
-  --glow-text-gold-xxl:    0 2px 6px rgba(168,124,46,0.40);
-  --glow-text-gold-soft:   0 1px 2px rgba(168,124,46,0.25);
-  --glow-text-crimson:      0 1px 2px rgba(155,45,58,0.35);
-  --glow-text-crimson-wide: 0 2px 4px rgba(155,45,58,0.40);
-
-  /* Active-team chip glow — keep visible but lighter on white */
-  --chip-active-shadow:      0 0 0 2px rgba(168,124,46,0.30), 0 4px 14px rgba(168,124,46,0.22);
-  --chip-active-shadow-soft: 0 4px 12px rgba(168,124,46,0.22);
-}
-
-/* Dark-mode surface shadow — only applies when light isn't active. */
-:root:not([data-theme='light']) {
-  --surface-shadow: none;
+  /* ── Legacy names, remapped ──────────────────────────────────── */
+  --ink-rgb: 242 239 226;
+  --cream-rgb: 29 31 32;
+  --gold-rgb: 143 97 4;
+  --gold-light-rgb: 255 196 39;
+  --gold-dark-rgb: 176 130 31;
+  --color-ink-80: var(--panel3);
+  --color-ink-60: var(--panel2);
+  --color-ink-50: var(--panel);
+  --color-cream-60: var(--muted);
+  --color-cream-45: var(--muted);
+  --color-cream-30: var(--muted2);
+  --surface-shadow: 0 6px 0 var(--shadow);
 }
 
 /* ─── BRAND BASE ─────────────────────────────────────────────── */
 @layer base {
   html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
+    text-rendering: optimizeSpeed;
+    background-color: var(--page);
+  }
+
+  /* Zero radius is the single hardest rule of the arcade theme. Enforcing it
+     here neutralises all ~150 existing `rounded-*` utilities in one line
+     instead of editing 41 files; the classes stay put and become no-ops. */
+  *,
+  *::before,
+  *::after {
+    border-radius: 0 !important;
+  }
+
+  /* Arcade motion never eases. Any transition still declared by a component
+     snaps in two frames instead of sliding. */
+  *,
+  *::before,
+  *::after {
+    transition-timing-function: steps(2, end);
   }
 
   body {
@@ -220,60 +180,56 @@ html[data-theme='light'] {
     margin: 0;
     overflow-x: hidden;
     position: relative;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    line-height: 1;
+    transition: background-color 0.25s, color 0.25s;
   }
 
   /* Explicit per-theme body — defensive against any inline overrides */
   html[data-theme='light'] body {
-    background-color: #EEF1F5;
-    color: #0A1226;
+    background-color: #F2EFE2;
+    color: #1D1F20;
   }
   html[data-theme='dark'] body {
-    background-color: #0A0F1A;
+    background-color: #070A12;
     color: #F4ECD8;
   }
 
-  /* Light-mode surface override — solid white card with shadow elevation */
-  html[data-theme='light'] .surface {
-    background-color: #FFFFFF;
-    border-color: rgba(168, 124, 46, 0.3);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 6px 24px rgba(15, 23, 42, 0.05);
+  /* Latin runs use the pixel display face, uppercase, always LTR. */
+  [lang="en"] {
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 
-  /* Light-mode button + chip explicit overrides.
-     The btn-outline default uses bg-ink-50 which is a subtle slate tint
-     (so it reads against a white card). On hover we shift to ink-80 (deeper). */
-  html[data-theme='light'] .btn-outline {
-    color: #0A1226;
-    border-color: rgba(168, 124, 46, 0.45);
-  }
-  html[data-theme='light'] .btn-outline:hover {
-    border-color: var(--color-gold);
+  /* Placeholders are hints, not values — muted so a blank team-name field
+     never looks like it is already filled in. */
+  input::placeholder {
+    color: var(--muted2);
+    opacity: 1;
   }
 
-  /* Islamic geometric pattern via CSS mask — color swaps per theme */
+  /* Keep a visible focus ring — never the browser default. */
+  :focus-visible {
+    outline: 4px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  /* Tilemap ground. Replaces the Islamic geometric mask pattern; same
+     pseudo-element, so the z-index/stacking contract with #root is unchanged. */
   body::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    /* 100vh floor so the pattern still covers the viewport on routes that
-       mount only a fixed-position overlay (e.g. /play/challenge), where the
-       body would otherwise collapse to near-zero height */
     min-height: max(100%, 100vh);
     z-index: 0;
     pointer-events: none;
-    opacity: var(--pattern-opacity);
-    background-color: var(--pattern-color);
+    background-image:
+      linear-gradient(var(--grid) 2px, transparent 2px),
+      linear-gradient(90deg, var(--grid) 2px, transparent 2px);
+    background-size: 32px 32px, 32px 32px;
     will-change: transform;
     transform: translateZ(0);
-    --mask-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23000000'%3E%3Cpolygon points='40,0 47,15 63,15 51,25 56,41 40,31 24,41 29,25 17,15 33,15'/%3E%3Cpolygon points='40,80 47,65 63,65 51,55 56,39 40,49 24,39 29,55 17,65 33,65'/%3E%3Cpolygon points='0,40 15,33 15,17 25,29 41,24 31,40 41,56 25,51 15,63 15,47'/%3E%3Cpolygon points='80,40 65,33 65,17 55,29 39,24 49,40 39,56 55,51 65,63 65,47'/%3E%3Crect x='36' y='36' width='8' height='8' transform='rotate(45 40 40)'/%3E%3C/g%3E%3C/svg%3E");
-    -webkit-mask-image: var(--mask-svg);
-    mask-image: var(--mask-svg);
-    -webkit-mask-size: 80px 80px;
-    mask-size: 80px 80px;
-    transition: background-color 0.25s ease, opacity 0.25s ease;
   }
 
   #root {
@@ -282,125 +238,149 @@ html[data-theme='light'] {
     min-height: 100vh;
   }
 
-  /* English text inside RTL document should flip back to LTR */
-  [lang="en"] {
-    direction: ltr;
-    unicode-bidi: isolate;
+  /* CRT scanline overlay. The handoff puts this as the last child of every
+     screen; one fixed pseudo-element covers all nine instead. */
+  #root::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    background: repeating-linear-gradient(var(--scan) 0 2px, transparent 2px 4px);
+  }
+
+  /* Pixel images: no smoothing, punchier colour. */
+  img {
+    image-rendering: pixelated;
   }
 }
 
 /* ─── COMPONENT TOKENS ───────────────────────────────────────── */
 @layer components {
-  /* Bilingual text: AR primary above, EN muted secondary below */
+  /* Bilingual text: AR primary (Handjet) above, EN secondary (Press Start 2P) below.
+     Press Start 2P has no lowercase worth reading — Latin is always uppercase. */
   .bi-ar { @apply font-ar-body font-bold text-cream; }
-  .bi-en { @apply font-en-body text-cream-45 text-sm; }
+  .bi-en {
+    @apply font-en-body text-cream-45;
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    direction: ltr;
+  }
 
-  /* Ornamental glyph divider */
+  /* Ornamental glyph divider — was '❖ ◈ ◇ ◈ ❖', now a run of pixel blocks. */
   .ornament-divider::before {
-    content: '❖ ◈ ◇ ◈ ❖';
-    color: var(--color-gold-light);
-    opacity: 0.55;
-    letter-spacing: 0.5em;
-    font-size: 0.875rem;
+    content: '■ ■ ■ ■ ■';
+    color: var(--gold);
+    letter-spacing: 0.4em;
+    font-size: 0.75rem;
   }
 
-  /* Gold gradient button (primary CTA) */
-  /* Use brightness-110 instead of growing the shadow for hover —
-     shadow expansion forces large repaints; brightness is a composited filter. */
+  /* Gold gradient button (primary CTA). The fill is a hard 2-stop gradient,
+     not a blend — a blend reads as airbrush, which the pixel theme has none of. */
   .btn-gold {
-    @apply bg-gradient-to-br from-gold to-gold-dark text-ink font-ar-ui font-bold
-           shadow-gold-glow border border-gold-light/40
-           transition-[transform,filter] duration-150
-           hover:brightness-110 hover:-translate-y-0.5;
+    background: linear-gradient(var(--gold) 50%, var(--gold-d) 50%);
+    color: var(--outline);
+    border: 4px solid var(--outline);
+    box-shadow: 0 8px 0 var(--gold-sh), inset 4px 4px 0 rgba(255, 255, 255, 0.35);
+    @apply font-ar-ui font-bold transition-transform duration-100;
+  }
+  .btn-gold:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 11px 0 var(--gold-sh), inset 4px 4px 0 rgba(255, 255, 255, 0.35);
+  }
+  .btn-gold:active {
+    transform: translateY(4px);
+    box-shadow: 0 4px 0 var(--gold-sh);
   }
 
-  /* Outlined cream button (secondary CTA) */
-  /* Removed backdrop-blur-sm — invisible at this opacity, expensive to composite. */
+  /* Outlined secondary CTA */
   .btn-outline {
-    @apply bg-ink-50 text-cream font-ar-ui font-medium
-           border border-gold-faint
-           transition-colors duration-150
-           hover:bg-ink-80;
+    background: var(--panel2);
+    color: var(--text);
+    border: 4px solid var(--blue);
+    box-shadow: 0 8px 0 var(--shadow);
+    @apply font-ar-ui font-bold transition-transform duration-100;
   }
   .btn-outline:hover {
-    border-color: var(--color-gold);
+    border-color: var(--gold);
+    transform: translateY(-3px);
+  }
+  .btn-outline:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 var(--shadow);
   }
 
-  /* Card surface — bright white in light mode, semi-transparent dark in dark mode */
-  /* backdrop-blur-md removed: dark mode bg-ink-50 is opaque enough and blur was
-     expensive to composite on every surface element (team cards, header buttons). */
+  /* Card surface — a flat panel in a hard 4px frame on a block shadow. */
   .surface {
-    @apply bg-ink-50 border border-gold-faint rounded-xl;
+    background-color: var(--panel);
+    border: 4px solid var(--gold-d);
     box-shadow: var(--surface-shadow);
   }
+
+  /* Category art: pixelated, pushed contrast, dithered. */
+  .accent-card img,
+  .pixel-art {
+    image-rendering: pixelated;
+    filter: contrast(1.38) saturate(1.5);
+  }
 }
 
-/* ─── LIGHT MODE CONTRAST OVERRIDES ─────────────────────────── */
-/* These rules override specific colour/opacity usages that are
-   fine on a dark background but fail W3C contrast on the light
-   #FFFFFF .surface card or the #EEF1F5 body.
-   Every rule is scoped to [data-theme='light'] so dark mode is
-   completely unaffected. */
-
-/* 1 ── Ornament divider: gold-light at half opacity is ~1.4:1 on white.
-        Raise to near full opacity so it reads as a mid-weight ornament. */
-html[data-theme='light'] .ornament-divider::before {
-  opacity: 1;
-  color: var(--color-gold);   /* deeper bronze reads better than gold-light */
-}
-
-/* 2 ── Sticky header / bottom bar: bg-ink/95 resolves to rgba(238,241,245,0.95)
-        in light mode — almost identical to the #EEF1F5 body, no depth.
-        Target the bg-ink/95 utility class directly in light mode. */
+/* ─── LIGHT MODE OVERRIDES ──────────────────────────────────── */
+/* The arcade palette is opaque in both themes, so the old contrast patches
+   for translucent golds are gone. Only the sticky bars still need help:
+   `bg-ink/95` resolves to the page ground itself in light mode. */
 html[data-theme='light'] .bg-ink\/95 {
-  background-color: rgba(255, 255, 255, 0.97) !important;
-  box-shadow: 0 1px 0 rgba(168, 124, 46, 0.25), 0 2px 8px rgba(15, 23, 42, 0.06);
+  background-color: var(--panel) !important;
+  box-shadow: 0 4px 0 var(--shadow);
 }
 
-/* 3 ── Decorative inline gold ornament glyph "❖" next to the brand name
-        in BoardScreen header. "text-gold-light/40" resolves to
-        rgb(168,124,46) at 0.4 opacity → ≈ 1.3:1 on body bg.
-        We can't easily target the element by class alone; we override
-        the gold-light opacity scale in light mode instead. */
-html[data-theme='light'] .text-gold-light\/40 {
-  color: rgba(139, 104, 34, 0.70) !important; /* gold at 70% → ~3.8:1 */
-}
-
-/* 4 ── "vs" separator and any decorative text-gold/40 usages.
-        rgb(139,104,34) at 0.4 opacity on white = ~1.5:1.
-        Floor to 65% opacity → ~3.4:1 (acceptable for a decorative separator). */
-html[data-theme='light'] .text-gold\/40 {
-  color: rgba(139, 104, 34, 0.70) !important;
-}
-
-/* 5 ── ScoreAdjustDialog preset buttons: bg-crimson/5 and bg-gold/5 are
-        virtually invisible on a white .surface card. Raise their backgrounds
-        so the coloured outline buttons have visible fill. */
-html[data-theme='light'] .bg-crimson\/5 {
-  background-color: rgba(155, 45, 58, 0.10) !important;
-}
-html[data-theme='light'] .bg-gold\/5 {
-  background-color: rgba(139, 104, 34, 0.10) !important;
-}
-
-/* 6 ── .accent-card — used wherever a vivid full-saturation category-accent
-        background appears (BoardScreen CategoryHeader, RevealScreen Spinning
-        + Settled cards, QuestionScreen category tag pill). The inherited
-        `text-cream` resolves to dark navy in light mode, which would be
-        invisible on the dark accent gradient — force the icon + text to
-        the dark-mode light cream colour. */
+/* Vivid category-accent surfaces keep light text in both themes. */
 html[data-theme='light'] .accent-card,
 html[data-theme='light'] .accent-card * {
   color: #F4ECD8;
 }
-html[data-theme='light'] .accent-card .text-cream\/95 {
-  color: rgba(244, 236, 216, 0.95);
+
+/* ─── CHALLENGE INTRO ────────────────────────────────────────── */
+/* Beats for ChallengeScreen/DuelIntro. These live here rather than in
+   tailwind.config.js because the component applies them through an inline
+   `animation:` shorthand (each element needs its own delay, and several need a
+   per-element --from/--dx/--dy). Tailwind only emits keyframes for animations
+   whose `animate-*` utility it finds in the source, so a config entry would be
+   stripped from the build and the intro would play with nothing moving.
+   `blink` and `flash` are NOT redefined here — the component reuses the two
+   Tailwind already emits. */
+
+@keyframes ci-shutter { 0% { transform: translateY(var(--from)); } 100% { transform: translateY(0); } }
+@keyframes ci-march   { 0% { background-position: 0 0; } 100% { background-position: 56px 0; } }
+@keyframes ci-slam    { 0% { transform: translateX(var(--from)); } 100% { transform: translateX(0); } }
+@keyframes ci-stamp {
+  0%   { transform: scale(3.4); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
-html[data-theme='light'] .accent-card .text-cream\/70 {
-  color: rgba(244, 236, 216, 0.70);
+@keyframes ci-shock   { 0% { transform: scale(0.2); opacity: 1; } 100% { transform: scale(3.4); opacity: 0; } }
+@keyframes ci-spark   { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+@keyframes ci-titlein { 0% { transform: translateY(26px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes ci-fall    { 0% { transform: translateY(-60px); } 100% { transform: translateY(900px); } }
+@keyframes ci-block {
+  0%   { opacity: 0; }
+  6%   { opacity: 1; }
+  52%  { opacity: 1; }
+  58%  { opacity: 0; }
+  100% { opacity: 0; }
 }
-html[data-theme='light'] .accent-card .text-cream-60 {
-  color: rgba(244, 236, 216, 0.60);
+/* One 2500ms run carrying both jolts — the plate slam and the VS landing. */
+@keyframes ci-shake {
+  0%, 17%   { transform: translate(0, 0); }
+  18%       { transform: translate(-14px, 8px); }
+  20%       { transform: translate(12px, -6px); }
+  22%       { transform: translate(-6px, 4px); }
+  24%, 42%  { transform: translate(0, 0); }
+  43%       { transform: translate(18px, -10px); }
+  45%       { transform: translate(-16px, 8px); }
+  47%       { transform: translate(8px, -4px); }
+  49%, 100% { transform: translate(0, 0); }
 }
 
 /* ─── REDUCED MOTION ─────────────────────────────────────────── */
@@ -409,5 +389,12 @@ html[data-theme='light'] .accent-card .text-cream-60 {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  /* blink/flash leave the element at opacity 0 when frozen mid-cycle — pin
+     them visible instead. */
+  .animate-blink, .animate-flash, .animate-bob, .animate-pixfall {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

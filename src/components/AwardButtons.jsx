@@ -1,92 +1,88 @@
-import { X as XIcon } from 'lucide-react';
-
-// 3-column "Team A · No Award · Team B" award row. Used by both QuestionScreen
-// (normal question award, value = cellValue) and ChallengeRound's ResultDialog
-// (challenge award, value = cellValue * 2). Same layout, just different size
-// tokens; the `variant` prop swaps between "full" (roomy, used on the main
-// question screen) and "compact" (denser, used inside the challenge modal).
+// 3-column "Team A · No Award · Team B" award row for the stage-2 question
+// screen. The old `compact` variant is gone — ChallengeScreen's ResultStage
+// draws its own award row and never used it.
 //
 // onAward(teamId | null) — pass a team id to award that team, or null for
 // "no award" (cell played, no points).
 
-const VARIANTS = {
-  full: {
-    gap: 'gap-2.5',
-    btnPad: 'px-4 py-4',
-    btnGap: 'gap-1.5',
-    noAwardPad: 'px-4 py-4',
-    noAwardMinW: 'min-w-[90px]',
-    name: 'text-sm',
-    nameEn: 'text-sm',
-    delta: 'text-lg',
-    showLabelRow: true,  // shows "منح {name}" + "Award · {nameEn}"
-  },
-  compact: {
-    gap: 'gap-2',
-    btnPad: 'px-3 py-3',
-    btnGap: 'gap-0.5',
-    noAwardPad: 'px-3 py-3',
-    noAwardMinW: '',
-    name: 'text-xs',
-    nameEn: 'text-[11px]',
-    delta: 'text-base',
-    showLabelRow: false, // shows only "منح {name}" + "+{value}"
-  },
-};
+// P1 is always the blue side of the cabinet, P2 the red one.
+const SIDES = [
+  { bg: 'var(--blue-p)', border: 'var(--blue)', ink: 'var(--blue)', label: 'AWARD P1' },
+  { bg: 'var(--red-p)', border: 'var(--red)', ink: 'var(--red)', label: 'AWARD P2' },
+];
 
-export default function AwardButtons({ teams, value, onAward, variant = 'full' }) {
-  const v = VARIANTS[variant] ?? VARIANTS.full;
+const v = { pad: 18, label: 10, name: 34, delta: 46, noAwardMinW: 150 };
+
+export default function AwardButtons({ teams, value, onAward }) {
   return (
-    <div className={`grid grid-cols-[1fr_auto_1fr] ${v.gap}`}>
-      <TeamAwardButton team={teams[0]} value={value} onAward={onAward} variant={variant} />
+    <div className="grid grid-cols-[1fr_auto_1fr]" style={{ gap: 14 }}>
+      <TeamAwardButton team={teams[0]} side={SIDES[0]} value={value} onAward={onAward} />
       <button
         type="button"
         onClick={() => onAward(null)}
-        className={`flex flex-col items-center justify-center gap-1 ${v.noAwardPad} rounded-lg border bg-ink-80 border-gold-faint text-cream-60 hover:border-cream-60 hover:text-cream transition ${v.noAwardMinW}`}
+        className="text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+        style={{
+          minWidth: v.noAwardMinW,
+          padding: v.pad,
+          background: 'var(--cleared-bg)',
+          border: '4px solid var(--line)',
+        }}
       >
-        <XIcon size={variant === 'full' ? 18 : 14} className="opacity-70" />
-        <span className={`font-ar-ui ${v.name} font-semibold`}>بلا منح</span>
-        <span
-          className={`font-en-body ${v.nameEn} uppercase tracking-wide`}
+        <div className="font-en-body leading-none" style={{ fontSize: 16, color: 'var(--muted2)' }}>
+          <span aria-hidden="true">✕</span>
+        </div>
+        <div
+          className="font-ar-body font-bold leading-none"
+          style={{ fontSize: v.name - 4, color: 'var(--muted)', marginTop: 8 }}
+        >
+          بلا منح
+        </div>
+        <div
+          className="font-en-body leading-none"
+          style={{ fontSize: 9, color: 'var(--muted2)', marginTop: 8 }}
           lang="en"
         >
-          {variant === 'full' ? 'No Award' : 'No win'}
-        </span>
+          NO AWARD
+        </div>
       </button>
-      <TeamAwardButton team={teams[1]} value={value} onAward={onAward} variant={variant} />
+      <TeamAwardButton team={teams[1]} side={SIDES[1]} value={value} onAward={onAward} />
     </div>
   );
 }
 
-function TeamAwardButton({ team, value, onAward, variant }) {
-  const v = VARIANTS[variant] ?? VARIANTS.full;
+function TeamAwardButton({ team, side, value, onAward }) {
   return (
     <button
       type="button"
       onClick={() => onAward(team.id)}
-      className={`flex flex-col items-center justify-center ${v.btnGap} ${v.btnPad} rounded-lg border-2 transition-all hover:-translate-y-0.5`}
+      className="text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
       style={{
-        background: `linear-gradient(135deg, ${team.color}99, var(--color-ink-50))`,
-        borderColor: `${team.color}b3`,
+        padding: v.pad,
+        background: side.bg,
+        border: `4px solid ${side.border}`,
+        boxShadow: '0 8px 0 var(--shadow)',
       }}
     >
-      <span className={`font-ar-ui ${v.name} font-bold text-cream`}>
-        منح {team.name}
-      </span>
-      {v.showLabelRow && (
-        <span
-          className={`font-en-body ${v.nameEn} text-cream-60 uppercase tracking-wide`}
-          lang="en"
-        >
-          Award · {team.nameEn}
-        </span>
-      )}
-      <span
-        className={`font-en-display font-bold ${v.delta} ${v.showLabelRow ? 'mt-0.5' : ''}`}
-        style={{ color: team.color }}
+      <div
+        className="font-en-body leading-none"
+        style={{ fontSize: v.label, color: side.ink, letterSpacing: '0.1em' }}
+        lang="en"
+      >
+        {side.label}
+      </div>
+      <div
+        className="font-ar-body font-bold leading-none truncate"
+        style={{ fontSize: v.name, color: 'var(--text)', marginTop: 8 }}
+      >
+        {team.name}
+      </div>
+      <div
+        className="font-ar-body font-extrabold leading-none"
+        style={{ fontSize: v.delta, color: side.ink, marginTop: 6 }}
+        dir="ltr"
       >
         +{value}
-      </span>
+      </div>
     </button>
   );
 }
