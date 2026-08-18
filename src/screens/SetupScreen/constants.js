@@ -1,10 +1,9 @@
 // One shared palette — both teams choose from all six. Nothing is reserved to
 // a side, so P1 can take red and P2 can take blue.
 //
-// A colour the other team already holds stays selectable rather than being
-// disabled: swapping is a normal thing to do mid-setup, and greying it out
-// would make the two rows disagree about what exists. TeamCard marks it
-// instead, so picking a duplicate is a visible choice rather than an accident.
+// The two teams cannot share a colour: whichever one a team currently holds is
+// greyed out and unclickable in the other team's row. It frees up the moment
+// that team moves to a different colour, so the block is never permanent.
 //
 // The first two entries are the P1 / P2 defaults from lib/teams.js, so a
 // freshly-opened Setup always has one swatch selected in each row.

@@ -7,7 +7,9 @@ export default function TeamCard({ team, index, otherColor, onChange }) {
   const inputRef = useRef(null);
 
   const isP1 = index === 0;
-  const accent = isP1 ? 'var(--blue)' : 'var(--red)';
+  // The card frames itself in the team's own colour, so choosing a swatch
+  // changes the container and not just the swatch outline.
+  const accent = team.color;
 
   const addPlayer = () => {
     const name = playerInput.trim();
@@ -41,7 +43,9 @@ export default function TeamCard({ team, index, otherColor, onChange }) {
     >
       <span
         className="font-en-body leading-none"
-        style={{ fontSize: 11, color: accent, letterSpacing: '0.1em' }}
+        // Not the team colour: at 11px a dark pick like #9B2D3A sits at ~2.2:1
+        // on the panel. The 4px frame carries the colour instead.
+        style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.1em' }}
         lang="en"
       >
         {isP1 ? 'PLAYER 1' : 'PLAYER 2'}
@@ -73,19 +77,21 @@ export default function TeamCard({ team, index, otherColor, onChange }) {
             <button
               key={hex}
               type="button"
+              disabled={isTaken}
               aria-label={`اختر اللون ${hex}${isTaken ? ' — مستخدم من الفريق الآخر' : ''}`}
               aria-pressed={isMine}
-              title={isTaken ? 'مستخدم من الفريق الآخر · Used by the other team' : undefined}
+              title={isTaken ? 'مستخدم من الفريق الآخر · Taken by the other team' : undefined}
               onClick={() => onChange({ color: hex })}
               style={{
                 width: 22,
                 height: 22,
                 background: hex,
-                border: isMine
-                  ? '3px solid #F4ECD8'
-                  : isTaken
-                    ? '3px solid var(--muted2)'
-                    : '3px solid transparent',
+                border: isMine ? '3px solid #F4ECD8' : '3px solid transparent',
+                // Greyed rather than hidden: the swatch keeps its place in the
+                // row, so the palette does not reflow as colours change hands.
+                filter: isTaken ? 'grayscale(1)' : undefined,
+                opacity: isTaken ? 0.3 : 1,
+                cursor: isTaken ? 'not-allowed' : undefined,
               }}
             />
           );
