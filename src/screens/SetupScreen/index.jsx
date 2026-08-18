@@ -64,6 +64,9 @@ function Segments({ options, value, onChange, disabled }) {
 }
 
 const TIMER_SEGMENTS = 10;
+// A round shorter than this is unplayable, so the slider clamps here even
+// though its track starts at 0.
+const MIN_TIMER = 15;
 
 // A status chip — green when the condition is met, inert line frame otherwise.
 function CountChip({ ready, children }) {
@@ -275,17 +278,29 @@ export default function SetupScreen() {
                   ))}
                 </div>
                 {/* The meter is the readout; this stays the control so the value
-                    is still keyboard- and screen-reader-operable. */}
+                    is still keyboard- and screen-reader-operable.
+
+                    The track runs 0-60 so it shares one scale with the meter
+                    above (which fills on secs/60, per the handoff's 15/30/45/60
+                    -> 3/5/8/10 mapping) and so the midpoint really is 30s. It
+                    previously ran 15-60 while the meter ran 0-60, which put the
+                    thumb hard left at 15s while the meter showed 3/10 and left
+                    the two drifting up to 23 points apart.
+
+                    MIN_TIMER is a floor rather than the input's `min`: dragging
+                    below it clamps, so the thumb simply stops at the 15s mark
+                    instead of the whole track starting there. */}
                 <input
                   type="range"
-                  min={15}
+                  min={0}
                   max={60}
                   step={5}
                   value={timerSecs}
-                  onChange={(e) => setTimerSecs(Number(e.target.value))}
+                  onChange={(e) => setTimerSecs(Math.max(MIN_TIMER, Number(e.target.value)))}
                   className="w-full cursor-pointer h-2 appearance-none"
                   style={{ background: 'var(--line)', accentColor: 'var(--gold)' }}
-                  aria-label="وقت الإجابة · Answer time in seconds"
+                  aria-label={`وقت الإجابة · Answer time in seconds, minimum ${MIN_TIMER}`}
+                  aria-valuetext={`${timerSecs} ثانية`}
                 />
               </div>
               <span
@@ -308,6 +323,7 @@ export default function SetupScreen() {
                   key={idx}
                   team={team}
                   index={idx}
+                  otherColor={teams[1 - idx]?.color}
                   onChange={(patch) => updateTeam(idx, patch)}
                 />
               ))}
