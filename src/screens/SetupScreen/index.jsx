@@ -179,6 +179,9 @@ export default function SetupScreen() {
     window.scrollTo(0, 0);
   }, [step]);
 
+  // Team names start empty (they show the default as a placeholder), so step 1
+  // is only complete once both have actually been filled in.
+  const teamsNamed = teams.every((t) => t.name.trim().length > 0);
   const isStepOne = step === 1;
   const timerFilled = Math.round((timerSecs / 60) * TIMER_SEGMENTS);
 
@@ -552,25 +555,31 @@ export default function SetupScreen() {
             </button>
             <button
               type="button"
+              disabled={!teamsNamed}
               onClick={() => setStep(2)}
-              className="flex-1 text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+              title={teamsNamed ? undefined : 'أدخل اسمي الفريقين · Enter both team names'}
+              className="flex-1 text-center transition-transform duration-100 enabled:hover:-translate-y-[3px] enabled:active:translate-y-[3px]"
               style={{
                 padding: 14,
-                background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
-                border: '4px solid var(--outline)',
-                boxShadow: '0 8px 0 var(--gold-sh)',
-                color: 'var(--outline)',
+                background: teamsNamed
+                  ? 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)'
+                  : 'var(--cleared-bg)',
+                border: `4px solid ${teamsNamed ? 'var(--outline)' : 'var(--line)'}`,
+                boxShadow: teamsNamed ? '0 8px 0 var(--gold-sh)' : 'none',
+                color: teamsNamed ? 'var(--outline)' : 'var(--muted2)',
+                opacity: teamsNamed ? 1 : 0.45,
+                cursor: teamsNamed ? undefined : 'not-allowed',
               }}
             >
               <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 38 }}>
-                اختر الفئات
+                {teamsNamed ? 'اختر الفئات' : 'أدخل أسماء الفرق'}
               </span>
               <span
                 className="font-en-body leading-none"
                 style={{ fontSize: 12, marginInlineStart: 12 }}
                 lang="en"
               >
-                NEXT ▸
+                {teamsNamed ? 'NEXT ▸' : 'NAME BOTH TEAMS'}
               </span>
             </button>
           </>
@@ -613,7 +622,7 @@ export default function SetupScreen() {
                   categories: effectiveCategories,
                   teams: teams.map((t, i) => ({
                     id: i + 1,
-                    name: t.name || t.defaultNameAr,
+                    name: t.name.trim() || t.defaultNameAr,
                     nameEn: t.defaultNameEn,
                     color: t.color,
                     players: t.players,
