@@ -221,7 +221,7 @@ html[data-theme='light'] {
     top: 0;
     left: 0;
     right: 0;
-    min-height: max(100%, 100vh);
+    min-height: max(100%, 100dvh);
     z-index: 0;
     pointer-events: none;
     background-image:
@@ -236,6 +236,127 @@ html[data-theme='light'] {
     position: relative;
     z-index: 1;
     min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* `min-h-screen` (100vh) is on 18 screens. Same mobile URL-bar problem, so
+     retarget the utility once here rather than editing every call site. */
+  @supports (min-height: 100dvh) {
+    .min-h-screen {
+      min-height: 100dvh;
+    }
+  }
+
+  /* Phone mirrored to a TV in landscape gives a ~390px-tall viewport. The
+     arcade theme hardcodes px sizes inline (fontSize: 34, paddingBottom: 110),
+     so no amount of class-level tuning reaches them -- zoom scales the whole
+     tree, inline px included, and keeps the pixel grid proportional.
+     ponytail: one global scale; per-screen landscape layouts if this isn't enough. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    #root {
+      zoom: 0.85;
+    }
+  }
+  @media (orientation: landscape) and (max-height: 400px) {
+    #root {
+      zoom: 0.8;
+    }
+  }
+
+  /* Board + setup metrics live here so one block controls the whole compact
+     scale; the components just read the vars. Base = phone portrait, the
+     min-width bump reproduces the old `md:` values, and the short-landscape
+     block (last, so it wins) is what makes a mirrored phone actually fit. */
+  :root {
+    --brd-hdr-h: 92px;
+    --brd-cell-h: 56px;
+    --brd-gap: 8px;
+    --brd-pad-t: 20px;
+    --brd-pad-b: 28px;
+    --brd-status-fs: 11px;
+    --brd-status-mb: 14px;
+    --cat-label-fs: 26px;
+    --hud-pad: 14px 18px;
+    --hud-name-fs: 30px;
+    --hud-score-fs: 52px;
+    --setup-pad-b: 110px;
+    --setup-title-pad: 26px 16px 8px;
+    --setup-title-fs: clamp(34px, 5vmin, 56px);
+    --setup-body-pad: 16px 24px;
+    --setup-gap: 22px;
+    --setup-timer-fs: 56px;
+    --setup-bar-pad: 16px 24px;
+    --res-pad: 40px;
+    --res-trophy: 120px;
+    --res-row-pad: 16px 20px;
+    --res-name-fs: 36px;
+    --res-gap: 22px;
+    --cat-tile-h: 64px;
+  }
+
+  @media (min-width: 768px) {
+    :root {
+      --brd-hdr-h: 132px;
+      --brd-cell-h: 76px;
+      --brd-gap: 10px;
+      --cat-tile-h: 110px;
+    }
+  }
+
+  /* A landscape phone is WIDE (844px), so width-only breakpoints hand it the
+     desktop board -- 132px headers over 6x76px rows, ~856px of content in a
+     390px viewport. Height is the axis that actually matters here. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    :root {
+      --brd-hdr-h: 64px;
+      --brd-cell-h: 38px;
+      --brd-gap: 6px;
+      --brd-pad-t: 10px;
+      --brd-pad-b: 12px;
+      --brd-status-mb: 8px;
+      --cat-label-fs: 16px;
+      --hud-pad: 8px 14px;
+      --hud-name-fs: 20px;
+      --hud-score-fs: 30px;
+      --setup-pad-b: 64px;
+      --setup-title-pad: 10px 16px 2px;
+      --setup-title-fs: clamp(22px, 4.5vmin, 34px);
+      --setup-body-pad: 8px 16px;
+      --setup-gap: 10px;
+      --setup-timer-fs: 34px;
+      --setup-bar-pad: 8px 16px;
+      --res-pad: 12px;
+      --res-trophy: 60px;
+      --res-row-pad: 6px 14px;
+      --res-name-fs: 22px;
+      --res-gap: 12px;
+      --cat-tile-h: 52px;
+    }
+
+    /* Step 1 stacks three sections (timer 97 + teams 169 + challenges 213) --
+       508px of content in ~319px of body. Landscape has width to spare, so
+       pack them into two columns: timer over teams, challenges alongside.
+       !important because Tailwind's .flex utility layer outranks this one. */
+    .setup-body[data-step='1'] {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+      align-content: start;
+    }
+    .setup-body[data-step='1'] > *:nth-child(3) {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+
+    /* Step 2: mode and difficulty are short rows that sit happily side by
+       side; the category picker is a 6-up grid and keeps the full width. */
+    .setup-body[data-step='2'] {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+      align-content: start;
+    }
+    .setup-body[data-step='2'] > *:nth-child(3) {
+      grid-column: 1 / -1;
+    }
   }
 
   /* CRT scanline overlay. The handoff puts this as the last child of every

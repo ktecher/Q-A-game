@@ -27,7 +27,7 @@ export default function BoardCell({ category, value, isPicked, onPick }) {
     return (
       <div
         aria-label="Already played"
-        className="relative h-14 md:h-[76px] flex items-center justify-center font-en-body"
+        className="relative h-[var(--brd-cell-h)] flex items-center justify-center font-en-body"
         style={{
           background: 'var(--cleared-bg)',
           border: '4px solid var(--line)',
@@ -44,7 +44,7 @@ export default function BoardCell({ category, value, isPicked, onPick }) {
     <button
       type="button"
       onClick={() => onPick(category, value)}
-      className="group relative h-14 md:h-[76px] flex items-center justify-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+      className="group relative h-[var(--brd-cell-h)] flex items-center justify-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
       style={{
         background: tier.bg,
         border: `4px solid ${tier.border}`,

@@ -20,7 +20,7 @@ export default function HudTeam({ team, index, isActive, lifelines, onAdjust }) 
       aria-label={`Adjust ${team.nameEn} score (currently ${team.score})`}
       className="flex-1 min-w-0 text-start"
       style={{
-        padding: '14px 18px',
+        padding: 'var(--hud-pad)',
         background: isActive ? (isP1 ? 'var(--blue-p)' : 'var(--red-p)') : 'transparent',
         // Only P1 and the VS block carry a separator; P2 runs into the controls.
         borderInlineEnd: isP1 ? '4px solid var(--outline)' : undefined,
@@ -36,7 +36,7 @@ export default function HudTeam({ team, index, isActive, lifelines, onAdjust }) 
         </span>
         <span
           className="font-ar-body font-bold leading-none truncate"
-          style={{ color: 'var(--text)', fontSize: 30 }}
+          style={{ color: 'var(--text)', fontSize: 'var(--hud-name-fs)' }}
         >
           {team.name}
         </span>
@@ -51,7 +51,7 @@ export default function HudTeam({ team, index, isActive, lifelines, onAdjust }) 
 
       <div
         className="font-ar-body font-extrabold leading-none tabular-nums"
-        style={{ color: accent, fontSize: 52, textShadow: '4px 4px 0 var(--shadow)' }}
+        style={{ color: accent, fontSize: 'var(--hud-score-fs)', textShadow: '4px 4px 0 var(--shadow)' }}
         dir="ltr"
       >
         {formatScore(team.score)}

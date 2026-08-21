@@ -4,7 +4,7 @@ export default function CategoryHeader({ category }) {
   const Icon = ICON_MAP[category.icon] ?? FALLBACK_ICON;
   return (
     <div
-      className="accent-card relative overflow-hidden h-[92px] md:h-[132px]"
+      className="accent-card relative overflow-hidden h-[var(--brd-hdr-h)]"
       style={{
         background: category.accent,
         border: '4px solid var(--gold)',
@@ -53,7 +53,7 @@ export default function CategoryHeader({ category }) {
       >
         <div
           className="font-ar-body font-bold leading-none truncate"
-          style={{ color: 'var(--gold-ink)', fontSize: 26 }}
+          style={{ color: 'var(--gold-ink)', fontSize: 'var(--cat-label-fs)' }}
         >
           {category.ar}
         </div>

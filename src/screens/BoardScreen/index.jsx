@@ -238,9 +238,9 @@ export default function BoardScreen() {
         </div>
       </header>
 
-      <div className="px-4 pt-5 pb-7 md:px-6">
+      <div className="px-4 md:px-6" style={{ paddingTop: 'var(--brd-pad-t)', paddingBottom: 'var(--brd-pad-b)' }}>
         {/* Status row */}
-        <div className="flex items-center justify-between gap-3 font-en-body" style={{ fontSize: 11, marginBottom: 14 }}>
+        <div className="flex items-center justify-between gap-3 font-en-body" style={{ fontSize: 'var(--brd-status-fs)', marginBottom: 'var(--brd-status-mb)' }}>
           <span style={{ color: 'var(--muted)', letterSpacing: '0.08em' }} lang="en">
             SELECT A BLOCK · {playedCount}/{totalCells} CLEARED
           </span>
@@ -254,8 +254,8 @@ export default function BoardScreen() {
 
         {/* The Board */}
         <div
-          className="grid gap-2 md:gap-2.5"
-          style={{ gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))` }}
+          className="grid"
+          style={{ gap: 'var(--brd-gap)', gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))` }}
         >
           {/* Row 0: category headers */}
           {categories.map((cat) => (

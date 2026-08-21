@@ -71,7 +71,7 @@ function Trophy() {
   return (
     <div
       className="shrink-0 grid place-items-center animate-bob"
-      style={{ width: 120, height: 120, background: 'var(--panel)', border: '4px solid var(--gold)' }}
+      style={{ width: 'var(--res-trophy)', height: 'var(--res-trophy)', background: 'var(--panel)', border: '4px solid var(--gold)' }}
       aria-hidden="true"
     >
       <div className="grid" style={{ gridTemplateColumns: 'repeat(8, 12px)' }}>
@@ -106,17 +106,17 @@ export default function ResultsScreen() {
   const margin = winner.score - runnerUp.score;
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen">
       <ConfettiLayer />
 
       <div
         className="relative z-[2] min-h-screen flex flex-col items-center justify-center text-center"
-        style={{ gap: 8, padding: 40 }}
+        style={{ gap: 8, padding: 'var(--res-pad)' }}
       >
         <div
           className="font-en-body leading-none animate-flash"
           style={{
-            fontSize: 'clamp(20px, 3.4vw, 34px)',
+            fontSize: 'clamp(20px, 3.4vmin, 34px)',
             color: 'var(--red)',
             letterSpacing: '0.16em',
             textShadow: '5px 5px 0 var(--outline)',
@@ -126,13 +126,13 @@ export default function ResultsScreen() {
           GAME OVER
         </div>
 
-        <div className="flex items-center flex-wrap justify-center" style={{ gap: 22, marginTop: 18 }}>
+        <div className="flex items-center flex-wrap justify-center" style={{ gap: 'var(--res-gap)', marginTop: 'var(--res-gap)' }}>
           <Trophy />
           <div className="text-center">
             <div
               className="font-ar-body font-extrabold leading-none"
               style={{
-                fontSize: 'clamp(40px, 7vw, 88px)',
+                fontSize: 'clamp(40px, 7vmin, 88px)',
                 color: 'var(--gold-ink)',
                 textShadow: '6px 6px 0 var(--gold-sh)',
               }}
@@ -166,7 +166,7 @@ export default function ResultsScreen() {
             className="flex items-center"
             style={{
               gap: 20,
-              padding: '16px 20px',
+              padding: 'var(--res-row-pad)',
               background: 'var(--panel3)',
               border: '4px solid var(--gold)',
               boxShadow: '0 8px 0 var(--gold-sh)',
@@ -186,7 +186,7 @@ export default function ResultsScreen() {
             <div className="flex-1 min-w-0 text-start">
               <div
                 className="font-ar-body font-bold leading-none truncate"
-                style={{ fontSize: 36, color: 'var(--text)' }}
+                style={{ fontSize: 'var(--res-name-fs)', color: 'var(--text)' }}
               >
                 {winner.name}
               </div>

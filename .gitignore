@@ -49,3 +49,4 @@ scripts/output/
 content/*.xlsx
 preview-challenge-flow.html
 preview-sword-intro.html
+.env*

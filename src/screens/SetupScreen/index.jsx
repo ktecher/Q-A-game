@@ -189,7 +189,7 @@ export default function SetupScreen() {
   const timerFilled = Math.round((timerSecs / 60) * TIMER_SEGMENTS);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ paddingBottom: 110 }}>
+    <div className="min-h-screen flex flex-col" style={{ paddingBottom: 'var(--setup-pad-b)' }}>
       {/* ── Sticky top header ──────────────────────────────────────── */}
       <header
         className="sticky top-0 z-20 flex items-center justify-between gap-3"
@@ -234,10 +234,10 @@ export default function SetupScreen() {
       </header>
 
       {/* ── Page title ─────────────────────────────────────────────── */}
-      <div className="text-center" style={{ padding: '26px 16px 8px' }}>
+      <div className="text-center" style={{ padding: 'var(--setup-title-pad)' }}>
         <h2
           className="font-ar-body font-extrabold leading-none"
-          style={{ fontSize: 'clamp(34px, 5vw, 56px)', color: 'var(--text)', textShadow: '4px 4px 0 var(--red-d)' }}
+          style={{ fontSize: 'var(--setup-title-fs)', color: 'var(--text)', textShadow: '4px 4px 0 var(--red-d)' }}
         >
           {isStepOne ? 'إعداد الفرق' : 'اختر الفئات'}
         </h2>
@@ -250,7 +250,7 @@ export default function SetupScreen() {
         </p>
       </div>
 
-      <div className="flex-1 flex flex-col" style={{ padding: '16px 24px', gap: 22 }}>
+      <div className="setup-body flex-1 flex flex-col" data-step={step} style={{ padding: 'var(--setup-body-pad)', gap: 'var(--setup-gap)' }}>
         {isStepOne ? (
           <>
           {/* A — Timer */}
@@ -261,7 +261,7 @@ export default function SetupScreen() {
             >
               <span
                 className="font-ar-body font-extrabold leading-none shrink-0"
-                style={{ fontSize: 56, color: 'var(--gold-ink)' }}
+                style={{ fontSize: 'var(--setup-timer-fs)', color: 'var(--gold-ink)' }}
                 dir="ltr"
               >
                 {timerSecs}
@@ -539,7 +539,7 @@ export default function SetupScreen() {
         className="fixed bottom-0 start-0 end-0 z-30 flex items-center"
         style={{
           gap: 16,
-          padding: '16px 24px',
+          padding: 'var(--setup-bar-pad)',
           background: 'var(--panel)',
           borderTop: '4px solid var(--gold-d)',
         }}

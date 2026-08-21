@@ -26,7 +26,7 @@ export default function CategoryTile({ cat, isSelected, asButton, onClick }) {
 
       {/* Image band */}
       <div
-        className="relative overflow-hidden h-16 md:h-[110px]"
+        className="relative overflow-hidden h-[var(--cat-tile-h)]"
         style={{ background: cat.accent, borderBottom: '4px solid var(--outline)' }}
       >
         {cat.imageUrl ? (
