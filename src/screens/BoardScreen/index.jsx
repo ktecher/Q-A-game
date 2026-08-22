@@ -144,7 +144,7 @@ export default function BoardScreen() {
     <div className="min-h-screen">
       {/* HUD bar — one flush row, hard-separated. Stacks below md. */}
       <header
-        className="flex flex-col md:flex-row md:items-stretch"
+        className="board-hud flex flex-col md:flex-row md:items-stretch"
         style={{ background: 'var(--panel)', borderBottom: '4px solid var(--gold-d)' }}
       >
         <HudTeam
@@ -157,7 +157,7 @@ export default function BoardScreen() {
 
         {/* VS / round progress */}
         <div
-          className="w-full md:w-[190px] shrink-0 flex flex-col items-center justify-center gap-2"
+          className="board-hud-vs w-full md:w-[190px] shrink-0 flex flex-col items-center justify-center gap-2"
           style={{
             padding: 10,
             background: 'var(--strip)',

@@ -308,7 +308,11 @@ html[data-theme='light'] {
      390px viewport. Height is the axis that actually matters here. */
   @media (orientation: landscape) and (max-height: 500px) {
     :root {
-      --brd-hdr-h: 64px;
+      /* Deliberately taller than the fit-exactly height: the label plate eats
+         ~40px, so a 64px header left almost no photo. Costs ~45px of scroll
+         on the board, which is the trade we want -- the category art is what
+         players read the board by. */
+      --brd-hdr-h: 108px;
       --brd-cell-h: 38px;
       --brd-gap: 6px;
       --brd-pad-t: 10px;
@@ -345,6 +349,17 @@ html[data-theme='light'] {
     .setup-body[data-step='1'] > *:nth-child(3) {
       grid-column: 2;
       grid-row: 1 / span 2;
+    }
+
+    /* Below 768px the HUD stacks vertically -- on a 736x414 landscape phone
+       (iPhone 8 Plus and friends) that alone cost ~200px of height. Landscape
+       always has the width for one row, whatever the breakpoint says. */
+    .board-hud {
+      flex-direction: row !important;
+      align-items: stretch;
+    }
+    .board-hud-vs {
+      width: 190px !important;
     }
 
     /* Step 2: mode and difficulty are short rows that sit happily side by
