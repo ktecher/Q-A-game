@@ -170,7 +170,14 @@ export default function SeatScreen() {
     return () => clearTimeout(t);
   }, [actionError]);
 
-  const { game, seats, hand } = useKoutGame(joined?.gameId ?? null);
+  const { game, seats, hand, error: gameError } = useKoutGame(joined?.gameId ?? null);
+
+  // useKoutGame surfaces a failed kout_games/kout_seats/kout_hands query here
+  // specifically so it doesn't quietly render as an empty hand (see
+  // useKoutGame.js). Derived straight from render rather than mirrored into
+  // actionError via an effect: it disappears on its own the moment the next
+  // refetch succeeds, and it never blanks the game underneath it.
+  const gameErrorAr = gameError ? arabicKoutError(gameError) : '';
 
   async function handleClaim(seat) {
     if (claiming || !name.trim()) return;
@@ -241,9 +248,12 @@ export default function SeatScreen() {
 
   if (!game) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="font-ar-body font-bold" style={{ fontSize: 20, color: 'var(--muted)' }}>جارٍ تحميل اللعبة...</p>
-      </div>
+      <>
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="font-ar-body font-bold" style={{ fontSize: 20, color: 'var(--muted)' }}>جارٍ تحميل اللعبة...</p>
+        </div>
+        {gameErrorAr && <ErrorBanner text={gameErrorAr} />}
+      </>
     );
   }
 
@@ -425,7 +435,7 @@ export default function SeatScreen() {
         )}
       </div>
 
-      {actionError && <ErrorBanner text={actionError} />}
+      {(actionError || gameErrorAr) && <ErrorBanner text={actionError || gameErrorAr} />}
     </div>
   );
 }

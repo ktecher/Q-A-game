@@ -154,11 +154,24 @@ async function claimSeat(uid: string, { joinCode, seat, name }: any) {
   if (!existing?.user_id) update.user_id = uid;
   if (name !== undefined) update.name = name.slice(0, 20);
 
-  const { error } = await admin
+  let query = admin
     .from('kout_seats')
     .update(update)
     .eq('game_id', game.id).eq('seat', seat);
+
+  // A fresh claim races two different phones tapping the same open seat
+  // inside one round trip: both read `existing.user_id` as null above, and
+  // without this, last-write-wins would seat both — the loser only finds out
+  // on their first move, with no way back to the seat picker. Gating on the
+  // seat still being empty AT WRITE TIME means only the first write matches;
+  // the second affects zero rows and is told the truth. The reclaim path
+  // (existing.user_id === uid) stays ungated — it must keep working in any
+  // status, which is what lets a dead phone rejoin.
+  if (!existing?.user_id) query = query.is('user_id', null);
+
+  const { data: claimed, error } = await query.select('seat');
   if (error) return dbFail('claim seat', error);
+  if (!existing?.user_id && (!claimed || claimed.length === 0)) return fail('seat taken');
 
   return json({ ok: true, gameId: game.id, seat });
 }
@@ -344,18 +357,46 @@ async function play(uid: string, { gameId, card }: any) {
   const trick = [...game.trick, { seat: seat.seat, card }];
   const playedCards = [...game.played_cards, card];
 
-  await admin.from('kout_hands')
-    .update({ cards }).eq('game_id', gameId).eq('seat', seat.seat);
-  await admin.from('kout_seats')
-    .update({ card_count: cards.length }).eq('game_id', gameId).eq('seat', seat.seat);
+  // The game row is the lock. Two taps from the same player inside one round
+  // trip both pass atTurn() above and both read this same hand, so both
+  // compute this same `cards` (card removed) from an identical stale read.
+  // Writing kout_games FIRST, gated on turn_seat still being this seat's,
+  // makes that a compare-and-swap: only the first write matches, and it also
+  // moves turn_seat off this seat, so the second write matches zero rows.
+  // A lost race is then a no-op instead of the second write restoring the
+  // card into kout_hands after the first already moved it into the trick.
+  // Applies to every branch below that advances the game.
+  async function claimTurn(patch: Record<string, unknown>) {
+    const { data } = await admin
+      .from('kout_games')
+      .update(patch)
+      .eq('id', gameId)
+      .eq('turn_seat', seat.seat)
+      .select('id');
+    return Boolean(data && data.length > 0);
+  }
+
+  // Residual, honestly: if this succeeds and the kout_hands/kout_seats write
+  // below then fails, the card is in the trick but still shows in the hand
+  // too. Strictly better than today (a lost race used to duplicate the card
+  // outright) — closing it fully needs both writes in one transaction (a
+  // Postgres function), which is a larger change than this fix.
+  async function applyHand() {
+    await admin.from('kout_hands')
+      .update({ cards }).eq('game_id', gameId).eq('seat', seat.seat);
+    await admin.from('kout_seats')
+      .update({ card_count: cards.length }).eq('game_id', gameId).eq('seat', seat.seat);
+  }
 
   // Trick still in progress.
   if (trick.length < game.seat_count) {
-    await admin.from('kout_games').update({
+    const claimed = await claimTurn({
       trick, played_cards: playedCards,
       turn_seat: nextSeat(seat.seat, game.seat_count),
       updated_at: new Date().toISOString(),
-    }).eq('id', gameId);
+    });
+    if (!claimed) return fail('not your turn');
+    await applyHand();
     return json({ ok: true });
   }
 
@@ -369,10 +410,12 @@ async function play(uid: string, { gameId, card }: any) {
   const tricksPlayed = tricksWon[0] + tricksWon[1];
 
   if (tricksPlayed < HAND_SIZE) {
-    await admin.from('kout_games').update({
+    const claimed = await claimTurn({
       trick: [], played_cards: playedCards, tricks_won: tricksWon,
       turn_seat: winner, updated_at: new Date().toISOString(),
-    }).eq('id', gameId);
+    });
+    if (!claimed) return fail('not your turn');
+    await applyHand();
     return json({ ok: true, trickWinner: winner });
   }
 
@@ -385,12 +428,14 @@ async function play(uid: string, { gameId, card }: any) {
     roundNo: game.round_no, bid: game.bid, tricksWon, bidderSeat: game.bidder_seat,
   });
 
-  await admin.from('kout_games').update({
+  const claimed = await claimTurn({
     status: winnerTeam === null ? 'round_end' : 'finished',
     trick: [], played_cards: playedCards, tricks_won: tricksWon,
     score, winner_team: winnerTeam, turn_seat: null,
     updated_at: new Date().toISOString(),
-  }).eq('id', gameId);
+  });
+  if (!claimed) return fail('not your turn');
+  await applyHand();
 
   if (winnerTeam !== null) {
     const { data: seats } = await admin
