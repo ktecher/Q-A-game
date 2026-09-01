@@ -75,6 +75,14 @@ describe('dealHands', () => {
     const hands = dealHands(4, () => 1);
     expect(new Set(hands.flat()).size).toBe(36);
   });
+
+  it('the same seed always produces the same deal', () => {
+    expect(dealHands(6, makeRng(99))).toEqual(dealHands(6, makeRng(99)));
+  });
+
+  it('different seeds produce different deals', () => {
+    expect(dealHands(6, makeRng(1))).not.toEqual(dealHands(6, makeRng(2)));
+  });
 });
 
 const ctx = { hukm: 'S', leadSuit: 'H', seatCount: 4 };
@@ -142,6 +150,53 @@ describe('trickWinner', () => {
   });
 });
 
+const ctx6 = { hukm: 'D', leadSuit: 'C', seatCount: 6 };
+
+describe('cardPower / trickWinner — bo-6', () => {
+  it('the bo-6 table actually orders low cards below high ones', () => {
+    // 2, 3, 4, 5 exist only in the bo-6 deck.
+    expect(cardPower('2C', ctx6)).toBeLessThan(cardPower('5C', ctx6));
+    expect(cardPower('5C', ctx6)).toBeLessThan(cardPower('TC', ctx6));
+  });
+
+  it('picks the bo-6 rank table, not the bo-4 one, by seatCount', () => {
+    // '6' sits at a different index in each table (0 in bo-4, 4 in bo-6), so
+    // a wrong table selection would go unnoticed if both happened to agree.
+    const bo4 = cardPower('6D', { hukm: 'D', leadSuit: 'C', seatCount: 4 });
+    const bo6 = cardPower('6D', { hukm: 'D', leadSuit: 'C', seatCount: 6 });
+    expect(bo4).toBe(1000 + 0);
+    expect(bo6).toBe(1000 + 4);
+    expect(bo6).not.toBe(bo4);
+  });
+
+  it('resolves a six-seat trick where a bo-6-only low card is in play', () => {
+    const trick = [
+      { seat: 0, card: '3C' }, // lead suit, low bo-6-only card
+      { seat: 1, card: '9C' }, // lead suit, higher
+      { seat: 2, card: '2D' }, // hukm, lowest possible hukm rank
+      { seat: 3, card: 'AH' }, // off-suit, cannot win regardless of rank
+      { seat: 4, card: '4C' }, // lead suit, still below any hukm
+      { seat: 5, card: 'KD' }, // hukm, higher than the 2D
+    ];
+    expect(trickWinner(trick, ctx6)).toBe(5);
+  });
+
+  it('a joker led in a six-seat game sets no lead suit; only power can win it', () => {
+    const trick = [
+      { seat: 0, card: BLACK_JOKER },
+      { seat: 1, card: '9H' },
+      { seat: 2, card: 'AD' },
+      { seat: 3, card: '2C' },
+      { seat: 4, card: RED_JOKER },
+      { seat: 5, card: 'KD' },
+    ];
+    const nullLead = { hukm: 'D', leadSuit: leadSuitFor(trick), seatCount: 6 };
+    expect(nullLead.leadSuit).toBe(null);
+    // Red joker (4000) beats the ace of hukm (3000); the off-suit cards score 0.
+    expect(trickWinner(trick, nullLead)).toBe(4);
+  });
+});
+
 const base = { seatCount: 4 };
 
 describe('legalPlays — leading', () => {
@@ -191,6 +246,12 @@ describe('legalPlays — following', () => {
     const out = legalPlays([RED_JOKER, BLACK_JOKER], { ...base, trick: [{ seat: 0, card: 'TH' }] });
     expect(out).toHaveLength(2);
   });
+
+  it('must follow suit even with a card that only exists in the bo-6 deck', () => {
+    const hand = ['3H', 'AS', '9C'];
+    const out = legalPlays(hand, { seatCount: 6, trick: [{ seat: 0, card: '5H' }] });
+    expect(out).toEqual(['3H']);
+  });
 });
 
 describe('leadSuitFor', () => {
@@ -229,6 +290,16 @@ describe('resolveBidding', () => {
 
   it('keeps the first of two equal bids — you cannot match, only raise', () => {
     expect(resolveBidding([7, PASS, 7, PASS], { seatCount: 4, lastSeat: 3 }).winnerSeat).toBe(0);
+  });
+
+  it('a single bid wins outright when everyone else passes', () => {
+    expect(resolveBidding([PASS, 6, PASS, PASS], { seatCount: 4, lastSeat: 3 }))
+      .toEqual({ winnerSeat: 1, bid: 6, mulzum: false });
+  });
+
+  it('a single bid wins outright among six seats too', () => {
+    expect(resolveBidding([PASS, PASS, PASS, PASS, 8, PASS], { seatCount: 6, lastSeat: 5 }))
+      .toEqual({ winnerSeat: 4, bid: 8, mulzum: false });
   });
 });
 
