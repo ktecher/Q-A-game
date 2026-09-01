@@ -97,35 +97,44 @@ alter table public.kout_seats   enable row level security;
 alter table public.kout_hands   enable row level security;
 alter table public.kout_results enable row level security;
 
+-- Membership check used by both kout_games and kout_seats policies below.
+-- It CANNOT be inlined as a subquery in either policy: "Members read game"
+-- would query kout_seats and "Members read seats" would query kout_games,
+-- and each of those tables' own policy queries the other right back —
+-- Postgres detects the cycle and raises "infinite recursion detected in
+-- policy for relation kout_seats" at query time. security definer runs
+-- this check with RLS bypassed, breaking the cycle. Do not "simplify" this
+-- back into a direct subquery in the policies.
+create or replace function public.is_kout_member(p_game_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select exists (
+    select 1 from public.kout_seats s
+    where s.game_id = p_game_id and s.user_id = auth.uid()
+  ) or exists (
+    select 1 from public.kout_games g
+    where g.id = p_game_id and g.host_id = auth.uid()
+  );
+$$;
+
+revoke all on function public.is_kout_member(uuid) from public;
+grant execute on function public.is_kout_member(uuid) to authenticated;
+
 -- A game is readable by its host and by anyone holding a seat in it.
 drop policy if exists "Members read game" on public.kout_games;
 create policy "Members read game" on public.kout_games
   for select to authenticated
-  using (
-    host_id = (select auth.uid())
-    or exists (
-      select 1 from public.kout_seats s
-      where s.game_id = kout_games.id and s.user_id = (select auth.uid())
-    )
-  );
+  using (public.is_kout_member(id));
 
 -- Seats are public to members — names, bids and card counts, nothing secret.
 drop policy if exists "Members read seats" on public.kout_seats;
 create policy "Members read seats" on public.kout_seats
   for select to authenticated
-  using (
-    exists (
-      select 1 from public.kout_games g
-      where g.id = kout_seats.game_id
-        and (
-          g.host_id = (select auth.uid())
-          or exists (
-            select 1 from public.kout_seats s2
-            where s2.game_id = g.id and s2.user_id = (select auth.uid())
-          )
-        )
-    )
-  );
+  using (public.is_kout_member(game_id));
 
 -- ★ The policy the whole design rests on. One line, one job: your hand is
 --   yours. It gates both the SELECT and what Realtime is allowed to deliver.
@@ -143,6 +152,10 @@ create policy "Host reads own results" on public.kout_results
 
 -- ── Grants ─────────────────────────────────────────────────────────
 -- Read only. Every write is the Edge Function's service-role client.
+-- Revoke anon first (Supabase's default table grant gives anon select) to
+-- match the posture on every other user-data table (0006/0007 precedent).
+revoke all on public.kout_games, public.kout_seats,
+               public.kout_hands, public.kout_results from anon;
 grant select on public.kout_games, public.kout_seats,
                 public.kout_hands, public.kout_results to authenticated;
 
