@@ -54,6 +54,9 @@ Deno.serve(async (req) => {
     case 'create': return create(uid, args);
     case 'claimSeat': return claimSeat(uid, args);
     case 'startRound': return startRound(uid, args);
+    case 'bid': return bid(uid, args);
+    case 'setHukm': return setHukm(uid, args);
+    case 'play': return play(uid, args);
     default: return fail(`unknown action: ${action}`);
   }
 });
@@ -145,4 +148,146 @@ async function startRound(uid: string, { gameId }: any) {
   if (error) return fail(error.message, 500);
 
   return json({ ok: true });
+}
+
+/* Shared preamble: load the game, find the caller's seat, refuse if it is not
+   their turn. Every mutating action starts here — turn order is enforced on
+   the server, never trusted from the client. */
+async function atTurn(uid: string, gameId: string, wantStatus: string[]) {
+  const { data: game } = await admin.from('kout_games').select('*').eq('id', gameId).single();
+  if (!game) return { err: fail('no such game', 404) };
+  if (!wantStatus.includes(game.status)) return { err: fail(`not in ${wantStatus}`) };
+  const { data: seat } = await admin
+    .from('kout_seats').select('*')
+    .eq('game_id', gameId).eq('user_id', uid).maybeSingle();
+  if (!seat) return { err: fail('you hold no seat here', 403) };
+  if (game.turn_seat !== seat.seat) return { err: fail('not your turn') };
+  return { game, seat };
+}
+
+async function bid(uid: string, { gameId, bid: value }: any) {
+  const { game, seat, err } = await atTurn(uid, gameId, ['bidding']);
+  if (err) return err;
+
+  const isPass = value === PASS;
+  if (!isPass && (value < MIN_BID || value > MAX_BID)) return fail('bid must be 5-9 or pass');
+
+  await admin.from('kout_seats')
+    .update({ bid: value }).eq('game_id', gameId).eq('seat', seat.seat);
+
+  const dealer = game.dealer_seat;
+  const lastSeat = dealer; // bidding opened to the dealer's right, so it closes ON the dealer
+  if (seat.seat !== lastSeat) {
+    await admin.from('kout_games')
+      .update({ turn_seat: nextSeat(seat.seat, game.seat_count) }).eq('id', gameId);
+    return json({ ok: true });
+  }
+
+  // Everyone has bid. Resolve.
+  const { data: seats } = await admin
+    .from('kout_seats').select('seat,bid').eq('game_id', gameId).order('seat');
+  const bids = seats!.map((s) => s.bid);
+  const result = resolveBidding(bids, { seatCount: game.seat_count, lastSeat });
+
+  await admin.from('kout_games').update({
+    status: 'hukm',
+    bid: result.bid,
+    bidder_seat: result.winnerSeat,
+    mulzum: result.mulzum,
+    turn_seat: result.winnerSeat,
+  }).eq('id', gameId);
+
+  return json({ ok: true, ...result });
+}
+
+async function setHukm(uid: string, { gameId, hukm }: any) {
+  const { game, seat, err } = await atTurn(uid, gameId, ['hukm']);
+  if (err) return err;
+  if (!['S', 'H', 'D', 'C'].includes(hukm)) return fail('hukm must be S, H, D or C');
+  if (game.bidder_seat !== seat.seat) return fail('only the high bidder names hukm');
+
+  await admin.from('kout_games').update({
+    status: 'playing', hukm, turn_seat: game.bidder_seat, // the bidder leads
+  }).eq('id', gameId);
+  return json({ ok: true });
+}
+
+async function play(uid: string, { gameId, card }: any) {
+  const { game, seat, err } = await atTurn(uid, gameId, ['playing']);
+  if (err) return err;
+
+  const { data: hand } = await admin
+    .from('kout_hands').select('cards').eq('game_id', gameId).eq('seat', seat.seat).single();
+  if (!hand?.cards.includes(card)) return fail('that card is not in your hand');
+
+  const legal = legalPlays(hand.cards, {
+    trick: game.trick, seatCount: game.seat_count,
+  });
+  if (!legal.includes(card)) return fail('illegal play');
+
+  const cards = hand.cards.filter((c: string) => c !== card);
+  const trick = [...game.trick, { seat: seat.seat, card }];
+  const playedCards = [...game.played_cards, card];
+
+  await admin.from('kout_hands')
+    .update({ cards }).eq('game_id', gameId).eq('seat', seat.seat);
+  await admin.from('kout_seats')
+    .update({ card_count: cards.length }).eq('game_id', gameId).eq('seat', seat.seat);
+
+  // Trick still in progress.
+  if (trick.length < game.seat_count) {
+    await admin.from('kout_games').update({
+      trick, played_cards: playedCards,
+      turn_seat: nextSeat(seat.seat, game.seat_count),
+      updated_at: new Date().toISOString(),
+    }).eq('id', gameId);
+    return json({ ok: true });
+  }
+
+  // Trick complete.
+  const leadSuit = leadSuitFor(trick);
+  const winner = trickWinner(trick, {
+    hukm: game.hukm, leadSuit, seatCount: game.seat_count,
+  });
+  const tricksWon = [...game.tricks_won];
+  tricksWon[teamOf(winner)] += 1;
+  const tricksPlayed = tricksWon[0] + tricksWon[1];
+
+  if (tricksPlayed < HAND_SIZE) {
+    await admin.from('kout_games').update({
+      trick: [], played_cards: playedCards, tricks_won: tricksWon,
+      turn_seat: winner, updated_at: new Date().toISOString(),
+    }).eq('id', gameId);
+    return json({ ok: true, trickWinner: winner });
+  }
+
+  // Round complete.
+  const delta = scoreRound({
+    bid: game.bid, bidderSeat: game.bidder_seat, mulzum: game.mulzum, tricksWon,
+  });
+  const score = [game.score[0] + delta[0], game.score[1] + delta[1]];
+  const winnerTeam = checkGameOver(score, {
+    roundNo: game.round_no, bid: game.bid, tricksWon, bidderSeat: game.bidder_seat,
+  });
+
+  await admin.from('kout_games').update({
+    status: winnerTeam === null ? 'round_end' : 'finished',
+    trick: [], played_cards: playedCards, tricks_won: tricksWon,
+    score, winner_team: winnerTeam, turn_seat: null,
+    updated_at: new Date().toISOString(),
+  }).eq('id', gameId);
+
+  if (winnerTeam !== null) {
+    const { data: seats } = await admin
+      .from('kout_seats').select('seat,name').eq('game_id', gameId).order('seat');
+    await admin.from('kout_results').insert({
+      host_id: game.host_id, seat_count: game.seat_count, rounds: game.round_no,
+      score, winner_team: winnerTeam,
+      players: seats!.map((s) => ({ seat: s.seat, name: s.name, team: teamOf(s.seat) })),
+    });
+    // Hands are deliberately not kept.
+    await admin.from('kout_hands').delete().eq('game_id', gameId);
+  }
+
+  return json({ ok: true, trickWinner: winner, roundScore: delta, score, winnerTeam });
 }
