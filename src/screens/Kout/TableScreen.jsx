@@ -14,6 +14,18 @@ const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
 const toArabicDigits = (n) => String(n).split('').map((d) => AR_DIGITS[Number(d)] ?? d).join('');
 const RED_SUIT = { H: true, D: true };
 
+// Every host-menu action that hits the server can be refused — a bare
+// `.catch(() => {})` here means the host taps, nothing visibly happens, and
+// they conclude the app is broken. Same small per-file map as SeatScreen's
+// arabicError: nothing reaches the host as a raw English message.
+const HOST_ERROR_AR = {
+  'only the host starts a round': 'هذا الحساب ليس مضيف اللعبة',
+  'a round is already in progress': 'الجولة جارية بالفعل',
+  'every seat must be claimed': 'يجب أن يشغل كل مقعد لاعب أولاً',
+  'no such game': 'تعذّر العثور على اللعبة',
+};
+const arabicError = (message) => HOST_ERROR_AR[message] ?? 'حدث خطأ، حاول مرة أخرى';
+
 const menuBtnStyle = {
   padding: '12px 16px',
   background: 'var(--panel2)',
@@ -39,6 +51,7 @@ export default function TableScreen() {
   const { game, seats, loading, error } = useKoutGame(gameId);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuError, setMenuError] = useState('');
   const [showQr, setShowQr] = useState(false);
   const [paused, setPaused] = useState(false);
 
@@ -61,6 +74,16 @@ export default function TableScreen() {
 
   const orientation = readOrientation(game.seat_count);
   const bidLive = ['hukm', 'playing', 'round_end'].includes(game.status) && game.bid != null;
+
+  const handleMenuStart = async () => {
+    setMenuError('');
+    try {
+      await startRound(gameId);
+      setMenuOpen(false);
+    } catch (e) {
+      setMenuError(arabicError(e.message));
+    }
+  };
 
   return (
     <div className="flex flex-col" style={{ height: '100dvh', overflow: 'hidden', position: 'relative' }}>
@@ -107,7 +130,7 @@ export default function TableScreen() {
           <button
             type="button"
             aria-label="القائمة"
-            onClick={() => setMenuOpen(true)}
+            onClick={() => { setMenuError(''); setMenuOpen(true); }}
             className="flex items-center justify-center shrink-0"
             style={{ width: 30, height: 30, background: 'var(--panel2)', border: '3px solid var(--line)', color: 'var(--gold-ink)', fontSize: 15, marginInlineStart: 4 }}
           >
@@ -143,16 +166,16 @@ export default function TableScreen() {
         <h3 id="kout-menu-title" className="font-ar-body font-bold leading-none" style={{ fontSize: 22, color: 'var(--gold-ink)' }}>
           القائمة
         </h3>
+        {menuError && (
+          <p className="font-ar-body font-bold" style={{ fontSize: 13, color: 'var(--red-ink)', marginTop: 10 }}>
+            {menuError}
+          </p>
+        )}
         <div className="flex flex-col" style={{ gap: 10, marginTop: 16 }}>
           <button type="button" onClick={() => { setMenuOpen(false); setShowQr(true); }} className="font-ar-body font-bold" style={menuBtnStyle}>
             عرض رمز الانضمام
           </button>
-          <button
-            type="button"
-            onClick={() => { setMenuOpen(false); startRound(gameId).catch(() => {}); }}
-            className="font-ar-body font-bold"
-            style={menuBtnStyle}
-          >
+          <button type="button" onClick={handleMenuStart} className="font-ar-body font-bold" style={menuBtnStyle}>
             ابدأ الجولة
           </button>
           <button type="button" onClick={() => { setMenuOpen(false); setPaused(true); }} className="font-ar-body font-bold" style={menuBtnStyle}>

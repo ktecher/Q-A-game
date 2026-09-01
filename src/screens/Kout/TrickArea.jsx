@@ -43,6 +43,11 @@ function TrickCard({ card, left, top }) {
         transform: 'translate(-50%, -50%)',
         width: 30,
         height: 42,
+        // A card face is intentionally theme-invariant, same as
+        // QuestionScreen's QR panel and SketchStage.jsx:18 — cream paper,
+        // dark ink, fixed red. It must NOT become var(--red): that token is
+        // #9B2D3A in light mode, so the card would restyle with the app
+        // chrome instead of staying a real playing card.
         background: '#F4ECD8',
         border: '2px solid var(--outline)',
         color: face.red ? '#C44150' : '#1D1F20',
