@@ -1135,35 +1135,44 @@ alter table public.kout_seats   enable row level security;
 alter table public.kout_hands   enable row level security;
 alter table public.kout_results enable row level security;
 
+-- Membership must be answered by a security definer helper, NOT by a policy
+-- subquery. A policy on kout_seats that reads kout_seats re-enters itself, and
+-- a kout_games policy reading kout_seats while kout_seats reads kout_games back
+-- is a mutual cycle. Postgres raises "infinite recursion detected in policy" at
+-- QUERY time — the migration applies clean and every read then fails. Running
+-- with the definer's rights breaks the cycle by skipping RLS inside the check.
+-- search_path is pinned because security definer bypasses RLS by design: it
+-- stops a caller shadowing kout_seats with an object of their own.
+create or replace function public.is_kout_member(p_game_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $fn$
+  select exists (
+    select 1 from public.kout_seats s
+    where s.game_id = p_game_id and s.user_id = auth.uid()
+  ) or exists (
+    select 1 from public.kout_games g
+    where g.id = p_game_id and g.host_id = auth.uid()
+  );
+$fn$;
+
+revoke all on function public.is_kout_member(uuid) from public;
+grant execute on function public.is_kout_member(uuid) to authenticated;
+
 -- A game is readable by its host and by anyone holding a seat in it.
 drop policy if exists "Members read game" on public.kout_games;
 create policy "Members read game" on public.kout_games
   for select to authenticated
-  using (
-    host_id = (select auth.uid())
-    or exists (
-      select 1 from public.kout_seats s
-      where s.game_id = kout_games.id and s.user_id = (select auth.uid())
-    )
-  );
+  using (public.is_kout_member(id));
 
 -- Seats are public to members — names, bids and card counts, nothing secret.
 drop policy if exists "Members read seats" on public.kout_seats;
 create policy "Members read seats" on public.kout_seats
   for select to authenticated
-  using (
-    exists (
-      select 1 from public.kout_games g
-      where g.id = kout_seats.game_id
-        and (
-          g.host_id = (select auth.uid())
-          or exists (
-            select 1 from public.kout_seats s2
-            where s2.game_id = g.id and s2.user_id = (select auth.uid())
-          )
-        )
-    )
-  );
+  using (public.is_kout_member(game_id));
 
 -- ★ The policy the whole design rests on. One line, one job: your hand is
 --   yours. It gates both the SELECT and what Realtime is allowed to deliver.
