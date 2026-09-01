@@ -21,7 +21,7 @@ export async function ensureSession() {
   return anon.session;
 }
 
-export const createGame = (seatCount, teamNames) => call('create', { seatCount, teamNames });
+export const createGame = (seatCount, teamNames, teamColors) => call('create', { seatCount, teamNames, teamColors });
 export const claimSeat = (joinCode, seat, name) => call('claimSeat', { joinCode, seat, name });
 export const peekGame = (joinCode) => call('peekGame', { joinCode });
 export const startRound = (gameId) => call('startRound', { gameId });

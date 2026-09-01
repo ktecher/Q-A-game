@@ -8,6 +8,13 @@ const TEAM_DEFAULTS = [
   { nameAr: 'الفريق الثاني', nameEn: 'Team Beta',  color: '#9B2D3A' },
 ];
 
+// Kout screens render off a game row that may predate the team_colors column
+// (or a peekGame response, which never carries it — see peekGame in
+// supabase/functions/kout/index.ts). This is the one fallback every such
+// screen falls back to, so the same two hex values can't drift out of step
+// with each other the way the old per-screen TEAM_COLOR arrays did.
+export const TEAM_COLOR_FALLBACK = TEAM_DEFAULTS.map((d) => d.color);
+
 // Initial team shape used by the gameReducer (with id, score, players).
 export function makeReducerTeams() {
   return TEAM_DEFAULTS.map((d, i) => ({

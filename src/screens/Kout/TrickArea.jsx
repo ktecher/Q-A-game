@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { cardFace } from '../../lib/koutCards';
 import { startRound } from '../../lib/koutClient';
 import { scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
+import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
 
 // Smaller ellipse than SeatRing's — the trick lives inside the ring, each
 // card nudged toward the seat that played it.
@@ -18,9 +19,6 @@ function ellipsePct(angleDeg, rx, ry) {
   const rad = (angleDeg * Math.PI) / 180;
   return { left: 50 - rx * Math.sin(rad), top: 50 - ry * Math.cos(rad) };
 }
-
-const TEAM_COLOR = ['var(--blue)', 'var(--red)'];
-const TEAM_INK = ['var(--blue-ink)', 'var(--red-ink)'];
 
 const btnStyle = {
   padding: '10px 26px',
@@ -65,6 +63,7 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const teamColors = game.team_colors ?? TEAM_COLOR_FALLBACK;
 
   const handleStart = async () => {
     setBusy(true);
@@ -110,10 +109,10 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
         <span className="font-ar-body font-bold leading-none" style={{ fontSize: 22, color: 'var(--text)' }}>
           نتيجة الجولة
         </span>
-        <span className="font-en-body font-bold leading-none" style={{ fontSize: 15, color: TEAM_INK[0] }} lang="en">
+        <span className="font-en-body font-bold leading-none" style={{ fontSize: 15, color: teamColors[0] }} lang="en">
           {game.team_names[0]} +{delta[0]}
         </span>
-        <span className="font-en-body font-bold leading-none" style={{ fontSize: 15, color: TEAM_INK[1] }} lang="en">
+        <span className="font-en-body font-bold leading-none" style={{ fontSize: 15, color: teamColors[1] }} lang="en">
           {game.team_names[1]} +{delta[1]}
         </span>
         {err && (
@@ -163,10 +162,10 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
             width: 46,
             height: 46,
             background: 'var(--panel2)',
-            border: `3px solid ${TEAM_COLOR[team]}`,
+            border: `3px solid ${teamColors[team]}`,
           }}
         >
-          <span className="font-en-body font-bold leading-none" style={{ fontSize: 20, color: TEAM_INK[team] }} lang="en">
+          <span className="font-en-body font-bold leading-none" style={{ fontSize: 20, color: teamColors[team] }} lang="en">
             {game.tricks_won[team]}
           </span>
           <span className="font-en-body leading-none" style={{ fontSize: 7, color: 'var(--muted)' }} lang="en">

@@ -41,6 +41,7 @@ create table if not exists public.kout_games (
   tricks_won    int[] not null default '{0,0}',
   score         int[] not null default '{0,0}',
   team_names    text[] not null default '{"فريق ١","فريق ٢"}',
+  team_colors   text[] not null default '{"#3A7BC8","#9B2D3A"}',
   winner_team   int,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()

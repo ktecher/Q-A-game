@@ -5,6 +5,7 @@ import { startRound } from '../../lib/koutClient';
 import { SUIT_GLYPH } from '../../lib/koutCards';
 import { STORAGE_KEYS } from '../../lib/storageKeys';
 import { TARGET_SCORE } from '../../../supabase/functions/_shared/koutRules.js';
+import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
 import Modal from '../../components/Modal';
 import SeatRing from './SeatRing';
 import TrickArea from './TrickArea';
@@ -74,6 +75,7 @@ export default function TableScreen() {
 
   const orientation = readOrientation(game.seat_count);
   const bidLive = ['hukm', 'playing', 'round_end'].includes(game.status) && game.bid != null;
+  const teamColors = game.team_colors ?? TEAM_COLOR_FALLBACK;
 
   const handleMenuStart = async () => {
     setMenuError('');
@@ -93,10 +95,10 @@ export default function TableScreen() {
         style={{ padding: '6px 14px', background: 'var(--panel)', borderBottom: '3px solid var(--gold-d)' }}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 15, color: 'var(--blue-ink)' }}>
+          <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 15, color: teamColors[0] }}>
             {game.team_names[0]}
           </span>
-          <span className="font-en-body font-bold leading-none" style={{ fontSize: 20, color: 'var(--blue-ink)' }} lang="en">
+          <span className="font-en-body font-bold leading-none" style={{ fontSize: 20, color: teamColors[0] }} lang="en">
             {game.score[0]}
           </span>
         </div>
@@ -121,10 +123,10 @@ export default function TableScreen() {
         </div>
 
         <div className="flex items-center gap-2 min-w-0 shrink-0">
-          <span className="font-en-body font-bold leading-none" style={{ fontSize: 20, color: 'var(--red-ink)' }} lang="en">
+          <span className="font-en-body font-bold leading-none" style={{ fontSize: 20, color: teamColors[1] }} lang="en">
             {game.score[1]}
           </span>
-          <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 15, color: 'var(--red-ink)' }}>
+          <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 15, color: teamColors[1] }}>
             {game.team_names[1]}
           </span>
           <button
@@ -141,7 +143,7 @@ export default function TableScreen() {
 
       {/* The table itself — seat ring around the trick + capture piles */}
       <div className="relative flex-1" style={{ minHeight: 0 }}>
-        <SeatRing seats={seats} seatCount={game.seat_count} orientation={orientation} turnSeat={game.turn_seat} status={game.status} />
+        <SeatRing seats={seats} seatCount={game.seat_count} orientation={orientation} turnSeat={game.turn_seat} status={game.status} teamColors={teamColors} />
         <TrickArea game={game} seats={seats} seatCount={game.seat_count} orientation={orientation} gameId={gameId} />
       </div>
 

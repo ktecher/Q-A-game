@@ -3,6 +3,7 @@ import { ensureSession, claimSeat, peekGame, placeBid, setHukm, playCard } from 
 import { useKoutGame } from '../../lib/useKoutGame';
 import { suitLabelAr } from '../../lib/koutCards';
 import { MIN_BID, MAX_BID, PASS, teamOf, scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
+import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
 import HandStrip from './HandStrip';
 
 // seat_count is only ever 4 or 6 (see 0010_kout.sql). `peekGame` (added
@@ -13,7 +14,6 @@ import HandStrip from './HandStrip';
 const MAX_SEATS = 6;
 const AR_DIGIT = { 5: '٥', 6: '٦', 7: '٧', 8: '٨', 9: '٩' };
 const SUITS = ['S', 'H', 'D', 'C'];
-const TEAM_COLOR = ['var(--blue)', 'var(--red)'];
 
 // Every rejection the Edge Function can send, in Arabic, so nothing reaches
 // the console as a raw thrown error. Unlisted messages fall back to a
@@ -107,7 +107,7 @@ function SeatPicker({ name, setName, seatCount, seatInfo, disabledSeats, claimin
                 width: 68,
                 height: 68,
                 background: dim ? 'var(--cleared-bg)' : 'var(--panel)',
-                border: `4px solid ${dim ? 'var(--line)' : TEAM_COLOR[team]}`,
+                border: `4px solid ${dim ? 'var(--line)' : TEAM_COLOR_FALLBACK[team]}`,
                 color: dim ? 'var(--muted2)' : 'var(--text)',
                 boxShadow: blocked ? 'none' : '0 6px 0 var(--shadow)',
                 opacity: canClaim ? 1 : 0.6,
@@ -131,18 +131,19 @@ function SeatPicker({ name, setName, seatCount, seatInfo, disabledSeats, claimin
 function StatusStrip({ game }) {
   const [t0, t1] = game.team_names ?? ['فريق ١', 'فريق ٢'];
   const [s0, s1] = game.score ?? [0, 0];
+  const teamColors = game.team_colors ?? TEAM_COLOR_FALLBACK;
   return (
     <div
       className="flex items-center justify-between sticky top-0 z-10"
       style={{ padding: '10px 16px', background: 'var(--panel)', borderBottom: '4px solid var(--gold-d)' }}
     >
-      <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 16, color: TEAM_COLOR[0] }}>
+      <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 16, color: teamColors[0] }}>
         {t0} · {s0}
       </span>
       <span className="font-en-body leading-none" style={{ fontSize: 9, color: 'var(--muted)' }} lang="en">
         الهدف ١٠١
       </span>
-      <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 16, color: TEAM_COLOR[1] }}>
+      <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 16, color: teamColors[1] }}>
         {s1} · {t1}
       </span>
     </div>
@@ -268,6 +269,7 @@ export default function SeatScreen() {
 
   const mySeat = joined.seat;
   const myTurn = game.turn_seat === mySeat;
+  const teamColors = game.team_colors ?? TEAM_COLOR_FALLBACK;
   const standingBid = seats.reduce(
     (max, s) => (typeof s.bid === 'number' && s.bid !== PASS && s.bid > max ? s.bid : max),
     0,
@@ -395,10 +397,10 @@ export default function SeatScreen() {
               <p className="font-ar-body font-extrabold" style={{ fontSize: 22, color: 'var(--gold-ink)' }}>
                 نهاية الجولة
               </p>
-              <p className="font-ar-body" style={{ fontSize: 18, color: TEAM_COLOR[0] }}>
+              <p className="font-ar-body" style={{ fontSize: 18, color: teamColors[0] }}>
                 {game.team_names[0]}: +{delta[0]}
               </p>
-              <p className="font-ar-body" style={{ fontSize: 18, color: TEAM_COLOR[1] }}>
+              <p className="font-ar-body" style={{ fontSize: 18, color: teamColors[1] }}>
                 {game.team_names[1]}: +{delta[1]}
               </p>
               <p className="font-ar-body font-bold text-center" style={{ fontSize: 14, color: 'var(--muted)' }}>
@@ -410,7 +412,7 @@ export default function SeatScreen() {
 
         {game.status === 'finished' && (
           <>
-            <p className="font-ar-body font-extrabold" style={{ fontSize: 26, color: TEAM_COLOR[game.winner_team] }}>
+            <p className="font-ar-body font-extrabold" style={{ fontSize: 26, color: teamColors[game.winner_team] }}>
               فاز {game.team_names[game.winner_team]}!
             </p>
             <p className="font-en-body" style={{ fontSize: 12, color: 'var(--muted)' }} lang="en">

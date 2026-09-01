@@ -42,10 +42,8 @@ function Label({ ar, en, center }) {
 
 /* Host setup — mirrored to a TV, landscape, ~844×390. Three sections on one
    screen (seats, teams, seat-1 orientation) so there is nothing to scroll
-   past. Team colours are collected here per the handoff sheet, but nothing
-   downstream (TableScreen/SeatRing/SeatScreen/TrickArea) reads a per-game
-   colour yet — they hardcode blue/red for team 0/1 — so the picker's choice
-   currently has no visible effect. Out of this task's file scope to wire up. */
+   past. The chosen team colours are sent to `create` and stored on the game
+   row; TableScreen/SeatRing/SeatScreen/TrickArea all read them from there. */
 export default function SetupScreen() {
   const navigate = useNavigate();
   const [seatCount, setSeatCount] = useState(4);
@@ -72,7 +70,7 @@ export default function SetupScreen() {
     try {
       await ensureSession();
       const teamNames = names.map((n, i) => n.trim() || DEFAULT_NAMES[i]);
-      const { gameId } = await createGame(seatCount, teamNames);
+      const { gameId } = await createGame(seatCount, teamNames, colors);
       localStorage.setItem(STORAGE_KEYS.KOUT_SEAT1_POS, String(orientation));
       navigate(`/kout/table?g=${gameId}`);
     } catch (e) {

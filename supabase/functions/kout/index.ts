@@ -77,9 +77,15 @@ Deno.serve(async (req) => {
   }
 });
 
-async function create(uid: string, { seatCount, teamNames }: any) {
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
+async function create(uid: string, { seatCount, teamNames, teamColors }: any) {
   if (seatCount !== 4 && seatCount !== 6) return fail('seatCount must be 4 or 6');
   if (teamNames !== undefined && !Array.isArray(teamNames)) return fail('teamNames must be an array');
+  if (teamColors !== undefined && (
+    !Array.isArray(teamColors) || teamColors.length !== 2 ||
+    !teamColors.every((c: unknown) => typeof c === 'string' && HEX_COLOR.test(c))
+  )) return fail('teamColors must be two #RRGGBB colors');
 
   const joinCode = newJoinCode();
   const { data: game, error } = await admin
@@ -89,6 +95,7 @@ async function create(uid: string, { seatCount, teamNames }: any) {
       host_id: uid,
       seat_count: seatCount,
       team_names: teamNames ?? ['فريق ١', 'فريق ٢'],
+      team_colors: teamColors ?? ['#3A7BC8', '#9B2D3A'],
     })
     .select()
     .single();

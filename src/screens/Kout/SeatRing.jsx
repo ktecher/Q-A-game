@@ -5,11 +5,6 @@ import { teamOf } from '../../../supabase/functions/_shared/koutRules.js';
 const RX = 40;
 const RY = 37;
 
-const TEAM_COLOR = [
-  { border: 'var(--blue)', ink: 'var(--blue-ink)' },
-  { border: 'var(--red)', ink: 'var(--red-ink)' },
-];
-
 // slot 0 = top, increasing slot = counterclockwise (top → upper-left → …).
 // `orientation` is the ring slot the host tapped at setup to mean seat 0,
 // so every other seat's slot is offset from it.
@@ -27,7 +22,7 @@ const bidLabel = (bid) => (bid === -1 ? 'طاف' : String(bid));
 
 /* Seats around the table. Card BACKS only — a small filled rectangle, never
    a rank or suit — this screen is mirrored to a television. */
-export default function SeatRing({ seats, seatCount, orientation, turnSeat, status }) {
+export default function SeatRing({ seats, seatCount, orientation, turnSeat, status, teamColors }) {
   const showTurn = status === 'bidding' || status === 'hukm' || status === 'playing';
 
   return (
@@ -36,7 +31,7 @@ export default function SeatRing({ seats, seatCount, orientation, turnSeat, stat
         const seat = seats.find((s) => s.seat === i);
         const claimed = !!seat?.user_id;
         const { left, top } = ellipsePct(seatAngleDeg(i, seatCount, orientation), RX, RY);
-        const team = TEAM_COLOR[teamOf(i)];
+        const color = teamColors[teamOf(i)];
         const isTurn = showTurn && turnSeat === i;
 
         return (
@@ -50,7 +45,7 @@ export default function SeatRing({ seats, seatCount, orientation, turnSeat, stat
               width: 82,
               padding: '4px 6px',
               background: 'var(--panel2)',
-              border: `3px solid ${isTurn ? 'var(--gold)' : team.border}`,
+              border: `3px solid ${isTurn ? 'var(--gold)' : color}`,
               boxShadow: isTurn ? '0 0 0 3px var(--gold-sh)' : 'none',
             }}
           >
@@ -64,7 +59,7 @@ export default function SeatRing({ seats, seatCount, orientation, turnSeat, stat
             <span className="flex items-center gap-1" style={{ marginTop: 3 }}>
               <span
                 aria-hidden="true"
-                style={{ width: 9, height: 13, background: 'var(--outline)', border: `2px solid ${team.ink}` }}
+                style={{ width: 9, height: 13, background: 'var(--outline)', border: `2px solid ${color}` }}
               />
               <span className="font-en-body leading-none" style={{ fontSize: 10, color: 'var(--muted)' }} lang="en">
                 ×{seat?.card_count ?? 0}
