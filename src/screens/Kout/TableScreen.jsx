@@ -6,10 +6,9 @@ import { SUIT_GLYPH } from '../../lib/koutCards';
 import { toArabicDigits } from '../../lib/format';
 import { TARGET_SCORE } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
-import { readKoutOrientation } from '../../lib/koutGeometry';
 import { arabicKoutError } from '../../lib/koutErrors';
 import Modal from '../../components/Modal';
-import SeatRing from './SeatRing';
+import SeatRail from './SeatRail';
 import TrickArea from './TrickArea';
 import JoinQr from './JoinQr';
 
@@ -40,7 +39,7 @@ const menuOpenBtnStyle = {
 /* The host's table — mirrored to a TV, landscape, ~844×390. Every seat here
    is `useKoutGame`'s public data only: the host holds no `kout_hands` row
    (RLS-enforced), so `hand` from the hook is never even read, let alone
-   rendered. Nothing in this file, SeatRing, or TrickArea shows a card face
+   rendered. Nothing in this file, SeatRail, or TrickArea shows a card face
    that belongs to a player's hand — the trick's cards are the one exception,
    and those are already public (played face-up for the whole table to see). */
 export default function TableScreen() {
@@ -71,7 +70,6 @@ export default function TableScreen() {
     return <CenteredMessage text="جارٍ التحميل…" />;
   }
 
-  const orientation = readKoutOrientation(game.seat_count);
   const bidLive = ['hukm', 'playing', 'round_end'].includes(game.status) && game.bid != null;
   const teamColors = game.team_colors ?? TEAM_COLOR_FALLBACK;
 
@@ -139,10 +137,25 @@ export default function TableScreen() {
         </div>
       </div>
 
-      {/* The table itself — seat ring around the trick + capture piles */}
-      <div className="relative flex-1" style={{ minHeight: 0 }}>
-        <SeatRing seats={seats} seatCount={game.seat_count} orientation={orientation} turnSeat={game.turn_seat} status={game.status} teamColors={teamColors} />
-        <TrickArea game={game} seats={seats} seatCount={game.seat_count} orientation={orientation} gameId={gameId} />
+      {/* Two team rails flanking the cards. `dir="ltr"` here and nowhere
+          else: the owner named PHYSICAL sides (blue right, red left) and the
+          app is dir="rtl", so logical order would mirror them. Each child
+          restores rtl for its own content. Team 0 = even seats on the right,
+          team 1 = odd seats on the left — `teamOf(seat) = seat % 2` untouched.
+          The rails also reclaim the two ~250px columns the old ellipse left
+          empty, which is where the cards' new size comes from. */}
+      <div dir="ltr" className="flex flex-1" style={{ minHeight: 0, padding: 6, gap: 6 }}>
+        <SeatRail
+          seats={seats} seatCount={game.seat_count} team={1} teamColor={teamColors[1]}
+          turnSeat={game.turn_seat} status={game.status} tricksWon={game.tricks_won}
+          bid={game.bid} bidderSeat={game.bidder_seat} hukm={game.hukm}
+        />
+        <TrickArea game={game} seats={seats} gameId={gameId} />
+        <SeatRail
+          seats={seats} seatCount={game.seat_count} team={0} teamColor={teamColors[0]}
+          turnSeat={game.turn_seat} status={game.status} tricksWon={game.tricks_won}
+          bid={game.bid} bidderSeat={game.bidder_seat} hukm={game.hukm}
+        />
       </div>
 
       {showQr && <JoinQr joinCode={game.join_code} onClose={() => setShowQr(false)} />}

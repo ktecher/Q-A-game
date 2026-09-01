@@ -2,16 +2,20 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cardFace } from '../../lib/koutCards';
 import { startRound } from '../../lib/koutClient';
-import { scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
+import { scoreRound, teamOf } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
-import { seatAngleDeg, ellipsePct } from '../../lib/koutGeometry';
 import { arabicKoutError } from '../../lib/koutErrors';
 import { JoinQrPanel } from './JoinQr';
 
-// Smaller ellipse than SeatRing's — the trick lives inside the ring, each
-// card nudged toward the seat that played it.
-const TRX = 17;
-const TRY = 15;
+// One card size serves both seat counts: height is the binding constraint and
+// the grid is 2 rows deep at 4 and at 6 alike, so widening the columns at 4
+// seats buys gutter, not card. A card takes the cell's height up to this cap
+// and derives its width from the 5:7 aspect — the cap is what it reaches on
+// the 1055×487 target canvas (130×182), and taking the height from the cell
+// rather than hardcoding it keeps the grid from overflowing at the theme's
+// other landscape zoom step (index.css:255 has two) or on a desktop browser.
+const CARD_H = 182;
+const LABEL_H = 23;
 
 const btnStyle = {
   padding: '10px 26px',
@@ -21,41 +25,73 @@ const btnStyle = {
   color: 'var(--outline)',
 };
 
+// Height first, width from the aspect — see CARD_H.
+const slotStyle = { flex: '1 1 auto', minHeight: 0, maxHeight: CARD_H, aspectRatio: '5 / 7' };
+
+const seatName = (seats, seat) => seats.find((s) => s.seat === seat)?.name || `#${seat + 1}`;
+
 // A card that has been PLAYED into the trick is public — every seat and the
 // TV already see it face up. This is not a hand; rendering its face is fine.
-function TrickCard({ card, left, top }) {
+function TrickCard({ card, teamColor, name, isLead }) {
   const face = cardFace(card);
   return (
-    <div
-      className="absolute flex flex-col items-center justify-center font-en-body font-bold leading-none"
-      style={{
-        left: `${left}%`,
-        top: `${top}%`,
-        transform: 'translate(-50%, -50%)',
-        width: 30,
-        height: 42,
-        // A card face is intentionally theme-invariant, same as
-        // QuestionScreen's QR panel and SketchStage.jsx:18 — cream paper,
-        // dark ink, fixed red. It must NOT become var(--red): that token is
-        // #9B2D3A in light mode, so the card would restyle with the app
-        // chrome instead of staying a real playing card.
-        background: '#F4ECD8',
-        border: '2px solid var(--outline)',
-        color: face.red ? '#C44150' : '#1D1F20',
-        fontSize: 13,
-      }}
-      lang="en"
-    >
-      <span>{face.rank}</span>
-      {!face.joker && <span style={{ fontSize: 12 }}>{face.glyph}</span>}
+    <div className="flex flex-col items-center justify-center" style={{ width: '100%', height: '100%', minWidth: 0 }}>
+      <div
+        className="relative flex flex-col items-center justify-center font-en-body font-bold leading-none"
+        style={{
+          ...slotStyle,
+          // A card face is intentionally theme-invariant, same as
+          // QuestionScreen's QR panel and SketchStage.jsx:18 — cream paper,
+          // dark ink, fixed red. It must NOT become var(--red): that token is
+          // #9B2D3A in light mode, so the card would restyle with the app
+          // chrome instead of staying a real playing card.
+          background: '#F4ECD8',
+          // The frame is the attribution channel that survives a truncated
+          // name — the team read never has to depend on text.
+          border: `4px solid ${teamColor}`,
+          color: face.red ? '#C44150' : '#1D1F20',
+          fontSize: 56,
+        }}
+        lang="en"
+      >
+        {isLead && (
+          <span
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: 0,
+              insetInlineStart: 0,
+              width: 0,
+              height: 0,
+              borderTop: '20px solid var(--gold)',
+              borderInlineEnd: '20px solid transparent',
+            }}
+          />
+        )}
+        <span>{face.rank}</span>
+        {!face.joker && <span style={{ fontSize: 52 }}>{face.glyph}</span>}
+      </div>
+      {/* Attribution rests entirely on this line and the frame above it now
+          that position no longer says who played the card, so it never
+          shrinks below 18px and never wraps — one long Arabic name ellipsises
+          rather than reflowing the whole grid. */}
+      <span
+        className="font-ar-body font-bold leading-none truncate shrink-0"
+        style={{ fontSize: 18, height: LABEL_H, paddingTop: 5, maxWidth: '100%', color: 'var(--text)' }}
+      >
+        {name}
+      </span>
     </div>
   );
 }
 
-export default function TrickArea({ game, seats, seatCount, orientation, gameId }) {
+/* The centre field — the whole stage minus the two team rails. Its only
+   face-up cards are `game.trick`'s, which every seat has already seen. */
+export default function TrickArea({ game, seats, gameId }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const seatCount = game.seat_count;
   const teamColors = game.team_colors ?? TEAM_COLOR_FALLBACK;
   const claimed = seats.filter((s) => s.user_id).length;
   const ready = seats.filter((s) => s.user_id && s.ready).length;
@@ -88,7 +124,9 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
     // menu, which meant a room full of players had no way onto the table —
     // the "keep the QR out of the permanent layout" rule is for once a trick
     // is on the table (390px of height can't spare it there); an empty
-    // lobby has nothing better to show, so the QR IS the screen here.
+    // lobby has nothing better to show, so the QR IS the screen here. It now
+    // owns the centre field only, so the rails stay live behind it and the
+    // room watches names land on the red side and the blue side as they scan.
     // Ready gates only this first deal — a claimed-but-unready seat means
     // someone scanned the QR and never actually looked up from their phone.
     // `round_end` below has no such check: players are already mid-game there.
@@ -96,11 +134,10 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
     const showQrOverlay = !everyoneWasReady;
 
     return (
-      <div className="absolute inset-0">
-        {/* Dimmed-through layer: seat ring below still shows through the
-            scrim, and this progress readout stays legible under it too — the
-            host has to be able to watch the room fill in while the QR owns
-            the screen. */}
+      <Field>
+        {/* Dimmed-through layer: this progress readout stays legible under
+            the scrim — the host has to be able to watch the room fill in
+            while the QR owns the field. */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <span className="font-ar-body font-bold leading-none" style={{ fontSize: 26, color: 'var(--text)' }}>
@@ -129,7 +166,7 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
           </div>
         </div>
 
-        {/* QR owns the screen until the room is full and ready — the one
+        {/* QR owns the field until the room is full and ready — the one
             moment nothing else matters. `var(--scrim)` is Modal's own
             backdrop token, reused rather than inventing a second dimming
             value. */}
@@ -138,7 +175,7 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
             <JoinQrPanel joinCode={game.join_code} size={200} />
           </div>
         )}
-      </div>
+      </Field>
     );
   }
 
@@ -147,74 +184,119 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
       bid: game.bid, bidderSeat: game.bidder_seat, mulzum: game.mulzum, tricksWon: game.tricks_won,
     });
     return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-        <span className="font-ar-body font-bold leading-none" style={{ fontSize: 22, color: 'var(--text)' }}>
-          نتيجة الجولة
-        </span>
-        <span className="font-en-body font-bold leading-none" style={{ fontSize: 15, color: teamColors[0] }} lang="en">
-          {game.team_names[0]} +{delta[0]}
-        </span>
-        <span className="font-en-body font-bold leading-none" style={{ fontSize: 15, color: teamColors[1] }} lang="en">
-          {game.team_names[1]} +{delta[1]}
-        </span>
-        {err && (
-          <span className="font-en-body leading-none" style={{ fontSize: 11, color: 'var(--red-ink)' }}>
-            {err}
+      <Field>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+          <span className="font-ar-body font-bold leading-none" style={{ fontSize: 22, color: 'var(--text)' }}>
+            نتيجة الجولة
           </span>
-        )}
-        <button type="button" disabled={busy} onClick={handleStart} className="text-center disabled:opacity-40" style={{ ...btnStyle, marginTop: 6 }}>
-          <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 20 }}>الجولة التالية</span>{' '}
-          <span className="font-en-body leading-none" style={{ fontSize: 10 }} lang="en">NEXT</span>
-        </button>
-      </div>
+          <span className="font-en-body font-bold leading-none" style={{ fontSize: 15, color: teamColors[0] }} lang="en">
+            {game.team_names[0]} +{delta[0]}
+          </span>
+          <span className="font-en-body font-bold leading-none" style={{ fontSize: 15, color: teamColors[1] }} lang="en">
+            {game.team_names[1]} +{delta[1]}
+          </span>
+          {err && (
+            <span className="font-en-body leading-none" style={{ fontSize: 11, color: 'var(--red-ink)' }}>
+              {err}
+            </span>
+          )}
+          <button type="button" disabled={busy} onClick={handleStart} className="text-center disabled:opacity-40" style={{ ...btnStyle, marginTop: 6 }}>
+            <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 20 }}>الجولة التالية</span>{' '}
+            <span className="font-en-body leading-none" style={{ fontSize: 10 }} lang="en">NEXT</span>
+          </button>
+        </div>
+      </Field>
     );
   }
 
   if (game.status === 'finished') {
     const winner = game.team_names[game.winner_team] ?? '';
     return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-        <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 28, color: 'var(--gold-ink)' }}>
-          {winner} فاز!
-        </span>
-        <button type="button" onClick={() => navigate('/kout')} className="text-center" style={btnStyle}>
-          <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 20 }}>لعبة جديدة</span>{' '}
-          <span className="font-en-body leading-none" style={{ fontSize: 10 }} lang="en">NEW GAME</span>
-        </button>
-      </div>
+      <Field>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 28, color: 'var(--gold-ink)' }}>
+            {winner} فاز!
+          </span>
+          <button type="button" onClick={() => navigate('/kout')} className="text-center" style={btnStyle}>
+            <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 20 }}>لعبة جديدة</span>{' '}
+            <span className="font-en-body leading-none" style={{ fontSize: 10 }} lang="en">NEW GAME</span>
+          </button>
+        </div>
+      </Field>
     );
   }
 
-  // bidding | hukm | playing — the live trick plus each team's capture pile.
-  return (
-    <div className="absolute inset-0">
-      {game.trick.map(({ seat, card }) => {
-        const { left, top } = ellipsePct(seatAngleDeg(seat, seatCount, orientation), TRX, TRY);
-        return <TrickCard key={seat} card={card} left={left} top={top} />;
-      })}
+  // bidding | hukm | playing — one grid cell per seat, filled in play order.
+  // The rails bounce the lit card across the stage every single turn (turn
+  // order strictly alternates teams); this grid does not — it advances one
+  // cell in reading order and never jumps. It is the stable turn signal, and
+  // it is also the biggest thing on the screen.
+  const next = game.trick.length;
+  const showNext = next < seatCount && game.turn_seat != null;
 
-      {[0, 1].map((team) => (
-        <div
-          key={team}
-          className="absolute flex flex-col items-center justify-center"
-          style={{
-            [team === 0 ? 'left' : 'right']: '4%',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: 46,
-            height: 46,
-            background: 'var(--panel2)',
-            border: `3px solid ${teamColors[team]}`,
-          }}
-        >
-          <span className="font-en-body font-bold leading-none" style={{ fontSize: 20, color: teamColors[team] }} lang="en">
-            {game.tricks_won[team]}
-          </span>
-          <span className="font-en-body leading-none" style={{ fontSize: 7, color: 'var(--muted)' }} lang="en">
-            TRICKS
-          </span>
-        </div>
-      ))}
+  return (
+    <Field>
+      <div
+        className="absolute inset-0 grid"
+        style={{ gridTemplateColumns: `repeat(${seatCount / 2}, 1fr)`, gridTemplateRows: 'repeat(2, 1fr)', gap: 8, padding: '0 8px' }}
+      >
+        {Array.from({ length: seatCount }, (_, cell) => {
+          const played = game.trick[cell];
+          if (played) {
+            return (
+              <TrickCard
+                key={cell}
+                card={played.card}
+                teamColor={teamColors[teamOf(played.seat)]}
+                name={seatName(seats, played.seat)}
+                isLead={cell === 0}
+              />
+            );
+          }
+
+          // The centre of the screen says the name outright, so nobody has to
+          // hunt a highlight to answer "whose turn?".
+          if (showNext && cell === next) {
+            return (
+              <Slot key={cell}>
+                <div
+                  className="flex items-center justify-center text-center"
+                  style={{ ...slotStyle, border: '3px dashed var(--gold)', padding: 6 }}
+                >
+                  <span className="font-ar-body font-extrabold" style={{ fontSize: 26, lineHeight: 1.15, color: 'var(--gold-ink)', overflow: 'hidden', wordBreak: 'break-word' }}>
+                    {seatName(seats, game.turn_seat)}
+                  </span>
+                </div>
+              </Slot>
+            );
+          }
+
+          // Drawn, never omitted: the room can see how many cards are still
+          // to come, and the half-empty second row at six seats reads as
+          // "not yet played" instead of as a broken layout.
+          return (
+            <Slot key={cell}>
+              <div style={{ ...slotStyle, border: '2px dashed var(--line)' }} />
+            </Slot>
+          );
+        })}
+      </div>
+    </Field>
+  );
+}
+
+// A cell holding no played card: same box as a TrickCard, minus the name, so
+// every card in the grid sits on one baseline.
+function Slot({ children }) {
+  return (
+    <div className="flex flex-col items-center justify-center" style={{ width: '100%', height: '100%', minWidth: 0, paddingBottom: LABEL_H }}>
+      {children}
     </div>
   );
+}
+
+// Every status renders into the same box, so the rails and the score bar
+// never move between them.
+function Field({ children }) {
+  return <div dir="rtl" className="relative" style={{ flex: 1, minWidth: 0 }}>{children}</div>;
 }
