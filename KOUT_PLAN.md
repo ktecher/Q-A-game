@@ -150,6 +150,7 @@ browser tab.
 | Player identity | **`supabase.auth.signInAnonymously()` on scan** | RLS needs an `auth.uid()`. Players never see a login screen. Fits the existing guest-mode shape in `AuthContext`. |
 | Player UI | **Lazy-loaded React routes in the existing SPA**, not a second Vite entry | `draw.html` is a separate entry because a 60-second doodle page should not ship React. A Kout seat is a 40-minute stateful session that needs auth, realtime and routing — it *is* the app. Lazy-load it like `Dashboard` so the quiz bundle is unaffected. |
 | Bo-4 vs bo-6 | **One engine, a `seatCount` flag** | Having read both rulesets they differ only in deck and team size. Same bidding, same مُلزم, same joker rule, same scoring, same 101. |
+| Pre-join visibility | A `peekGame({ joinCode })` action returning ONLY seat count, status, and per-seat `{ taken, name }` | RLS hides a game from anyone not already seated in it — which is every player who has just scanned the QR. Without a server-side peek the seat picker cannot know how many seats exist or which are free. Names are included because players pick a seat to choose a partner; a join code lives on a QR in the room, so its holder is in the room. |
 | History | `kout_results` keeps the final score; hands and tricks are discarded | Cheap, and "Bu Faisal has never won a بوان" is what brings a diwaniya back. Per-trick history is a later problem. |
 
 ---
@@ -1338,15 +1339,19 @@ async function claimSeat(uid: string, { joinCode, seat, name }: any) {
   const { data: game } = await admin
     .from('kout_games').select('*').eq('join_code', joinCode).single();
   if (!game) return fail('no such game', 404);
-  if (game.status !== 'lobby') return fail('game already started');
   if (seat < 0 || seat >= game.seat_count) return fail('no such seat');
 
-  // Re-joining your own seat after a dead phone is allowed and is the whole
-  // point of storing seats server-side. Taking someone else's is not.
   const { data: existing } = await admin
     .from('kout_seats').select('user_id')
     .eq('game_id', game.id).eq('seat', seat).single();
+
+  // Order matters. A dead phone must reclaim its OWN seat in ANY status —
+  // that is the whole reason seats live on the server. An EMPTY seat is only
+  // up for grabs before the game starts. Someone else's seat, never. Checking
+  // status before ownership (the obvious way to write this) silently makes
+  // reconnect impossible, which is the one thing this design promised.
   if (existing?.user_id && existing.user_id !== uid) return fail('seat taken');
+  if (!existing?.user_id && game.status !== 'lobby') return fail('game already started');
 
   const { error } = await admin
     .from('kout_seats')
