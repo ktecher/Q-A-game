@@ -1,0 +1,26 @@
+-- ════════════════════════════════════════════════════════════════════
+--   Kout — stop `anon` executing the membership helper
+--   Migration: 0011_kout_revoke_anon_execute
+-- ════════════════════════════════════════════════════════════════════
+--
+-- `is_kout_member` runs SECURITY DEFINER, and it must: inlining it as a
+-- subquery makes kout_games' and kout_seats' policies query each other and
+-- Postgres raises "infinite recursion detected in policy" at query time.
+-- See 0010_kout.sql for the full reasoning.
+--
+-- 0010 revoked it from PUBLIC, which is the usual incantation — but Supabase
+-- grants EXECUTE on public-schema functions to `anon` in its own right, so the
+-- function stayed callable without signing in at /rest/v1/rpc/is_kout_member.
+-- Caught by the database linter (0028_anon_security_definer_function_executable)
+-- immediately after 0010 was applied.
+--
+-- The effect was harmless — auth.uid() is null for an anonymous caller, so the
+-- function just returns false — but a definer function that bypasses RLS should
+-- not be reachable by a role with no use for it. Both policies that call it are
+-- `to authenticated`, so nothing anonymous ever needed it.
+--
+-- Note for future migrations: `revoke ... from public` does NOT imply
+-- `revoke ... from anon` on this platform. Revoke the role explicitly.
+-- ════════════════════════════════════════════════════════════════════
+
+revoke all on function public.is_kout_member(uuid) from anon;
