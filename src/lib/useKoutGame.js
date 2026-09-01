@@ -23,7 +23,8 @@ export function useKoutGame(gameId) {
         supabase.from('kout_hands').select('cards,seat').eq('game_id', gameId).maybeSingle(),
       ]);
       if (!alive) return;
-      if (g.error) setError(g.error.message);
+      const failed = g.error ?? s.error ?? h.error;
+      setError(failed ? failed.message : null);
       setGame(g.data ?? null);
       setSeats(s.data ?? []);
       setHand(h.data?.cards ?? null);
