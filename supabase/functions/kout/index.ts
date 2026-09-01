@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
   switch (action) {
     case 'create': return create(uid, args);
     case 'claimSeat': return claimSeat(uid, args);
+    case 'startRound': return startRound(uid, args);
     default: return fail(`unknown action: ${action}`);
   }
 });
@@ -103,4 +104,45 @@ async function claimSeat(uid: string, { joinCode, seat, name }: any) {
   if (error) return fail(error.message, 500);
 
   return json({ ok: true, gameId: game.id, seat });
+}
+
+async function startRound(uid: string, { gameId }: any) {
+  const { data: game } = await admin.from('kout_games').select('*').eq('id', gameId).single();
+  if (!game) return fail('no such game', 404);
+  if (game.host_id !== uid) return fail('only the host starts a round', 403);
+
+  const { data: seats } = await admin
+    .from('kout_seats').select('*').eq('game_id', gameId).order('seat');
+  if (!seats || seats.some((s) => !s.user_id)) return fail('every seat must be claimed');
+
+  // dealHands throws rather than emit a corrupt deal — see koutRules.js.
+  const hands = dealHands(game.seat_count, secureRng);
+
+  const { error: handErr } = await admin.from('kout_hands').upsert(
+    hands.map((cards, seat) => ({
+      game_id: gameId, seat, user_id: seats[seat].user_id, cards,
+    })),
+    { onConflict: 'game_id,seat' },
+  );
+  if (handErr) return fail(handErr.message, 500);
+
+  const dealer = game.round_no === 0 ? game.dealer_seat
+                                     : nextSeat(game.dealer_seat, game.seat_count);
+
+  await admin.from('kout_seats')
+    .update({ bid: null, card_count: HAND_SIZE }).eq('game_id', gameId);
+
+  const { error } = await admin.from('kout_games').update({
+    status: 'bidding',
+    round_no: game.round_no + 1,
+    dealer_seat: dealer,
+    // Bidding opens to the dealer's RIGHT and runs counterclockwise.
+    turn_seat: nextSeat(dealer, game.seat_count),
+    bid: null, bidder_seat: null, mulzum: false, hukm: null,
+    trick: [], played_cards: [], tricks_won: [0, 0],
+    updated_at: new Date().toISOString(),
+  }).eq('id', gameId);
+  if (error) return fail(error.message, 500);
+
+  return json({ ok: true });
 }
