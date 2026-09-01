@@ -57,6 +57,19 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const teamColors = game.team_colors ?? TEAM_COLOR_FALLBACK;
+  const claimed = seats.filter((s) => s.user_id).length;
+  const ready = seats.filter((s) => s.user_id && s.ready).length;
+  // Latches once the lobby has been fully claimed+ready — a seat can never be
+  // un-claimed in this app, so once true it stays true for the rest of the
+  // lobby's life. Without the latch, a player fat-fingering ready off after
+  // everyone was already in would resurrect a full-screen "SCAN ME" overlay
+  // over a room that has already sat down; nobody is joining at that point.
+  // Set conditionally during render (React's documented "adjusting state
+  // during render" pattern) rather than in an effect, so it commits before
+  // the QR overlay ever paints instead of flashing on for one frame.
+  const fullySeated = claimed === seatCount && ready === seatCount;
+  const [everyoneWasReady, setEveryoneWasReady] = useState(fullySeated);
+  if (fullySeated && !everyoneWasReady) setEveryoneWasReady(true);
 
   const handleStart = async () => {
     setBusy(true);
@@ -76,40 +89,55 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
     // the "keep the QR out of the permanent layout" rule is for once a trick
     // is on the table (390px of height can't spare it there); an empty
     // lobby has nothing better to show, so the QR IS the screen here.
-    const claimed = seats.filter((s) => s.user_id).length;
     // Ready gates only this first deal — a claimed-but-unready seat means
     // someone scanned the QR and never actually looked up from their phone.
     // `round_end` below has no such check: players are already mid-game there.
-    const ready = seats.filter((s) => s.user_id && s.ready).length;
     const waitingOn = seats.filter((s) => s.user_id && !s.ready).map((s) => s.name || `#${s.seat + 1}`);
+    const showQrOverlay = !everyoneWasReady;
+
     return (
-      <div className="absolute inset-0 flex items-center justify-center gap-8">
-        <JoinQrPanel joinCode={game.join_code} size={170} />
-        <div className="flex flex-col items-center gap-3">
-          <span className="font-ar-body font-bold leading-none" style={{ fontSize: 26, color: 'var(--text)' }}>
-            بانتظار اللاعبين
-          </span>
-          <span className="font-en-body leading-none" style={{ fontSize: 12, color: 'var(--muted)' }} lang="en">
-            {claimed}/{seatCount} SEATS CLAIMED
-          </span>
-          <span className="font-en-body leading-none" style={{ fontSize: 12, color: ready < claimed ? 'var(--gold-ink)' : 'var(--muted)' }} lang="en">
-            {ready}/{claimed} READY
-          </span>
-          {waitingOn.length > 0 && (
-            <span className="font-ar-body font-bold leading-none" style={{ fontSize: 12, color: 'var(--gold-ink)' }}>
-              بانتظار: {waitingOn.join('، ')}
+      <div className="absolute inset-0">
+        {/* Dimmed-through layer: seat ring below still shows through the
+            scrim, and this progress readout stays legible under it too — the
+            host has to be able to watch the room fill in while the QR owns
+            the screen. */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <span className="font-ar-body font-bold leading-none" style={{ fontSize: 26, color: 'var(--text)' }}>
+              بانتظار اللاعبين
             </span>
-          )}
-          {err && (
-            <span className="font-en-body leading-none" style={{ fontSize: 11, color: 'var(--red-ink)' }}>
-              {err}
+            <span className="font-en-body leading-none" style={{ fontSize: 12, color: 'var(--muted)' }} lang="en">
+              {claimed}/{seatCount} SEATS CLAIMED
             </span>
-          )}
-          <button type="button" disabled={ready < seatCount || busy} onClick={handleStart} className="text-center disabled:opacity-40" style={btnStyle}>
-            <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 22 }}>ابدأ الجولة</span>{' '}
-            <span className="font-en-body leading-none" style={{ fontSize: 10 }} lang="en">START</span>
-          </button>
+            <span className="font-en-body leading-none" style={{ fontSize: 12, color: ready < claimed ? 'var(--gold-ink)' : 'var(--muted)' }} lang="en">
+              {ready}/{claimed} READY
+            </span>
+            {waitingOn.length > 0 && (
+              <span className="font-ar-body font-bold leading-none" style={{ fontSize: 12, color: 'var(--gold-ink)' }}>
+                بانتظار: {waitingOn.join('، ')}
+              </span>
+            )}
+            {err && (
+              <span className="font-en-body leading-none" style={{ fontSize: 11, color: 'var(--red-ink)' }}>
+                {err}
+              </span>
+            )}
+            <button type="button" disabled={ready < seatCount || busy} onClick={handleStart} className="text-center disabled:opacity-40" style={btnStyle}>
+              <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 22 }}>ابدأ الجولة</span>{' '}
+              <span className="font-en-body leading-none" style={{ fontSize: 10 }} lang="en">START</span>
+            </button>
+          </div>
         </div>
+
+        {/* QR owns the screen until the room is full and ready — the one
+            moment nothing else matters. `var(--scrim)` is Modal's own
+            backdrop token, reused rather than inventing a second dimming
+            value. */}
+        {showQrOverlay && (
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'var(--scrim)' }}>
+            <JoinQrPanel joinCode={game.join_code} size={200} />
+          </div>
+        )}
       </div>
     );
   }
