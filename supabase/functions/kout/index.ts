@@ -367,9 +367,16 @@ async function setHukm(uid: string, { gameId, hukm }: any) {
   if (!['S', 'H', 'D', 'C'].includes(hukm)) return fail('hukm must be S, H, D or C');
   if (game.bidder_seat !== seat.seat) return fail('only the high bidder names hukm');
 
-  await admin.from('kout_games').update({
+  // Two concurrent setHukm calls both pass atTurn() (status still 'hukm')
+  // and both pass the bidder_seat check above, so both would reach this
+  // write. It's harmless: both set the same hukm and the same turn_seat
+  // (game.bidder_seat, read fresh by each call before either writes), so
+  // the second write is a no-op repeat of the first, not a claimTurn()
+  // situation like bid()/play() where the patch depends on racing state.
+  const { error: hukmErr } = await admin.from('kout_games').update({
     status: 'playing', hukm, turn_seat: game.bidder_seat, // the bidder leads
   }).eq('id', gameId);
+  if (hukmErr) return dbFail('set hukm', hukmErr);
   return json({ ok: true });
 }
 
