@@ -258,8 +258,13 @@ async function startRound(uid: string, { gameId }: any) {
   const dealer = game.round_no === 0 ? game.dealer_seat
                                      : nextSeat(game.dealer_seat, game.seat_count);
 
-  await admin.from('kout_seats')
+  const { error: resetErr } = await admin.from('kout_seats')
     .update({ bid: null, card_count: HAND_SIZE }).eq('game_id', gameId);
+  // Silently losing this reset is the dangerous one: a stale `bid` would
+  // survive into the new round, and resolveBidding() below would read last
+  // round's bid as this round's — awarding the contract to the wrong player
+  // at the wrong number while the caller still hears {ok: true}.
+  if (resetErr) return dbFail('reset seats for round', resetErr);
 
   const { error } = await admin.from('kout_games').update({
     status: 'bidding',
@@ -291,6 +296,25 @@ async function atTurn(uid: string, gameId: string, wantStatus: string[]) {
   return { game, seat };
 }
 
+// The game row is the lock — not for atomicity between this and whatever
+// write follows, but so the LOSER of a race is rejected before it ever
+// reaches the seat/hand rows a caller touches next. bid() and play() share
+// this: both are read-then-write off atTurn(), so two taps from the same
+// seat both pass atTurn() with the same turn_seat and would otherwise both
+// write. Gating on turn_seat still matching `atSeat` means only the first
+// write matches — and that write is itself what moves turn_seat away, so
+// the second matches zero rows and is told 'not your turn' before it can
+// touch anything else.
+async function claimTurn(gameId: string, atSeat: number, patch: Record<string, unknown>) {
+  const { data } = await admin
+    .from('kout_games')
+    .update(patch)
+    .eq('id', gameId)
+    .eq('turn_seat', atSeat)
+    .select('id');
+  return Boolean(data && data.length > 0);
+}
+
 async function bid(uid: string, { gameId, bid: value }: any) {
   const { game, seat, err } = await atTurn(uid, gameId, ['bidding']);
   if (err) return err;
@@ -300,20 +324,19 @@ async function bid(uid: string, { gameId, bid: value }: any) {
     return fail('bid must be 5-9 or pass');
   }
 
-  await admin.from('kout_seats')
+  const { error: bidErr } = await admin.from('kout_seats')
     .update({ bid: value }).eq('game_id', gameId).eq('seat', seat.seat);
+  // A dropped write here means this player's bid is simply absent when
+  // resolveBidding() runs below — must not fall through as if it landed.
+  if (bidErr) return dbFail('record bid', bidErr);
 
   const dealer = game.dealer_seat;
   const lastSeat = dealer; // bidding opened to the dealer's right, so it closes ON the dealer
-  // Same race as play(): two taps from this seat both pass atTurn() with the
-  // same turn_seat, so both would advance the turn — the second one skipping
-  // whoever bids after this seat. Gate on turn_seat still being this seat's;
-  // the loser's update matches zero rows and is rejected.
   if (seat.seat !== lastSeat) {
-    const { data } = await admin.from('kout_games')
-      .update({ turn_seat: nextSeat(seat.seat, game.seat_count) })
-      .eq('id', gameId).eq('turn_seat', seat.seat).select('id');
-    if (!data || data.length === 0) return fail('not your turn');
+    const claimed = await claimTurn(gameId, seat.seat, {
+      turn_seat: nextSeat(seat.seat, game.seat_count),
+    });
+    if (!claimed) return fail('not your turn');
     return json({ ok: true });
   }
 
@@ -323,14 +346,17 @@ async function bid(uid: string, { gameId, bid: value }: any) {
   const bids = seats!.map((s) => s.bid);
   const result = resolveBidding(bids, { seatCount: game.seat_count, lastSeat });
 
-  const { data: resolved } = await admin.from('kout_games').update({
+  // This is the branch that matters most: without the claim, two concurrent
+  // resolves could both run resolveBidding() and both write a winner —
+  // awarding the contract twice.
+  const claimed = await claimTurn(gameId, seat.seat, {
     status: 'hukm',
     bid: result.bid,
     bidder_seat: result.winnerSeat,
     mulzum: result.mulzum,
     turn_seat: result.winnerSeat,
-  }).eq('id', gameId).eq('turn_seat', seat.seat).select('id');
-  if (!resolved || resolved.length === 0) return fail('not your turn');
+  });
+  if (!claimed) return fail('not your turn');
 
   return json({ ok: true, ...result });
 }
@@ -364,49 +390,43 @@ async function play(uid: string, { gameId, card }: any) {
   const trick = [...game.trick, { seat: seat.seat, card }];
   const playedCards = [...game.played_cards, card];
 
-  // The game row is the lock — not for atomicity between the two writes
-  // below, but so the LOSER of a race is rejected before it ever reaches
-  // kout_hands. Two taps from the same player inside one round trip both
-  // pass atTurn() above and both read this same hand, so both compute this
-  // same `cards` (card removed) from an identical stale read. Gating the
-  // kout_games write on turn_seat still being this seat's means only the
-  // first one matches — and that write is itself what moves turn_seat off
-  // this seat, so the second write matches zero rows and never gets to
-  // applyHand() at all. Once a request's claimTurn() succeeds, the hand and
-  // card_count writes that follow are exclusive for this turn; do not
-  // reorder them ahead of the claim. Applies to every branch below that
-  // advances the game.
-  async function claimTurn(patch: Record<string, unknown>) {
-    const { data } = await admin
-      .from('kout_games')
-      .update(patch)
-      .eq('id', gameId)
-      .eq('turn_seat', seat.seat)
-      .select('id');
-    return Boolean(data && data.length > 0);
-  }
+  // Two taps from the same player inside one round trip both pass atTurn()
+  // above and both read this same hand, so both compute this same `cards`
+  // (card removed) from an identical stale read. claimTurn() (above) rejects
+  // the loser before it reaches applyHand() below — do not reorder applyHand
+  // ahead of the claim. Applies to every branch below that advances the game.
 
-  // Residual, honestly: if this succeeds and the kout_hands/kout_seats write
-  // below then fails, the card is in the trick but still shows in the hand
-  // too. Strictly better than today (a lost race used to duplicate the card
-  // outright) — closing it fully needs both writes in one transaction (a
-  // Postgres function), which is a larger change than this fix.
+  // Once claimTurn() has succeeded, the game row has already moved past this
+  // turn — these are the ONLY writes left that remove the card from the
+  // hand and shrink card_count. Silently losing one now would leave a card
+  // that's already in the trick still sitting in the hand: the exact
+  // corruption the claim above exists to prevent, arriving through this
+  // door instead. So, unlike a fire-and-forget write, a failure here must
+  // reach the caller as an error, not {ok: true} — even though the game
+  // state has already moved and there is no rollback from here. That
+  // residual (game advanced, hand write lost) needs a single Postgres
+  // transaction to close fully; deliberately out of scope for this fix. For
+  // now it leaves the round needing the host to notice and intervene.
   async function applyHand() {
-    await admin.from('kout_hands')
+    const { error: handErr } = await admin.from('kout_hands')
       .update({ cards }).eq('game_id', gameId).eq('seat', seat.seat);
-    await admin.from('kout_seats')
+    if (handErr) return dbFail('update hand after play', handErr);
+    const { error: countErr } = await admin.from('kout_seats')
       .update({ card_count: cards.length }).eq('game_id', gameId).eq('seat', seat.seat);
+    if (countErr) return dbFail('update card count after play', countErr);
+    return null;
   }
 
   // Trick still in progress.
   if (trick.length < game.seat_count) {
-    const claimed = await claimTurn({
+    const claimed = await claimTurn(gameId, seat.seat, {
       trick, played_cards: playedCards,
       turn_seat: nextSeat(seat.seat, game.seat_count),
       updated_at: new Date().toISOString(),
     });
     if (!claimed) return fail('not your turn');
-    await applyHand();
+    const handErr = await applyHand();
+    if (handErr) return handErr;
     return json({ ok: true });
   }
 
@@ -420,12 +440,13 @@ async function play(uid: string, { gameId, card }: any) {
   const tricksPlayed = tricksWon[0] + tricksWon[1];
 
   if (tricksPlayed < HAND_SIZE) {
-    const claimed = await claimTurn({
+    const claimed = await claimTurn(gameId, seat.seat, {
       trick: [], played_cards: playedCards, tricks_won: tricksWon,
       turn_seat: winner, updated_at: new Date().toISOString(),
     });
     if (!claimed) return fail('not your turn');
-    await applyHand();
+    const handErr = await applyHand();
+    if (handErr) return handErr;
     return json({ ok: true, trickWinner: winner });
   }
 
@@ -438,14 +459,15 @@ async function play(uid: string, { gameId, card }: any) {
     roundNo: game.round_no, bid: game.bid, tricksWon, bidderSeat: game.bidder_seat,
   });
 
-  const claimed = await claimTurn({
+  const claimed = await claimTurn(gameId, seat.seat, {
     status: winnerTeam === null ? 'round_end' : 'finished',
     trick: [], played_cards: playedCards, tricks_won: tricksWon,
     score, winner_team: winnerTeam, turn_seat: null,
     updated_at: new Date().toISOString(),
   });
   if (!claimed) return fail('not your turn');
-  await applyHand();
+  const handErr = await applyHand();
+  if (handErr) return handErr;
 
   if (winnerTeam !== null) {
     const { data: seats } = await admin
