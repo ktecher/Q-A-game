@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildDeck, suitOf, rankOf, isJoker, RED_JOKER, BLACK_JOKER, makeRng, shuffle, dealHands, trickWinner, cardPower, legalPlays, leadSuitFor } from './koutRules.js';
+import { buildDeck, suitOf, rankOf, isJoker, RED_JOKER, BLACK_JOKER, makeRng, shuffle, dealHands, trickWinner, cardPower, legalPlays, leadSuitFor, resolveBidding, scoreRound, checkGameOver, teamOf, nextSeat, PASS } from './koutRules.js';
 
 describe('buildDeck', () => {
   it('bo-6 is the full 52 plus both jokers', () => {
@@ -203,5 +203,77 @@ describe('leadSuitFor', () => {
   });
   it('is null before anyone has played', () => {
     expect(leadSuitFor([])).toBe(null);
+  });
+});
+
+describe('seating', () => {
+  it('alternates teams around the table', () => {
+    expect([0, 1, 2, 3, 4, 5].map(teamOf)).toEqual([0, 1, 0, 1, 0, 1]);
+  });
+  it('turns counterclockwise and wraps', () => {
+    expect(nextSeat(3, 4)).toBe(0);
+    expect(nextSeat(4, 6)).toBe(5);
+  });
+});
+
+describe('resolveBidding', () => {
+  it('the highest bid wins', () => {
+    expect(resolveBidding([5, PASS, 7, PASS], { seatCount: 4, lastSeat: 3 }))
+      .toEqual({ winnerSeat: 2, bid: 7, mulzum: false });
+  });
+
+  it('forces the last seat to five when everyone passes — مُلزم', () => {
+    expect(resolveBidding([PASS, PASS, PASS, PASS], { seatCount: 4, lastSeat: 3 }))
+      .toEqual({ winnerSeat: 3, bid: 5, mulzum: true });
+  });
+
+  it('keeps the first of two equal bids — you cannot match, only raise', () => {
+    expect(resolveBidding([7, PASS, 7, PASS], { seatCount: 4, lastSeat: 3 }).winnerSeat).toBe(0);
+  });
+});
+
+describe('scoreRound', () => {
+  it('a made bid scores the tricks actually taken', () => {
+    // Bid 5, took 6 → team 0 gets 6, not 5.
+    expect(scoreRound({ bid: 5, bidderSeat: 0, mulzum: false, tricksWon: [6, 3] }))
+      .toEqual([6, 0]);
+  });
+
+  it('a failed bid gives the opponents double the bid', () => {
+    expect(scoreRound({ bid: 7, bidderSeat: 0, mulzum: false, tricksWon: [6, 3] }))
+      .toEqual([0, 14]);
+  });
+
+  it('a failed مُلزم gives the minimum five', () => {
+    expect(scoreRound({ bid: 5, bidderSeat: 1, mulzum: true, tricksWon: [5, 4] }))
+      .toEqual([5, 0]);
+  });
+
+  it('a made بوان is worth thirty-six', () => {
+    expect(scoreRound({ bid: 9, bidderSeat: 1, mulzum: false, tricksWon: [0, 9] }))
+      .toEqual([0, 36]);
+  });
+
+  it('scores the bidding team from the correct seat', () => {
+    expect(scoreRound({ bid: 5, bidderSeat: 1, mulzum: false, tricksWon: [3, 6] }))
+      .toEqual([0, 6]);
+  });
+});
+
+describe('checkGameOver', () => {
+  const noWin = { roundNo: 3, bid: 5, tricksWon: [5, 4], bidderSeat: 0 };
+  it('ends at 101', () => {
+    expect(checkGameOver([104, 60], noWin)).toBe(0);
+    expect(checkGameOver([99, 60], noWin)).toBe(null);
+  });
+  it('ends at 51 when the opponents are still on zero', () => {
+    expect(checkGameOver([55, 0], noWin)).toBe(0);
+    expect(checkGameOver([55, 3], noWin)).toBe(null);
+  });
+  it('ends on a first-round بوان that takes all nine', () => {
+    expect(checkGameOver([36, 0], { roundNo: 1, bid: 9, tricksWon: [9, 0], bidderSeat: 0 })).toBe(0);
+  });
+  it('does not end on a بوان in a later round', () => {
+    expect(checkGameOver([36, 40], { roundNo: 2, bid: 9, tricksWon: [9, 0], bidderSeat: 0 })).toBe(null);
   });
 });

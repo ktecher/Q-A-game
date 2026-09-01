@@ -133,3 +133,61 @@ export function legalPlays(hand, { trick }) {
   const following = hand.filter((c) => suitOf(c) === lead);
   return following.length > 0 ? following : [...hand];
 }
+
+export const MIN_BID = 5;
+export const MAX_BID = 9;
+export const PASS = -1;
+export const TARGET_SCORE = 101;
+export const SHUTOUT_SCORE = 51;
+export const BAWN_SCORE = 36;
+
+/* Seats alternate around the table, so team is simply parity. This is what
+   makes partnership play work and is why the host picks seat 1's position at
+   setup — the on-screen ring must match the physical room. */
+export const teamOf = (seat) => seat % 2;
+export const nextSeat = (seat, seatCount) => (seat + 1) % seatCount;
+
+export function resolveBidding(bids, { seatCount, lastSeat }) {
+  let winnerSeat = null;
+  let bid = 0;
+  for (let seat = 0; seat < seatCount; seat++) {
+    const b = bids[seat];
+    if (typeof b !== 'number' || b === PASS) continue;
+    if (b > bid) {            // strictly greater — you raise, you cannot match
+      bid = b;
+      winnerSeat = seat;
+    }
+  }
+  if (winnerSeat === null) {
+    return { winnerSeat: lastSeat, bid: MIN_BID, mulzum: true }; // مُلزم
+  }
+  return { winnerSeat, bid, mulzum: false };
+}
+
+export function scoreRound({ bid, bidderSeat, mulzum, tricksWon }) {
+  const bidTeam = teamOf(bidderSeat);
+  const other = bidTeam === 0 ? 1 : 0;
+  const taken = tricksWon[bidTeam];
+  const out = [0, 0];
+  if (taken >= bid) {
+    out[bidTeam] = bid === MAX_BID ? BAWN_SCORE : taken;
+  } else {
+    // A مُلزم bid is always MIN_BID, so "double" is always 10 — never a floor.
+    // Confirmed at the first play-test: a forced bid carries a reduced flat
+    // penalty instead, not the doubled punishment of a bid the team chose.
+    out[other] = mulzum ? MIN_BID : bid * 2;
+  }
+  return out;
+}
+
+export function checkGameOver(score, { roundNo, bid, tricksWon, bidderSeat }) {
+  for (const team of [0, 1]) {
+    const other = team === 0 ? 1 : 0;
+    if (score[team] >= TARGET_SCORE) return team;
+    if (score[team] >= SHUTOUT_SCORE && score[other] === 0) return team;
+  }
+  if (roundNo === 1 && bid === MAX_BID && tricksWon[teamOf(bidderSeat)] === 9) {
+    return teamOf(bidderSeat);
+  }
+  return null;
+}
