@@ -7,24 +7,13 @@ import { toArabicDigits } from '../../lib/format';
 import { TARGET_SCORE } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
 import { readKoutOrientation } from '../../lib/koutGeometry';
+import { arabicKoutError } from '../../lib/koutErrors';
 import Modal from '../../components/Modal';
 import SeatRing from './SeatRing';
 import TrickArea from './TrickArea';
 import JoinQr from './JoinQr';
 
 const RED_SUIT = { H: true, D: true };
-
-// Every host-menu action that hits the server can be refused — a bare
-// `.catch(() => {})` here means the host taps, nothing visibly happens, and
-// they conclude the app is broken. Same small per-file map as SeatScreen's
-// arabicError: nothing reaches the host as a raw English message.
-const HOST_ERROR_AR = {
-  'only the host starts a round': 'هذا الحساب ليس مضيف اللعبة',
-  'a round is already in progress': 'الجولة جارية بالفعل',
-  'every seat must be claimed': 'يجب أن يشغل كل مقعد لاعب أولاً',
-  'no such game': 'تعذّر العثور على اللعبة',
-};
-const arabicError = (message) => HOST_ERROR_AR[message] ?? 'حدث خطأ، حاول مرة أخرى';
 
 const menuBtnStyle = {
   padding: '12px 16px',
@@ -77,7 +66,7 @@ export default function TableScreen() {
       await startRound(gameId);
       setMenuOpen(false);
     } catch (e) {
-      setMenuError(arabicError(e.message));
+      setMenuError(arabicKoutError(e.message));
     }
   };
 

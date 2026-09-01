@@ -5,6 +5,7 @@ import { startRound } from '../../lib/koutClient';
 import { scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
 import { seatAngleDeg, ellipsePct } from '../../lib/koutGeometry';
+import { arabicKoutError } from '../../lib/koutErrors';
 
 // Smaller ellipse than SeatRing's — the trick lives inside the ring, each
 // card nudged toward the seat that played it.
@@ -62,7 +63,7 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
     try {
       await startRound(gameId);
     } catch (e) {
-      setErr(e.message);
+      setErr(arabicKoutError(e.message));
     } finally {
       setBusy(false);
     }

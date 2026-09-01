@@ -5,6 +5,8 @@ import { TEAM_COLORS } from '../SetupScreen/constants';
 import { STORAGE_KEYS } from '../../lib/storageKeys';
 import { ensureSession, createGame } from '../../lib/koutClient';
 import { seatAngleDeg, ellipsePct, readKoutOrientation } from '../../lib/koutGeometry';
+import { arabicKoutError } from '../../lib/koutErrors';
+import { toArabicDigits } from '../../lib/format';
 
 const SEAT_COUNTS = [4, 6];
 const DEFAULT_NAMES = ['فريق ١', 'فريق ٢'];
@@ -65,7 +67,7 @@ export default function SetupScreen() {
       localStorage.setItem(STORAGE_KEYS.KOUT_SEAT1_POS, String(orientation));
       navigate(`/kout/table?g=${gameId}`);
     } catch (e) {
-      setError(e.message || 'حدث خطأ، حاول مرة أخرى');
+      setError(arabicKoutError(e.message));
       setBusy(false);
     }
   }
@@ -172,7 +174,12 @@ export default function SetupScreen() {
                   key={slot}
                   type="button"
                   aria-pressed={active}
-                  aria-label="اجعل هذا الموضع هو المقعد رقم ١"
+                  // Every slot had the same literal Arabic sentence, so a
+                  // screen reader read the ring as one button repeated N
+                  // times with no way to tell positions apart. Naming the
+                  // slot's own position (1-based, out of seatCount) is what
+                  // makes the ring navigable non-visually.
+                  aria-label={`الموضع ${toArabicDigits(slot + 1)} من ${toArabicDigits(seatCount)} — اجعله المقعد رقم ١`}
                   onClick={() => setOrientation(slot)}
                   className="absolute flex items-center justify-center"
                   style={{

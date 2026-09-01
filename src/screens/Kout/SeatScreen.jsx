@@ -5,6 +5,7 @@ import { suitLabelAr } from '../../lib/koutCards';
 import { MIN_BID, MAX_BID, PASS, teamOf, scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
 import { toArabicDigits } from '../../lib/format';
+import { arabicKoutError } from '../../lib/koutErrors';
 import HandStrip from './HandStrip';
 
 // seat_count is only ever 4 or 6 (see 0010_kout.sql). `peekGame` (added
@@ -14,27 +15,6 @@ import HandStrip from './HandStrip';
 // the larger ring; the tap itself, not this data, is what the server judges.
 const MAX_SEATS = 6;
 const SUITS = ['S', 'H', 'D', 'C'];
-
-// Every rejection the Edge Function can send, in Arabic, so nothing reaches
-// the console as a raw thrown error. Unlisted messages fall back to a
-// generic line rather than leaking English.
-function arabicError(message) {
-  const known = {
-    'seat taken': 'هذا المقعد محجوز، اختر مقعدًا آخر',
-    'no such seat': 'لا يوجد هذا المقعد في هذه اللعبة',
-    'game already started': 'اللعبة بدأت بالفعل',
-    'no such game': 'تعذّر العثور على اللعبة، تحقق من الرمز',
-    'not your turn': 'ليس دورك الآن',
-    'illegal play': 'لا يمكنك لعب هذه الورقة',
-    'that card is not in your hand': 'هذه الورقة ليست بيدك',
-    'you hold no seat here': 'لا تملك مقعدًا في هذه اللعبة',
-    'only the high bidder names hukm': 'صاحب أعلى مزايدة هو من يحدد الحكم',
-    'bid must be 5-9 or pass': 'المزايدة يجب أن تكون بين ٥ و٩ أو الطاف',
-  };
-  if (known[message]) return known[message];
-  if (message?.startsWith('not in ')) return 'لا يمكنك فعل ذلك الآن، انتظر قليلاً';
-  return 'حدث خطأ، حاول مرة أخرى';
-}
 
 function seatLabel(seats, seat) {
   const row = seats.find((s) => s.seat === seat);
@@ -180,7 +160,7 @@ export default function SeatScreen() {
     let alive = true;
     peekGame(joinCode)
       .then((p) => { if (alive) setPeek(p); })
-      .catch((e) => { if (alive) setActionError(arabicError(e.message)); });
+      .catch((e) => { if (alive) setActionError(arabicKoutError(e.message)); });
     return () => { alive = false; };
   }, [ready, joinCode]);
 
@@ -202,7 +182,7 @@ export default function SeatScreen() {
     } catch (e) {
       if (!mountedRef.current) return;
       setDisabledSeats((prev) => new Set(prev).add(seat));
-      setActionError(arabicError(e.message));
+      setActionError(arabicKoutError(e.message));
     } finally {
       if (mountedRef.current) setClaiming(false);
     }
@@ -214,7 +194,7 @@ export default function SeatScreen() {
     try {
       await fn();
     } catch (e) {
-      setActionError(arabicError(e.message));
+      setActionError(arabicKoutError(e.message));
     }
   }
 
