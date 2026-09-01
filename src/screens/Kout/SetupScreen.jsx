@@ -2,19 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ColorSwatchPicker from '../../components/ColorSwatchPicker';
 import { TEAM_COLORS } from '../SetupScreen/constants';
-import { STORAGE_KEYS } from '../../lib/storageKeys';
 import { ensureSession, createGame } from '../../lib/koutClient';
-import { seatAngleDeg, ellipsePct, readKoutOrientation } from '../../lib/koutGeometry';
 import { arabicKoutError } from '../../lib/koutErrors';
-import { toArabicDigits } from '../../lib/format';
 
 const SEAT_COUNTS = [4, 6];
 const DEFAULT_NAMES = ['فريق ١', 'فريق ٢'];
-
-// Same ellipse convention as SeatRing.jsx (slot 0 = top, increasing slot =
-// counterclockwise) — this is the one formula both sides must agree on.
-const RX = 40;
-const RY = 37;
 
 function Label({ ar, en, center }) {
   return (
@@ -33,23 +25,17 @@ function Label({ ar, en, center }) {
   );
 }
 
-/* Host setup — mirrored to a TV, landscape, ~844×390. Three sections on one
-   screen (seats, teams, seat-1 orientation) so there is nothing to scroll
-   past. The chosen team colours are sent to `create` and stored on the game
-   row; TableScreen/SeatRing/SeatScreen/TrickArea all read them from there. */
+/* Host setup — mirrored to a TV, landscape, ~844×390. Two sections on one
+   screen (seats, teams) so there is nothing to scroll past. The chosen team
+   colours are sent to `create` and stored on the game row; TableScreen/
+   SeatScreen/TrickArea all read them from there. */
 export default function SetupScreen() {
   const navigate = useNavigate();
   const [seatCount, setSeatCount] = useState(4);
   const [names, setNames] = useState(DEFAULT_NAMES);
   const [colors, setColors] = useState([TEAM_COLORS[0], TEAM_COLORS[1]]);
-  const [orientationRaw, setOrientation] = useState(() => readKoutOrientation());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-
-  // A stored (or previously tapped) orientation can be out of range after
-  // switching seat counts — e.g. slot 5 from a 6-seat game with only 4 seats
-  // now. Clamp on read rather than in an effect, so there is no extra render.
-  const orientation = orientationRaw < seatCount ? orientationRaw : 0;
 
   const updateName = (i, value) =>
     setNames((prev) => prev.map((n, idx) => (idx === i ? value : n)));
@@ -64,7 +50,6 @@ export default function SetupScreen() {
       await ensureSession();
       const teamNames = names.map((n, i) => n.trim() || DEFAULT_NAMES[i]);
       const { gameId } = await createGame(seatCount, teamNames, colors);
-      localStorage.setItem(STORAGE_KEYS.KOUT_SEAT1_POS, String(orientation));
       navigate(`/kout/table?g=${gameId}`);
     } catch (e) {
       setError(arabicKoutError(e.message));
@@ -159,47 +144,6 @@ export default function SetupScreen() {
                 />
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Step 3 — seat-1 orientation ring */}
-        <div className="flex flex-col items-center shrink-0" style={{ gap: 4, width: 140 }}>
-          <Label ar="اتجاه المقعد ١" en="SEAT 1" center />
-          <div className="relative flex-1" style={{ width: '100%' }}>
-            {Array.from({ length: seatCount }, (_, slot) => {
-              const { left, top } = ellipsePct(seatAngleDeg(slot, seatCount, 0), RX, RY);
-              const active = orientation === slot;
-              return (
-                <button
-                  key={slot}
-                  type="button"
-                  aria-pressed={active}
-                  // Every slot had the same literal Arabic sentence, so a
-                  // screen reader read the ring as one button repeated N
-                  // times with no way to tell positions apart. Naming the
-                  // slot's own position (1-based, out of seatCount) is what
-                  // makes the ring navigable non-visually.
-                  aria-label={`الموضع ${toArabicDigits(slot + 1)} من ${toArabicDigits(seatCount)} — اجعله المقعد رقم ١`}
-                  onClick={() => setOrientation(slot)}
-                  className="absolute flex items-center justify-center"
-                  style={{
-                    left: `${left}%`,
-                    top: `${top}%`,
-                    transform: 'translate(-50%, -50%)',
-                    width: 30,
-                    height: 30,
-                    background: active ? 'var(--gold)' : 'var(--panel2)',
-                    border: `3px solid ${active ? 'var(--outline)' : 'var(--line)'}`,
-                  }}
-                >
-                  {active && (
-                    <span className="font-en-body font-bold leading-none" style={{ fontSize: 12, color: 'var(--outline)' }}>
-                      ١
-                    </span>
-                  )}
-                </button>
-              );
-            })}
           </div>
         </div>
       </div>

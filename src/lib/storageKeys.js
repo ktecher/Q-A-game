@@ -9,8 +9,4 @@ export const STORAGE_KEYS = {
   DEVICE_ID: 'uah.device_id',
   GUEST_PROFILE: 'uah.guest_profile',
   SETTINGS: 'uah.settings',
-  // Which on-screen ring slot the host tapped at Kout setup to mean "seat 1"
-  // — an integer 0..seatCount-1. Written by SetupScreen, read by SeatRing so
-  // the ring's counterclockwise layout matches the physical room.
-  KOUT_SEAT1_POS: 'uah.kout_seat1_pos',
 };

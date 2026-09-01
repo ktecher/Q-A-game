@@ -59,14 +59,17 @@ export default function TableScreen() {
     return () => lock?.release?.();
   }, []);
 
+  const errorAr = error ? arabicKoutError(error) : '';
+
   if (!gameId) {
     return <CenteredMessage text="لا يوجد رمز لعبة" />;
   }
-  if (error) {
-    return <CenteredMessage text={error} />;
-  }
+  // Only one of kout_games/kout_seats/kout_hands has to fail for `error` to be
+  // set (see useKoutGame) — `game` itself can still be there. A full-screen
+  // swap is reserved for when there's truly nothing to show; otherwise the
+  // error rides as a banner over the live table, same as SeatScreen.
   if (loading || !game) {
-    return <CenteredMessage text="جارٍ التحميل…" />;
+    return <CenteredMessage text={errorAr || 'جارٍ التحميل…'} />;
   }
 
   const bidLive = ['hukm', 'playing', 'round_end'].includes(game.status) && game.bid != null;
@@ -136,6 +139,8 @@ export default function TableScreen() {
         <SeatRail game={game} seats={seats} team={0} teamColor={teamColors[0]} />
       </div>
 
+      {errorAr && <ErrorBanner text={errorAr} />}
+
       {showQr && <JoinQr joinCode={game.join_code} onClose={() => setShowQr(false)} />}
 
       <Modal
@@ -194,6 +199,21 @@ function CenteredMessage({ text }) {
   return (
     <div className="flex items-center justify-center" style={{ height: '100dvh' }}>
       <span className="font-ar-body font-bold" style={{ fontSize: 22, color: 'var(--text)' }}>{text}</span>
+    </div>
+  );
+}
+
+// Same treatment as SeatScreen's ErrorBanner — a strip over the live view,
+// not a replacement for it. Read from across the room, so it gets the same
+// solid red band rather than a subtle toast.
+function ErrorBanner({ text }) {
+  return (
+    <div
+      className="fixed bottom-0 start-0 end-0 z-30 text-center font-ar-body font-bold"
+      style={{ padding: '12px 16px', background: 'var(--red-d)', color: '#F4ECD8', borderTop: '4px solid var(--outline)' }}
+      role="alert"
+    >
+      {text}
     </div>
   );
 }
