@@ -63,6 +63,7 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'create': return await create(uid, args);
       case 'claimSeat': return await claimSeat(uid, args);
+      case 'peekGame': return await peekGame(uid, args);
       case 'startRound': return await startRound(uid, args);
       case 'bid': return await bid(uid, args);
       case 'setHukm': return await setHukm(uid, args);
@@ -109,23 +110,53 @@ async function claimSeat(uid: string, { joinCode, seat, name }: any) {
   const { data: game } = await admin
     .from('kout_games').select('*').eq('join_code', joinCode).single();
   if (!game) return fail('no such game', 404);
-  if (game.status !== 'lobby') return fail('game already started');
   if (seat < 0 || seat >= game.seat_count) return fail('no such seat');
 
-  // Re-joining your own seat after a dead phone is allowed and is the whole
-  // point of storing seats server-side. Taking someone else's is not.
   const { data: existing } = await admin
     .from('kout_seats').select('user_id')
     .eq('game_id', game.id).eq('seat', seat).single();
+
+  // A dead phone must be able to reclaim its own seat in ANY status — that is
+  // the whole point of storing seats server-side. An EMPTY seat is only up
+  // for grabs before the game starts; someone else's seat is never up for
+  // grabs at all.
   if (existing?.user_id && existing.user_id !== uid) return fail('seat taken');
+  if (!existing?.user_id && game.status !== 'lobby') return fail('game already started');
+
+  const update: Record<string, unknown> = { connected: true };
+  if (!existing?.user_id) update.user_id = uid;
+  if (name !== undefined) update.name = name.slice(0, 20);
 
   const { error } = await admin
     .from('kout_seats')
-    .update({ user_id: uid, name: (name ?? '').slice(0, 20), connected: true })
+    .update(update)
     .eq('game_id', game.id).eq('seat', seat);
   if (error) return dbFail('claim seat', error);
 
   return json({ ok: true, gameId: game.id, seat });
+}
+
+// RLS hides a game from anyone not already seated in it (see 0010_kout.sql),
+// so a player who has only scanned the QR can't read kout_games/kout_seats
+// yet — they need the table to pick a seat. This is the one deliberate
+// pre-join peephole: a join code is on a QR in the room, so anyone holding
+// it is in the room, but that's the only reason names are safe to return
+// here. No hands, no scores, no bids, no host_id — ever.
+async function peekGame(_uid: string, { joinCode }: any) {
+  const { data: game } = await admin
+    .from('kout_games').select('id, seat_count, status').eq('join_code', joinCode).single();
+  if (!game) return fail('no such game', 404);
+
+  const { data: seats } = await admin
+    .from('kout_seats').select('seat, user_id, name').eq('game_id', game.id).order('seat');
+
+  return json({
+    ok: true,
+    gameId: game.id,
+    seatCount: game.seat_count,
+    status: game.status,
+    seats: (seats ?? []).map((s) => ({ seat: s.seat, taken: Boolean(s.user_id), name: s.name })),
+  });
 }
 
 async function startRound(uid: string, { gameId }: any) {

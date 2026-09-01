@@ -23,6 +23,7 @@ export async function ensureSession() {
 
 export const createGame = (seatCount, teamNames) => call('create', { seatCount, teamNames });
 export const claimSeat = (joinCode, seat, name) => call('claimSeat', { joinCode, seat, name });
+export const peekGame = (joinCode) => call('peekGame', { joinCode });
 export const startRound = (gameId) => call('startRound', { gameId });
 export const placeBid = (gameId, bid) => call('bid', { gameId, bid });
 export const setHukm = (gameId, hukm) => call('setHukm', { gameId, hukm });
