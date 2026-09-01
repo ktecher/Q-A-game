@@ -90,33 +90,60 @@ export default function HomeScreen() {
           )}
         </div>
 
-        <Link
-          to="/setup"
-          className="flex items-center gap-3 w-full transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
-          style={{
-            maxWidth: 420,
-            marginTop: 34,
-            padding: '14px 20px',
-            background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
-            border: '4px solid var(--outline)',
-            boxShadow: '0 8px 0 var(--gold-sh), inset 4px 4px 0 rgba(255, 255, 255, 0.35)',
-            color: 'var(--outline)',
-          }}
+        <div
+          className="flex flex-wrap justify-center"
+          style={{ gap: 14, marginTop: 34, width: '100%' }}
         >
-          <span className="font-en-body leading-none" style={{ fontSize: 12 }} aria-hidden="true">
-            ▶
-          </span>
-          <span className="font-ar-body font-bold leading-none" style={{ fontSize: 32 }}>
-            ابدأ اللعبة
-          </span>
-          <span
-            className="font-en-body leading-none"
-            style={{ fontSize: 11, marginInlineStart: 'auto' }}
-            lang="en"
-          >
-            PRESS START
-          </span>
-        </Link>
+          {[
+            { ar: 'أم الهيمان', en: 'TRIVIA', to: '/setup' },
+            { ar: 'كوت', en: 'KOUT', to: '/kout' },
+            { ar: 'هاند', en: 'HAND · SOON', to: null },
+          ].map((game) => {
+            const disabled = !game.to;
+            const cardStyle = {
+              flex: '1 1 160px',
+              maxWidth: 420,
+              padding: '14px 16px',
+              background: disabled ? 'var(--muted2)' : 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+              border: `4px solid ${disabled ? 'var(--muted)' : 'var(--outline)'}`,
+              boxShadow: disabled ? 'none' : '0 8px 0 var(--gold-sh), inset 4px 4px 0 rgba(255, 255, 255, 0.35)',
+              color: disabled ? 'var(--muted)' : 'var(--outline)',
+            };
+            const content = (
+              <>
+                <span className="font-ar-body font-bold leading-none" style={{ fontSize: 24 }}>
+                  {game.ar}
+                </span>
+                <span
+                  className="font-en-body leading-none uppercase"
+                  style={{ fontSize: 10, marginTop: 8, letterSpacing: '0.14em' }}
+                  lang="en"
+                >
+                  {game.en}
+                </span>
+              </>
+            );
+            return disabled ? (
+              <div
+                key={game.en}
+                aria-disabled="true"
+                className="flex flex-col items-center justify-center text-center"
+                style={cardStyle}
+              >
+                {content}
+              </div>
+            ) : (
+              <Link
+                key={game.en}
+                to={game.to}
+                className="flex flex-col items-center justify-center text-center transition-transform duration-100 hover:-translate-y-[3px] active:translate-y-[3px]"
+                style={cardStyle}
+              >
+                {content}
+              </Link>
+            );
+          })}
+        </div>
       </main>
 
       {/* ── Sign out + footer ─────────────────────────────────────── */}
