@@ -13,9 +13,16 @@ const admin = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 );
 
+// Wildcard origin is deliberate: players join by scanning a QR code from
+// whatever phone is in the room, on whatever network — there is no fixed
+// set of origins to allowlist. `apikey` and `x-client-info` are added
+// because supabase-js sends them on every functions.invoke() call; a
+// preflight asking for a header we don't allow fails the same as a missing
+// Authorization header does.
 const cors = {
   'access-control-allow-origin': '*',
-  'access-control-allow-headers': 'authorization, content-type',
+  'access-control-allow-headers': 'authorization, apikey, content-type, x-client-info',
+  'access-control-allow-methods': 'POST, OPTIONS',
 };
 
 const json = (body: unknown, status = 200) =>
@@ -50,7 +57,7 @@ async function callerId(req: Request): Promise<string | null> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method === 'OPTIONS') return new Response('ok', { status: 200, headers: cors });
 
   const uid = await callerId(req);
   if (!uid) return fail('not signed in', 401);

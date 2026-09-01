@@ -1,0 +1,12 @@
+# Disables the platform gateway's JWT check for this function only. A
+# browser's CORS preflight (OPTIONS) never carries an Authorization header,
+# so with verify_jwt left at its default (true) the gateway 401s the
+# preflight before our own OPTIONS handling in index.ts ever runs — every
+# call fails with an opaque CORS error, not a 401.
+#
+# This does not weaken auth: every action is already gated by callerId() in
+# index.ts, which validates the bearer token via admin.auth.getUser(token)
+# and 401s anything missing or invalid. That check is now the only auth
+# gate for this function — do not remove or weaken it.
+[functions.kout]
+verify_jwt = false
