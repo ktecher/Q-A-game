@@ -6,6 +6,7 @@ import { scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
 import { seatAngleDeg, ellipsePct } from '../../lib/koutGeometry';
 import { arabicKoutError } from '../../lib/koutErrors';
+import { JoinQrPanel } from './JoinQr';
 
 // Smaller ellipse than SeatRing's — the trick lives inside the ring, each
 // card nudged toward the seat that played it.
@@ -70,24 +71,32 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
   };
 
   if (game.status === 'lobby') {
+    // Nobody can join without this. It used to live only behind the host
+    // menu, which meant a room full of players had no way onto the table —
+    // the "keep the QR out of the permanent layout" rule is for once a trick
+    // is on the table (390px of height can't spare it there); an empty
+    // lobby has nothing better to show, so the QR IS the screen here.
     const claimed = seats.filter((s) => s.user_id).length;
     return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-        <span className="font-ar-body font-bold leading-none" style={{ fontSize: 26, color: 'var(--text)' }}>
-          بانتظار اللاعبين
-        </span>
-        <span className="font-en-body leading-none" style={{ fontSize: 12, color: 'var(--muted)' }} lang="en">
-          {claimed}/{seatCount} SEATS CLAIMED
-        </span>
-        {err && (
-          <span className="font-en-body leading-none" style={{ fontSize: 11, color: 'var(--red-ink)' }}>
-            {err}
+      <div className="absolute inset-0 flex items-center justify-center gap-8">
+        <JoinQrPanel joinCode={game.join_code} size={170} />
+        <div className="flex flex-col items-center gap-3">
+          <span className="font-ar-body font-bold leading-none" style={{ fontSize: 26, color: 'var(--text)' }}>
+            بانتظار اللاعبين
           </span>
-        )}
-        <button type="button" disabled={claimed < seatCount || busy} onClick={handleStart} className="text-center disabled:opacity-40" style={btnStyle}>
-          <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 22 }}>ابدأ الجولة</span>{' '}
-          <span className="font-en-body leading-none" style={{ fontSize: 10 }} lang="en">START</span>
-        </button>
+          <span className="font-en-body leading-none" style={{ fontSize: 12, color: 'var(--muted)' }} lang="en">
+            {claimed}/{seatCount} SEATS CLAIMED
+          </span>
+          {err && (
+            <span className="font-en-body leading-none" style={{ fontSize: 11, color: 'var(--red-ink)' }}>
+              {err}
+            </span>
+          )}
+          <button type="button" disabled={claimed < seatCount || busy} onClick={handleStart} className="text-center disabled:opacity-40" style={btnStyle}>
+            <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 22 }}>ابدأ الجولة</span>{' '}
+            <span className="font-en-body leading-none" style={{ fontSize: 10 }} lang="en">START</span>
+          </button>
+        </div>
       </div>
     );
   }
