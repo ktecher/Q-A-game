@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cardFace } from '../../lib/koutCards';
 import { startRound } from '../../lib/koutClient';
@@ -87,10 +87,38 @@ function TrickCard({ card, teamColor, name, isLead }) {
 
 /* The centre field — the whole stage minus the two team rails. Its only
    face-up cards are `game.trick`'s, which every seat has already seen. */
+// The server never lets a client observe a full trick — it clears `trick`
+// to [] in the SAME write that completes it (index.ts), so the winning
+// card would otherwise vanish the instant it's played. `last_trick` carries
+// it across that write; this holds it on screen for a couple of seconds so
+// the room actually sees it, then lets the empty grid (or the next card,
+// whichever comes first) take over.
+const TRICK_PAUSE_MS = 2000;
+
 export default function TrickArea({ game, seats, gameId }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+
+  // Keyed on content rather than a counter: every card in a round is played
+  // once, so a completed trick's cards are a unique key for that round, and
+  // last_trick only changes when a genuinely new trick lands.
+  const lastTrickKey = game.last_trick?.length ? JSON.stringify(game.last_trick) : null;
+  const [pausing, setPausing] = useState(false);
+  const [shownKey, setShownKey] = useState(null);
+  // Turning the pause ON happens here, during render (same pattern as
+  // `everyoneWasReady` above) rather than in the effect below, so the effect
+  // body itself never calls setState synchronously — it only schedules the
+  // timeout that turns the pause back OFF.
+  if (lastTrickKey && lastTrickKey !== shownKey) {
+    setShownKey(lastTrickKey);
+    setPausing(true);
+  }
+  useEffect(() => {
+    if (!pausing) return undefined;
+    const t = setTimeout(() => setPausing(false), TRICK_PAUSE_MS);
+    return () => clearTimeout(t);
+  }, [pausing, lastTrickKey]);
   const seatCount = game.seat_count;
   const teamColors = game.team_colors ?? TEAM_COLOR_FALLBACK;
   const claimed = seats.filter((s) => s.user_id).length;
@@ -231,7 +259,12 @@ export default function TrickArea({ game, seats, gameId }) {
   // order strictly alternates teams); this grid does not — it advances one
   // cell in reading order and never jumps. It is the stable turn signal, and
   // it is also the biggest thing on the screen.
-  const next = game.trick.length;
+  // While `trick` (live) has cards, show it — that's an in-progress trick,
+  // and new state always wins over a pending pause (see TRICK_PAUSE_MS
+  // above). Once it's empty, fall back to `last_trick` until the pause
+  // expires, then let the empty grid show through undisturbed.
+  const trick = game.trick.length ? game.trick : (pausing ? game.last_trick ?? [] : []);
+  const next = trick.length;
   const showNext = next < seatCount && game.turn_seat != null;
 
   return (
@@ -241,7 +274,7 @@ export default function TrickArea({ game, seats, gameId }) {
         style={{ gridTemplateColumns: `repeat(${seatCount / 2}, 1fr)`, gridTemplateRows: 'repeat(2, 1fr)', gap: 8, padding: '0 8px' }}
       >
         {Array.from({ length: seatCount }, (_, cell) => {
-          const played = game.trick[cell];
+          const played = trick[cell];
           if (played) {
             return (
               <TrickCard
@@ -257,14 +290,32 @@ export default function TrickArea({ game, seats, gameId }) {
           // The centre of the screen says the name outright, so nobody has to
           // hunt a highlight to answer "whose turn?".
           if (showNext && cell === next) {
+            const turnName = seatName(seats, game.turn_seat);
+            // A short name gets full size; a long one steps down first, so
+            // shrinking — not truncation — is the first response to length.
+            // WebkitLineClamp is only the backstop for a name that's long
+            // even at the smaller size.
+            const turnNameFontSize = turnName.length > 10 ? 18 : 26;
             return (
               <Slot key={cell}>
                 <div
                   className="flex items-center justify-center text-center"
                   style={{ ...slotStyle, border: '3px dashed var(--gold)', padding: 6 }}
                 >
-                  <span className="font-ar-body font-extrabold" style={{ fontSize: 26, lineHeight: 1.15, color: 'var(--gold-ink)', overflow: 'hidden', wordBreak: 'break-word' }}>
-                    {seatName(seats, game.turn_seat)}
+                  <span
+                    className="font-ar-body font-extrabold"
+                    style={{
+                      fontSize: turnNameFontSize,
+                      lineHeight: 1.15,
+                      color: 'var(--gold-ink)',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {turnName}
                   </span>
                 </div>
               </Slot>

@@ -266,17 +266,28 @@ async function startRound(uid: string, { gameId }: any) {
   // at the wrong number while the caller still hears {ok: true}.
   if (resetErr) return dbFail('reset seats for round', resetErr);
 
-  const { error } = await admin.from('kout_games').update({
+  const { data: claimed, error } = await admin.from('kout_games').update({
     status: 'bidding',
     round_no: game.round_no + 1,
     dealer_seat: dealer,
     // Bidding opens to the dealer's RIGHT and runs counterclockwise.
     turn_seat: nextSeat(dealer, game.seat_count),
     bid: null, bidder_seat: null, mulzum: false, hukm: null,
-    trick: [], played_cards: [], tricks_won: [0, 0],
+    // last_trick is cleared here too — otherwise round 2 would open showing
+    // round 1's final trick (see 0013_kout_last_trick.sql).
+    trick: [], last_trick: [], played_cards: [], tricks_won: [0, 0],
     updated_at: new Date().toISOString(),
-  }).eq('id', gameId);
+  }).eq('id', gameId)
+    // Two host taps (the TrickArea button and the menu item, each with its
+    // own `busy` flag) both pass the checks above and would otherwise both
+    // deal — the second dealHands() overwriting the first and changing a
+    // player's cards under them. Gating this write on status still matching
+    // what was read means only the first commits; the second matches zero
+    // rows and is told the truth instead of a false {ok: true}.
+    .eq('status', game.status)
+    .select('id');
   if (error) return dbFail('start round', error);
+  if (!claimed || claimed.length === 0) return fail('a round is already in progress');
 
   return json({ ok: true });
 }
@@ -448,7 +459,10 @@ async function play(uid: string, { gameId, card }: any) {
 
   if (tricksPlayed < HAND_SIZE) {
     const claimed = await claimTurn(gameId, seat.seat, {
-      trick: [], played_cards: playedCards, tricks_won: tricksWon,
+      // last_trick rides this write — no new write, no new error path — so
+      // TrickArea.jsx can show the room the card that just won, which the
+      // grid can otherwise never display (see 0013_kout_last_trick.sql).
+      trick: [], last_trick: trick, played_cards: playedCards, tricks_won: tricksWon,
       turn_seat: winner, updated_at: new Date().toISOString(),
     });
     if (!claimed) return fail('not your turn');
@@ -468,7 +482,9 @@ async function play(uid: string, { gameId, card }: any) {
 
   const claimed = await claimTurn(gameId, seat.seat, {
     status: winnerTeam === null ? 'round_end' : 'finished',
-    trick: [], played_cards: playedCards, tricks_won: tricksWon,
+    // last_trick rides this write too, same reasoning as the mid-round branch
+    // above.
+    trick: [], last_trick: trick, played_cards: playedCards, tricks_won: tricksWon,
     score, winner_team: winnerTeam, turn_seat: null,
     updated_at: new Date().toISOString(),
   });
@@ -479,13 +495,20 @@ async function play(uid: string, { gameId, card }: any) {
   if (winnerTeam !== null) {
     const { data: seats } = await admin
       .from('kout_seats').select('seat,name').eq('game_id', gameId).order('seat');
-    await admin.from('kout_results').insert({
+    const { error: resultErr } = await admin.from('kout_results').insert({
       host_id: game.host_id, seat_count: game.seat_count, rounds: game.round_no,
       score, winner_team: winnerTeam,
       players: seats!.map((s) => ({ seat: s.seat, name: s.name, team: teamOf(s.seat) })),
     });
+    // A dropped write here loses the history row silently — the game itself
+    // has already finished for every player, so this only ever surfaces to
+    // whoever played the winning card, but it must surface.
+    if (resultErr) return dbFail('record result', resultErr);
     // Hands are deliberately not kept.
-    await admin.from('kout_hands').delete().eq('game_id', gameId);
+    const { error: cleanupErr } = await admin.from('kout_hands').delete().eq('game_id', gameId);
+    // Still RLS-protected either way, but a dropped delete leaves a finished
+    // game's hands lingering instead of failing loudly.
+    if (cleanupErr) return dbFail('cleanup hands after game', cleanupErr);
   }
 
   return json({ ok: true, trickWinner: winner, roundScore: delta, score, winnerTeam });

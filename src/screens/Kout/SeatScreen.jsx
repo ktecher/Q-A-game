@@ -97,7 +97,10 @@ function SeatPicker({ name, setName, seatCount, seatInfo, disabledSeats, claimin
               {seat + 1}
               {occupant?.taken && occupant.name && (
                 <span className="font-ar-body truncate" style={{ fontSize: 9, maxWidth: 58 }}>
-                  {occupant.name}
+                  {/* Ready is genuinely useful here: it tells someone picking
+                      a seat who's already settled in versus who just landed
+                      on the QR scan and hasn't looked up yet. */}
+                  {occupant.ready ? '✓ ' : ''}{occupant.name}
                 </span>
               )}
             </button>
