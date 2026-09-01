@@ -1440,6 +1440,11 @@ async function startRound(uid: string, { gameId }: any) {
   const { data: game } = await admin.from('kout_games').select('*').eq('id', gameId).single();
   if (!game) return fail('no such game', 404);
   if (game.host_id !== uid) return fail('only the host starts a round', 403);
+  // Without this, a stray menu tap mid-round silently re-deals every hand and
+  // wipes forty minutes of play. Only a fresh table or a finished round deals.
+  if (game.status !== 'lobby' && game.status !== 'round_end') {
+    return fail('a round is already in progress');
+  }
 
   const { data: seats } = await admin
     .from('kout_seats').select('*').eq('game_id', gameId).order('seat');
