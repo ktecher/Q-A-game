@@ -54,3 +54,24 @@ export function makeDemoTeams(scores = [1800, 1400]) {
     score: scores[i] ?? 0,
   }));
 }
+
+// Ink for text sitting ON a team colour — the Kout table floods the active
+// player's card with it. The six selectable team colours are fixed hex
+// literals (SetupScreen/constants.js), so the fill is theme-invariant while
+// the box behind it is not, and neither fixed ink survives all six: cream
+// fails on green (2.19:1), gold (1.97:1) and orange (2.55:1); dark ink fails
+// on red (2.23:1), which is a default. Picking from the fill's own relative
+// luminance makes the worst case 3.82:1 — clear of the 3:1 large-text bar.
+//
+// Returns the LITERAL hex, never var(--text): a theme-reactive token on a
+// theme-invariant surface is the same trap TrickArea's card-face comment
+// documents about var(--red).
+export function inkOn(hex) {
+  const ch = [1, 3, 5].map((i) => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  // sRGB relative luminance; 0.179 is where cream and ink contrast equally.
+  const lum = 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+  return lum > 0.179 ? '#1D1F20' : '#F4ECD8';
+}

@@ -4,7 +4,6 @@ import { useKoutGame } from '../../lib/useKoutGame';
 import { startRound } from '../../lib/koutClient';
 import { SUIT_GLYPH } from '../../lib/koutCards';
 import { toArabicDigits } from '../../lib/format';
-import { TARGET_SCORE } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
 import { arabicKoutError } from '../../lib/koutErrors';
 import Modal from '../../components/Modal';
@@ -85,56 +84,41 @@ export default function TableScreen() {
 
   return (
     <div className="flex flex-col" style={{ height: '100dvh', overflow: 'hidden', position: 'relative' }}>
-      {/* Top strip — team names, scores, target, pinned bid badge, host menu */}
+      {/* Top strip — the round's bid + hukm, and the host menu. It used to
+          carry both team scores and TARGET 101 as well, but a match score and
+          a trick count are two unrelated quantities that looked alike at TV
+          distance; both now live together in each rail's foot, told apart by
+          size and by an explicit unit. What is left here is round-scoped
+          state, which belongs nowhere near a team's column. */}
       <div
         className="flex items-center justify-between gap-2 shrink-0"
         style={{ padding: '6px 14px', background: 'var(--panel)', borderBottom: '3px solid var(--gold-d)' }}
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 15, color: teamColors[0] }}>
-            {game.team_names[0]}
-          </span>
-          <span className="font-en-body font-bold leading-none" style={{ fontSize: 20, color: teamColors[0] }} lang="en">
-            {game.score[0]}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          <span className="font-en-body leading-none" style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.08em' }} lang="en">
-            TARGET {TARGET_SCORE}
-          </span>
-          {bidLive && (
-            <span
-              className="flex items-center gap-1 font-en-body font-bold leading-none"
-              style={{ fontSize: 16, background: 'var(--panel2)', border: '2px solid var(--gold)', padding: '3px 8px' }}
-            >
-              <span style={{ color: 'var(--gold-ink)' }}>{toArabicDigits(game.bid)}</span>
-              {game.hukm && (
-                <span style={{ color: RED_SUIT[game.hukm] ? 'var(--red-ink)' : 'var(--text)' }}>
-                  {SUIT_GLYPH[game.hukm]}
-                </span>
-              )}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 min-w-0 shrink-0">
-          <span className="font-en-body font-bold leading-none" style={{ fontSize: 20, color: teamColors[1] }} lang="en">
-            {game.score[1]}
-          </span>
-          <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 15, color: teamColors[1] }}>
-            {game.team_names[1]}
-          </span>
-          <button
-            type="button"
-            aria-label="القائمة"
-            onClick={() => { setMenuError(''); setMenuOpen(true); }}
-            className="flex items-center justify-center shrink-0"
-            style={menuOpenBtnStyle}
+        {bidLive ? (
+          <span
+            className="flex items-center gap-2 font-en-body font-bold leading-none"
+            style={{ fontSize: 24, background: 'var(--panel2)', border: '2px solid var(--gold)', padding: '5px 12px' }}
           >
-            <span aria-hidden="true">☰</span>
-          </button>
-        </div>
+            <span className="font-ar-body" style={{ color: 'var(--gold-ink)' }}>{toArabicDigits(game.bid)}</span>
+            {game.hukm && (
+              <span style={{ color: RED_SUIT[game.hukm] ? 'var(--red-ink)' : 'var(--text)' }}>
+                {SUIT_GLYPH[game.hukm]}
+              </span>
+            )}
+          </span>
+        ) : (
+          <span />
+        )}
+
+        <button
+          type="button"
+          aria-label="القائمة"
+          onClick={() => { setMenuError(''); setMenuOpen(true); }}
+          className="flex items-center justify-center shrink-0"
+          style={menuOpenBtnStyle}
+        >
+          <span aria-hidden="true">☰</span>
+        </button>
       </div>
 
       {/* Two team rails flanking the cards. `dir="ltr"` here and nowhere
@@ -143,19 +127,13 @@ export default function TableScreen() {
           restores rtl for its own content. Team 0 = even seats on the right,
           team 1 = odd seats on the left — `teamOf(seat) = seat % 2` untouched.
           The rails also reclaim the two ~250px columns the old ellipse left
-          empty, which is where the cards' new size comes from. */}
+          empty, which is where the cards' new size comes from. `game` carries
+          no hand data — it is the kout_games row — so passing it whole leaks
+          nothing the rail could render. */}
       <div dir="ltr" className="flex flex-1" style={{ minHeight: 0, padding: 6, gap: 6 }}>
-        <SeatRail
-          seats={seats} seatCount={game.seat_count} team={1} teamColor={teamColors[1]}
-          turnSeat={game.turn_seat} status={game.status} tricksWon={game.tricks_won}
-          bid={game.bid} bidderSeat={game.bidder_seat} hukm={game.hukm}
-        />
+        <SeatRail game={game} seats={seats} team={1} teamColor={teamColors[1]} />
         <TrickArea game={game} seats={seats} gameId={gameId} />
-        <SeatRail
-          seats={seats} seatCount={game.seat_count} team={0} teamColor={teamColors[0]}
-          turnSeat={game.turn_seat} status={game.status} tricksWon={game.tricks_won}
-          bid={game.bid} bidderSeat={game.bidder_seat} hukm={game.hukm}
-        />
+        <SeatRail game={game} seats={seats} team={0} teamColor={teamColors[0]} />
       </div>
 
       {showQr && <JoinQr joinCode={game.join_code} onClose={() => setShowQr(false)} />}
