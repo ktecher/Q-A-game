@@ -305,9 +305,15 @@ async function bid(uid: string, { gameId, bid: value }: any) {
 
   const dealer = game.dealer_seat;
   const lastSeat = dealer; // bidding opened to the dealer's right, so it closes ON the dealer
+  // Same race as play(): two taps from this seat both pass atTurn() with the
+  // same turn_seat, so both would advance the turn — the second one skipping
+  // whoever bids after this seat. Gate on turn_seat still being this seat's;
+  // the loser's update matches zero rows and is rejected.
   if (seat.seat !== lastSeat) {
-    await admin.from('kout_games')
-      .update({ turn_seat: nextSeat(seat.seat, game.seat_count) }).eq('id', gameId);
+    const { data } = await admin.from('kout_games')
+      .update({ turn_seat: nextSeat(seat.seat, game.seat_count) })
+      .eq('id', gameId).eq('turn_seat', seat.seat).select('id');
+    if (!data || data.length === 0) return fail('not your turn');
     return json({ ok: true });
   }
 
@@ -317,13 +323,14 @@ async function bid(uid: string, { gameId, bid: value }: any) {
   const bids = seats!.map((s) => s.bid);
   const result = resolveBidding(bids, { seatCount: game.seat_count, lastSeat });
 
-  await admin.from('kout_games').update({
+  const { data: resolved } = await admin.from('kout_games').update({
     status: 'hukm',
     bid: result.bid,
     bidder_seat: result.winnerSeat,
     mulzum: result.mulzum,
     turn_seat: result.winnerSeat,
-  }).eq('id', gameId);
+  }).eq('id', gameId).eq('turn_seat', seat.seat).select('id');
+  if (!resolved || resolved.length === 0) return fail('not your turn');
 
   return json({ ok: true, ...result });
 }
@@ -357,15 +364,18 @@ async function play(uid: string, { gameId, card }: any) {
   const trick = [...game.trick, { seat: seat.seat, card }];
   const playedCards = [...game.played_cards, card];
 
-  // The game row is the lock. Two taps from the same player inside one round
-  // trip both pass atTurn() above and both read this same hand, so both
-  // compute this same `cards` (card removed) from an identical stale read.
-  // Writing kout_games FIRST, gated on turn_seat still being this seat's,
-  // makes that a compare-and-swap: only the first write matches, and it also
-  // moves turn_seat off this seat, so the second write matches zero rows.
-  // A lost race is then a no-op instead of the second write restoring the
-  // card into kout_hands after the first already moved it into the trick.
-  // Applies to every branch below that advances the game.
+  // The game row is the lock — not for atomicity between the two writes
+  // below, but so the LOSER of a race is rejected before it ever reaches
+  // kout_hands. Two taps from the same player inside one round trip both
+  // pass atTurn() above and both read this same hand, so both compute this
+  // same `cards` (card removed) from an identical stale read. Gating the
+  // kout_games write on turn_seat still being this seat's means only the
+  // first one matches — and that write is itself what moves turn_seat off
+  // this seat, so the second write matches zero rows and never gets to
+  // applyHand() at all. Once a request's claimTurn() succeeds, the hand and
+  // card_count writes that follow are exclusive for this turn; do not
+  // reorder them ahead of the claim. Applies to every branch below that
+  // advances the game.
   async function claimTurn(patch: Record<string, unknown>) {
     const { data } = await admin
       .from('kout_games')

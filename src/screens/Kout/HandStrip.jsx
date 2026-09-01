@@ -32,11 +32,13 @@ export default function HandStrip({ hand, trick, myTurn, onPlay }) {
   // `onPlay` is a round trip to the server. The button is deliberately never
   // `disabled` (see file comment above), so without this a fast double-tap
   // fires two `play` actions before either resolves — exactly the race
-  // index.ts's turn-claim CAS now has to reject. Ignoring taps while one is
-  // outstanding does the same job as `disabled` without its failure mode (a
-  // stale realtime `trick` freezing the button dead); `pending` folds into
-  // `playable` below so the cards visibly grey out to show something's
-  // happening, without ever blocking a tap the CAS itself doesn't reject.
+  // index.ts's turn-claim CAS now has to reject. This is a courtesy, not the
+  // fix: it only stops an accidental double-tap on ONE phone — two tabs, or
+  // a retry after a timeout, still race, and the server CAS is what actually
+  // protects the hand. `onPlay` is `guarded()` from SeatScreen, which never
+  // rethrows (it catches and shows the Arabic error itself), so `await`
+  // always settles and `finally` always releases `pending` — a rejected or
+  // stuck request can't leave the hand permanently gated.
   async function handlePlay(card) {
     if (pending) return;
     setPending(true);
@@ -49,6 +51,11 @@ export default function HandStrip({ hand, trick, myTurn, onPlay }) {
 
   return (
     <div className="flex flex-wrap justify-center" style={{ gap: 8, padding: '4px 8px' }}>
+      {pending && (
+        <p className="font-ar-body font-bold w-full text-center" style={{ fontSize: 12, color: 'var(--muted)' }}>
+          جارٍ الإرسال...
+        </p>
+      )}
       {sorted.map((card) => {
         const face = cardFace(card);
         const playable = myTurn && legal.has(card) && !pending;
