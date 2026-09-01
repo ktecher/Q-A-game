@@ -1,16 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ensureSession, claimSeat, placeBid, setHukm, playCard } from '../../lib/koutClient';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ensureSession, claimSeat, peekGame, placeBid, setHukm, playCard } from '../../lib/koutClient';
 import { useKoutGame } from '../../lib/useKoutGame';
 import { suitLabelAr } from '../../lib/koutCards';
 import { MIN_BID, MAX_BID, PASS, teamOf, scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
 import HandStrip from './HandStrip';
 
-// seat_count is only ever 4 or 6 (see 0010_kout.sql), and a fresh anon
-// session cannot read it ahead of time — kout_games/kout_seats are RLS-gated
-// to members, and you aren't one until claimSeat succeeds. So the picker
-// renders the larger ring and lets the server's "no such seat" prune the two
-// extra positions for a 4-seat game, rather than blocking on data we have no
-// way to fetch. See task-14 report for the concern this raises upstream.
+// seat_count is only ever 4 or 6 (see 0010_kout.sql). `peekGame` (added
+// alongside this screen, see task-14 report) returns it plus which seats are
+// taken and by whom, so the ring below is sized and labelled for real once it
+// resolves. Until then — or if it fails (bad code, offline) — fall back to
+// the larger ring; the tap itself, not this data, is what the server judges.
 const MAX_SEATS = 6;
 const AR_DIGIT = { 5: '٥', 6: '٦', 7: '٧', 8: '٨', 9: '٩' };
 const SUITS = ['S', 'H', 'D', 'C'];
@@ -42,7 +41,7 @@ function seatLabel(seats, seat) {
   return row?.name || `مقعد ${seat + 1}`;
 }
 
-function SeatPicker({ name, setName, disabledSeats, claiming, onClaim }) {
+function SeatPicker({ name, setName, seatCount, seatInfo, disabledSeats, claiming, onClaim }) {
   const radius = 96;
   const center = 116;
   const canClaim = name.trim().length > 0;
@@ -81,33 +80,46 @@ function SeatPicker({ name, setName, disabledSeats, claiming, onClaim }) {
       )}
 
       <div className="relative" style={{ width: center * 2, height: center * 2 }}>
-        {Array.from({ length: MAX_SEATS }, (_, seat) => seat).map((seat) => {
-          const angle = (seat / MAX_SEATS) * 2 * Math.PI - Math.PI / 2;
+        {Array.from({ length: seatCount }, (_, seat) => seat).map((seat) => {
+          const angle = (seat / seatCount) * 2 * Math.PI - Math.PI / 2;
           const x = center + radius * Math.cos(angle) - 34;
           const y = center + radius * Math.sin(angle) - 34;
-          const blocked = disabledSeats.has(seat) || !canClaim || claiming;
           const team = teamOf(seat);
+          const occupant = seatInfo.find((s) => s.seat === seat);
+          const failedHere = disabledSeats.has(seat);
+          // `taken` is advisory (from peekGame, possibly a moment stale) —
+          // it dims the seat and shows who's in it, but never disables the
+          // tap: the seat might be yours from before a reload, and claimSeat
+          // now lets you reclaim it in any status. Only a server-confirmed
+          // rejection (failedHere) or a missing name actually blocks tapping.
+          const dim = failedHere || Boolean(occupant?.taken);
+          const blocked = failedHere || !canClaim || claiming;
           return (
             <button
               key={seat}
               type="button"
               disabled={blocked}
               onClick={() => onClaim(seat)}
-              className="absolute flex items-center justify-center font-en-body font-bold transition-transform duration-100 enabled:hover:-translate-y-1"
+              className="absolute flex flex-col items-center justify-center font-en-body font-bold transition-transform duration-100 enabled:hover:-translate-y-1"
               style={{
                 left: x,
                 top: y,
                 width: 68,
                 height: 68,
-                background: disabledSeats.has(seat) ? 'var(--cleared-bg)' : 'var(--panel)',
-                border: `4px solid ${disabledSeats.has(seat) ? 'var(--line)' : TEAM_COLOR[team]}`,
-                color: disabledSeats.has(seat) ? 'var(--muted2)' : 'var(--text)',
+                background: dim ? 'var(--cleared-bg)' : 'var(--panel)',
+                border: `4px solid ${dim ? 'var(--line)' : TEAM_COLOR[team]}`,
+                color: dim ? 'var(--muted2)' : 'var(--text)',
                 boxShadow: blocked ? 'none' : '0 6px 0 var(--shadow)',
                 opacity: canClaim ? 1 : 0.6,
                 fontSize: 22,
               }}
             >
               {seat + 1}
+              {occupant?.taken && occupant.name && (
+                <span className="font-ar-body truncate" style={{ fontSize: 9, maxWidth: 58 }}>
+                  {occupant.name}
+                </span>
+              )}
             </button>
           );
         })}
@@ -142,16 +154,34 @@ export default function SeatScreen() {
   const [ready, setReady] = useState(false);
   const [sessionError, setSessionError] = useState('');
   const [name, setName] = useState('');
+  const [peek, setPeek] = useState(null); // { seatCount, seats: [{ seat, taken, name }] }
   const [disabledSeats, setDisabledSeats] = useState(() => new Set());
   const [claiming, setClaiming] = useState(false);
   const [joined, setJoined] = useState(null); // { gameId, seat }
   const [actionError, setActionError] = useState('');
 
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
   useEffect(() => {
+    let alive = true;
     ensureSession()
-      .then(() => setReady(true))
-      .catch(() => setSessionError('تعذّر تسجيل الدخول، أعد فتح الرابط من جديد'));
+      .then(() => { if (alive) setReady(true); })
+      .catch(() => { if (alive) setSessionError('تعذّر تسجيل الدخول، أعد فتح الرابط من جديد'); });
+    return () => { alive = false; };
   }, []);
+
+  // Pre-join visibility into the real seat_count and who's already seated —
+  // needs a session first, since peekGame still runs behind the same "must
+  // be signed in" gate as every other action.
+  useEffect(() => {
+    if (!ready || !joinCode) return undefined;
+    let alive = true;
+    peekGame(joinCode)
+      .then((p) => { if (alive) setPeek(p); })
+      .catch((e) => { if (alive) setActionError(arabicError(e.message)); });
+    return () => { alive = false; };
+  }, [ready, joinCode]);
 
   useEffect(() => {
     if (!actionError) return undefined;
@@ -166,12 +196,14 @@ export default function SeatScreen() {
     setClaiming(true);
     try {
       const { gameId } = await claimSeat(joinCode, seat, name.trim());
+      if (!mountedRef.current) return;
       setJoined({ gameId, seat });
     } catch (e) {
+      if (!mountedRef.current) return;
       setDisabledSeats((prev) => new Set(prev).add(seat));
       setActionError(arabicError(e.message));
     } finally {
-      setClaiming(false);
+      if (mountedRef.current) setClaiming(false);
     }
   }
 
@@ -214,6 +246,8 @@ export default function SeatScreen() {
           <SeatPicker
             name={name}
             setName={setName}
+            seatCount={peek?.seatCount ?? MAX_SEATS}
+            seatInfo={peek?.seats ?? []}
             disabledSeats={disabledSeats}
             claiming={claiming}
             onClaim={handleClaim}
@@ -234,6 +268,10 @@ export default function SeatScreen() {
 
   const mySeat = joined.seat;
   const myTurn = game.turn_seat === mySeat;
+  const standingBid = seats.reduce(
+    (max, s) => (typeof s.bid === 'number' && s.bid !== PASS && s.bid > max ? s.bid : max),
+    0,
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -256,10 +294,6 @@ export default function SeatScreen() {
             <p className="font-ar-body font-bold" style={{ fontSize: 20, color: 'var(--gold-ink)' }}>دورك — زايد</p>
             <div className="flex flex-wrap justify-center" style={{ gap: 10 }}>
               {Array.from({ length: MAX_BID - MIN_BID + 1 }, (_, i) => MIN_BID + i).map((n) => {
-                const standingBid = seats.reduce(
-                  (max, s) => (typeof s.bid === 'number' && s.bid !== PASS && s.bid > max ? s.bid : max),
-                  0,
-                );
                 const enabled = n > standingBid;
                 return (
                   <button

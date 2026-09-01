@@ -17,10 +17,12 @@ function sortHand(hand) {
   });
 }
 
-/* Greying an illegal card here is a courtesy — the `kout` Edge Function runs
-   this exact legalPlays() again and is the actual authority. If the two ever
-   disagreed, tapping still just gets refused server-side and surfaces as an
-   inline message (see SeatScreen's `guarded`); it can never desync the game. */
+/* Greying an illegal card is advisory only — the `kout` Edge Function runs
+   this exact legalPlays() again and is the real authority. `trick` arrives
+   over realtime, so a phone that just woke can render one step behind the
+   server for a moment; if that makes `playable` wrong here, the tap must
+   still go through rather than sit dead. The server's refusal (surfaced via
+   SeatScreen's `guarded`) is the only thing allowed to actually block a play. */
 export default function HandStrip({ hand, trick, myTurn, onPlay }) {
   const sorted = sortHand(hand ?? []);
   const legal = new Set(legalPlays(hand ?? [], { trick }));
@@ -34,10 +36,9 @@ export default function HandStrip({ hand, trick, myTurn, onPlay }) {
           <button
             key={card}
             type="button"
-            disabled={!playable}
             onClick={() => onPlay(card)}
             aria-label={`${face.rank}${face.suit ? ` ${face.suit}` : ''}`}
-            className="flex flex-col items-center justify-center transition-transform duration-100 enabled:hover:-translate-y-2 enabled:active:translate-y-1"
+            className="flex flex-col items-center justify-center transition-transform duration-100 hover:-translate-y-2 active:translate-y-1"
             style={{
               width: 54,
               height: 78,
