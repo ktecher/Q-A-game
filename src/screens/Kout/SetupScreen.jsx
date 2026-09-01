@@ -4,24 +4,15 @@ import ColorSwatchPicker from '../../components/ColorSwatchPicker';
 import { TEAM_COLORS } from '../SetupScreen/constants';
 import { STORAGE_KEYS } from '../../lib/storageKeys';
 import { ensureSession, createGame } from '../../lib/koutClient';
+import { seatAngleDeg, ellipsePct, readKoutOrientation } from '../../lib/koutGeometry';
 
 const SEAT_COUNTS = [4, 6];
 const DEFAULT_NAMES = ['فريق ١', 'فريق ٢'];
 
 // Same ellipse convention as SeatRing.jsx (slot 0 = top, increasing slot =
-// counterclockwise) — duplicated rather than imported, since SeatRing only
-// exports its component and this is the one formula both sides must agree on.
+// counterclockwise) — this is the one formula both sides must agree on.
 const RX = 40;
 const RY = 37;
-function slotPct(slot, seatCount) {
-  const rad = ((slot * 360) / seatCount) * (Math.PI / 180);
-  return { left: 50 - RX * Math.sin(rad), top: 50 - RY * Math.cos(rad) };
-}
-
-function readStoredOrientation() {
-  const raw = Number(localStorage.getItem(STORAGE_KEYS.KOUT_SEAT1_POS));
-  return Number.isInteger(raw) && raw >= 0 ? raw : 0;
-}
 
 function Label({ ar, en, center }) {
   return (
@@ -49,7 +40,7 @@ export default function SetupScreen() {
   const [seatCount, setSeatCount] = useState(4);
   const [names, setNames] = useState(DEFAULT_NAMES);
   const [colors, setColors] = useState([TEAM_COLORS[0], TEAM_COLORS[1]]);
-  const [orientationRaw, setOrientation] = useState(readStoredOrientation);
+  const [orientationRaw, setOrientation] = useState(() => readKoutOrientation());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -174,7 +165,7 @@ export default function SetupScreen() {
           <Label ar="اتجاه المقعد ١" en="SEAT 1" center />
           <div className="relative flex-1" style={{ width: '100%' }}>
             {Array.from({ length: seatCount }, (_, slot) => {
-              const { left, top } = slotPct(slot, seatCount);
+              const { left, top } = ellipsePct(seatAngleDeg(slot, seatCount, 0), RX, RY);
               const active = orientation === slot;
               return (
                 <button

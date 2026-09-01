@@ -4,6 +4,7 @@ import { useKoutGame } from '../../lib/useKoutGame';
 import { suitLabelAr } from '../../lib/koutCards';
 import { MIN_BID, MAX_BID, PASS, teamOf, scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
+import { toArabicDigits } from '../../lib/format';
 import HandStrip from './HandStrip';
 
 // seat_count is only ever 4 or 6 (see 0010_kout.sql). `peekGame` (added
@@ -12,7 +13,6 @@ import HandStrip from './HandStrip';
 // resolves. Until then — or if it fails (bad code, offline) — fall back to
 // the larger ring; the tap itself, not this data, is what the server judges.
 const MAX_SEATS = 6;
-const AR_DIGIT = { 5: '٥', 6: '٦', 7: '٧', 8: '٨', 9: '٩' };
 const SUITS = ['S', 'H', 'D', 'C'];
 
 // Every rejection the Edge Function can send, in Arabic, so nothing reaches
@@ -314,7 +314,7 @@ export default function SeatScreen() {
                       boxShadow: enabled ? '0 6px 0 var(--gold-sh)' : 'none',
                     }}
                   >
-                    {AR_DIGIT[n]}
+                    {toArabicDigits(n)}
                   </button>
                 );
               })}
@@ -370,7 +370,7 @@ export default function SeatScreen() {
           </>
         ) : (
           <p className="font-ar-body font-bold text-center" style={{ fontSize: 18, color: 'var(--muted)' }}>
-            {seatLabel(seats, game.bidder_seat)} يحدد الحكم على {AR_DIGIT[game.bid] ?? game.bid}
+            {seatLabel(seats, game.bidder_seat)} يحدد الحكم على {toArabicDigits(game.bid)}
           </p>
         ))}
 

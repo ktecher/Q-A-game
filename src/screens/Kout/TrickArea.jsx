@@ -4,21 +4,12 @@ import { cardFace } from '../../lib/koutCards';
 import { startRound } from '../../lib/koutClient';
 import { scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
+import { seatAngleDeg, ellipsePct } from '../../lib/koutGeometry';
 
 // Smaller ellipse than SeatRing's — the trick lives inside the ring, each
 // card nudged toward the seat that played it.
 const TRX = 17;
 const TRY = 15;
-
-function seatAngleDeg(seatIndex, seatCount, orientation) {
-  const slot = (orientation + seatIndex) % seatCount;
-  return (slot * 360) / seatCount;
-}
-
-function ellipsePct(angleDeg, rx, ry) {
-  const rad = (angleDeg * Math.PI) / 180;
-  return { left: 50 - rx * Math.sin(rad), top: 50 - ry * Math.cos(rad) };
-}
 
 const btnStyle = {
   padding: '10px 26px',

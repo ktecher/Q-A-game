@@ -3,16 +3,15 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useKoutGame } from '../../lib/useKoutGame';
 import { startRound } from '../../lib/koutClient';
 import { SUIT_GLYPH } from '../../lib/koutCards';
-import { STORAGE_KEYS } from '../../lib/storageKeys';
+import { toArabicDigits } from '../../lib/format';
 import { TARGET_SCORE } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
+import { readKoutOrientation } from '../../lib/koutGeometry';
 import Modal from '../../components/Modal';
 import SeatRing from './SeatRing';
 import TrickArea from './TrickArea';
 import JoinQr from './JoinQr';
 
-const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-const toArabicDigits = (n) => String(n).split('').map((d) => AR_DIGITS[Number(d)] ?? d).join('');
 const RED_SUIT = { H: true, D: true };
 
 // Every host-menu action that hits the server can be refused — a bare
@@ -33,11 +32,6 @@ const menuBtnStyle = {
   border: '4px solid var(--line)',
   color: 'var(--text)',
 };
-
-function readOrientation(seatCount) {
-  const raw = Number(localStorage.getItem(STORAGE_KEYS.KOUT_SEAT1_POS));
-  return Number.isInteger(raw) && raw >= 0 && raw < seatCount ? raw : 0;
-}
 
 /* The host's table — mirrored to a TV, landscape, ~844×390. Every seat here
    is `useKoutGame`'s public data only: the host holds no `kout_hands` row
@@ -73,7 +67,7 @@ export default function TableScreen() {
     return <CenteredMessage text="جارٍ التحميل…" />;
   }
 
-  const orientation = readOrientation(game.seat_count);
+  const orientation = readKoutOrientation(game.seat_count);
   const bidLive = ['hukm', 'playing', 'round_end'].includes(game.status) && game.bid != null;
   const teamColors = game.team_colors ?? TEAM_COLOR_FALLBACK;
 
@@ -149,20 +143,24 @@ export default function TableScreen() {
 
       {showQr && <JoinQr joinCode={game.join_code} onClose={() => setShowQr(false)} />}
 
-      {paused && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4" style={{ background: 'var(--scrim)' }}>
-          <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 30, color: 'var(--gold-ink)' }}>
-            الجولة متوقفة
-          </span>
-          <button
-            type="button"
-            onClick={() => setPaused(false)}
-            style={{ padding: '10px 24px', background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)', border: '4px solid var(--outline)', boxShadow: '0 6px 0 var(--gold-sh)', color: 'var(--outline)' }}
-          >
-            <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 20 }}>استئناف</span>
-          </button>
-        </div>
-      )}
+      <Modal
+        open={paused}
+        onClose={() => setPaused(false)}
+        labelledBy="kout-paused-title"
+        className="flex flex-col items-center gap-4"
+        style={{ background: 'none', border: 'none', boxShadow: 'none' }}
+      >
+        <span id="kout-paused-title" className="font-ar-body font-extrabold leading-none" style={{ fontSize: 30, color: 'var(--gold-ink)' }}>
+          الجولة متوقفة
+        </span>
+        <button
+          type="button"
+          onClick={() => setPaused(false)}
+          style={{ padding: '10px 24px', background: 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)', border: '4px solid var(--outline)', boxShadow: '0 6px 0 var(--gold-sh)', color: 'var(--outline)' }}
+        >
+          <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 20 }}>استئناف</span>
+        </button>
+      </Modal>
 
       <Modal open={menuOpen} onClose={() => setMenuOpen(false)} labelledBy="kout-menu-title" className="max-w-xs w-full text-center" style={{ padding: '20px 24px' }}>
         <h3 id="kout-menu-title" className="font-ar-body font-bold leading-none" style={{ fontSize: 22, color: 'var(--gold-ink)' }}>

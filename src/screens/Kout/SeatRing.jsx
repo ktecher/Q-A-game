@@ -1,22 +1,10 @@
 import { teamOf } from '../../../supabase/functions/_shared/koutRules.js';
+import { seatAngleDeg, ellipsePct } from '../../lib/koutGeometry';
 
 // Ellipse radii as a % of the stage — wider than tall, since the stage
 // itself (844×~350) is much wider than it is high.
 const RX = 40;
 const RY = 37;
-
-// slot 0 = top, increasing slot = counterclockwise (top → upper-left → …).
-// `orientation` is the ring slot the host tapped at setup to mean seat 0,
-// so every other seat's slot is offset from it.
-function seatAngleDeg(seatIndex, seatCount, orientation) {
-  const slot = (orientation + seatIndex) % seatCount;
-  return (slot * 360) / seatCount;
-}
-
-function ellipsePct(angleDeg, rx, ry) {
-  const rad = (angleDeg * Math.PI) / 180;
-  return { left: 50 - rx * Math.sin(rad), top: 50 - ry * Math.cos(rad) };
-}
 
 const bidLabel = (bid) => (bid === -1 ? 'طاف' : String(bid));
 
