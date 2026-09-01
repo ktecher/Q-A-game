@@ -123,6 +123,18 @@ async function claimSeat(uid: string, { joinCode, seat, name }: any) {
   if (existing?.user_id && existing.user_id !== uid) return fail('seat taken');
   if (!existing?.user_id && game.status !== 'lobby') return fail('game already started');
 
+  // A double-seated player could read two hands, one of them an opponent's —
+  // the exact thing kout_hands' RLS exists to prevent. The unique index on
+  // (game_id, user_id) in 0010_kout.sql is the real guarantee; this check
+  // only turns that constraint violation into a message a player can act on.
+  // Must not fire on the reclaim path above, so it only runs for a fresh claim.
+  if (!existing?.user_id) {
+    const { data: heldElsewhere } = await admin
+      .from('kout_seats').select('seat')
+      .eq('game_id', game.id).eq('user_id', uid).maybeSingle();
+    if (heldElsewhere) return fail('you already hold a seat in this game');
+  }
+
   const update: Record<string, unknown> = { connected: true };
   if (!existing?.user_id) update.user_id = uid;
   if (name !== undefined) update.name = name.slice(0, 20);
