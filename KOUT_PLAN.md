@@ -1102,6 +1102,14 @@ create table if not exists public.kout_seats (
 
 create index if not exists kout_seats_user_idx on public.kout_seats (user_id);
 
+-- One phone, one seat. Without this a player can claim two seats in the same
+-- game and thereby hold an opponent's hand — defeating kout_hands' RLS at the
+-- seating layer rather than the query layer. Partial, because every unclaimed
+-- seat carries a null user_id and those must not collide.
+create unique index if not exists kout_seats_one_seat_per_user
+  on public.kout_seats (game_id, user_id)
+  where user_id is not null;
+
 -- ── kout_hands ─────────────────────────────────────────────────────
 -- The secret table. user_id is denormalised onto the row on purpose so the
 -- policy is an index-backed equality check with no join.
