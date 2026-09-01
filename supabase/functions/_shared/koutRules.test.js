@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildDeck, suitOf, rankOf, isJoker, RED_JOKER, BLACK_JOKER, makeRng, shuffle, dealHands } from './koutRules.js';
+import { buildDeck, suitOf, rankOf, isJoker, RED_JOKER, BLACK_JOKER, makeRng, shuffle, dealHands, trickWinner, cardPower } from './koutRules.js';
 
 describe('buildDeck', () => {
   it('bo-6 is the full 52 plus both jokers', () => {
@@ -74,5 +74,70 @@ describe('dealHands', () => {
     expect(() => dealHands(4, () => 1)).not.toThrow(); // clamped, still valid
     const hands = dealHands(4, () => 1);
     expect(new Set(hands.flat()).size).toBe(36);
+  });
+});
+
+const ctx = { hukm: 'S', leadSuit: 'H', seatCount: 4 };
+
+describe('trickWinner', () => {
+  it('highest card of the lead suit wins a plain trick', () => {
+    const trick = [
+      { seat: 0, card: '9H' }, { seat: 1, card: 'KH' },
+      { seat: 2, card: '7H' }, { seat: 3, card: 'TH' },
+    ];
+    expect(trickWinner(trick, ctx)).toBe(1);
+  });
+
+  it('an off-suit discard cannot win', () => {
+    const trick = [
+      { seat: 0, card: '7H' }, { seat: 1, card: 'AD' },
+      { seat: 2, card: 'AC' }, { seat: 3, card: '8H' },
+    ];
+    expect(trickWinner(trick, ctx)).toBe(3);
+  });
+
+  it('any hukm beats any lead-suit card', () => {
+    const trick = [
+      { seat: 0, card: 'AH' }, { seat: 1, card: '7S' },
+      { seat: 2, card: 'KH' }, { seat: 3, card: 'QH' },
+    ];
+    expect(trickWinner(trick, ctx)).toBe(1);
+  });
+
+  it('ranks hukm among itself', () => {
+    const trick = [
+      { seat: 0, card: '7H' }, { seat: 1, card: '7S' },
+      { seat: 2, card: 'KS' }, { seat: 3, card: 'TS' },
+    ];
+    expect(trickWinner(trick, ctx)).toBe(2);
+  });
+
+  it('orders red joker > ace of hukm > black joker > other hukm', () => {
+    const p = (c) => cardPower(c, ctx);
+    expect(p(RED_JOKER)).toBeGreaterThan(p('AS'));
+    expect(p('AS')).toBeGreaterThan(p(BLACK_JOKER));
+    expect(p(BLACK_JOKER)).toBeGreaterThan(p('KS'));
+    expect(p('KS')).toBeGreaterThan(p('AH'));
+  });
+
+  it('red joker takes a trick containing the ace of hukm', () => {
+    const trick = [
+      { seat: 0, card: 'AS' }, { seat: 1, card: RED_JOKER },
+      { seat: 2, card: BLACK_JOKER }, { seat: 3, card: 'KS' },
+    ];
+    expect(trickWinner(trick, ctx)).toBe(1);
+  });
+
+  it('resolves a joker-led trick, where no suit was set', () => {
+    const nullLead = { hukm: 'S', leadSuit: null, seatCount: 4 };
+    const trick = [
+      { seat: 0, card: BLACK_JOKER }, { seat: 1, card: '9H' },
+      { seat: 2, card: 'AS' },        { seat: 3, card: 'KC' },
+    ];
+    // Ace of hukm (3000) outranks the black joker (2000); the two off-suit
+    // cards cannot win at all, because with no lead suit they score zero.
+    expect(trickWinner(trick, nullLead)).toBe(2);
+    expect(cardPower('9H', nullLead)).toBe(0);
+    expect(cardPower('KC', nullLead)).toBe(0);
   });
 });

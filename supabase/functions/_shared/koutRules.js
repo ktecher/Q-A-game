@@ -78,3 +78,36 @@ export function dealHands(seatCount, rng) {
   }
   return hands;
 }
+
+/* Power bands, so comparisons never need branching at the call site:
+     4000  red joker
+     3000  ace of hukm
+     2000  black joker
+     1000+ other hukm, by rank
+      100+ lead suit, by rank
+         0 cannot win
+   A joker is always in the top band regardless of what was led — jokers have
+   no suit and are never "off-suit". */
+export function cardPower(card, { hukm, leadSuit, seatCount }) {
+  if (card === RED_JOKER) return 4000;
+  if (card === BLACK_JOKER) return 2000;
+  const ranks = seatCount === 6 ? RANKS_BO6 : RANKS_BO4;
+  const r = ranks.indexOf(rankOf(card));
+  const s = suitOf(card);
+  if (s === hukm) return rankOf(card) === 'A' ? 3000 : 1000 + r;
+  if (s === leadSuit) return 100 + r;
+  return 0;
+}
+
+export function trickWinner(trick, ctx) {
+  let best = null;
+  let bestPower = -1;
+  for (const { seat, card } of trick) {
+    const p = cardPower(card, ctx);
+    if (p > bestPower) {
+      bestPower = p;
+      best = seat;
+    }
+  }
+  return best;
+}
