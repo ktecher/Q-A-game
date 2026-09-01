@@ -1,0 +1,407 @@
+import { useEffect, useMemo, useState } from 'react';
+import { ensureSession, claimSeat, placeBid, setHukm, playCard } from '../../lib/koutClient';
+import { useKoutGame } from '../../lib/useKoutGame';
+import { suitLabelAr } from '../../lib/koutCards';
+import { MIN_BID, MAX_BID, PASS, teamOf, scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
+import HandStrip from './HandStrip';
+
+// seat_count is only ever 4 or 6 (see 0010_kout.sql), and a fresh anon
+// session cannot read it ahead of time — kout_games/kout_seats are RLS-gated
+// to members, and you aren't one until claimSeat succeeds. So the picker
+// renders the larger ring and lets the server's "no such seat" prune the two
+// extra positions for a 4-seat game, rather than blocking on data we have no
+// way to fetch. See task-14 report for the concern this raises upstream.
+const MAX_SEATS = 6;
+const AR_DIGIT = { 5: '٥', 6: '٦', 7: '٧', 8: '٨', 9: '٩' };
+const SUITS = ['S', 'H', 'D', 'C'];
+const TEAM_COLOR = ['var(--blue)', 'var(--red)'];
+
+// Every rejection the Edge Function can send, in Arabic, so nothing reaches
+// the console as a raw thrown error. Unlisted messages fall back to a
+// generic line rather than leaking English.
+function arabicError(message) {
+  const known = {
+    'seat taken': 'هذا المقعد محجوز، اختر مقعدًا آخر',
+    'no such seat': 'لا يوجد هذا المقعد في هذه اللعبة',
+    'game already started': 'اللعبة بدأت بالفعل',
+    'no such game': 'تعذّر العثور على اللعبة، تحقق من الرمز',
+    'not your turn': 'ليس دورك الآن',
+    'illegal play': 'لا يمكنك لعب هذه الورقة',
+    'that card is not in your hand': 'هذه الورقة ليست بيدك',
+    'you hold no seat here': 'لا تملك مقعدًا في هذه اللعبة',
+    'only the high bidder names hukm': 'صاحب أعلى مزايدة هو من يحدد الحكم',
+    'bid must be 5-9 or pass': 'المزايدة يجب أن تكون بين ٥ و٩ أو الطاف',
+  };
+  if (known[message]) return known[message];
+  if (message?.startsWith('not in ')) return 'لا يمكنك فعل ذلك الآن، انتظر قليلاً';
+  return 'حدث خطأ، حاول مرة أخرى';
+}
+
+function seatLabel(seats, seat) {
+  const row = seats.find((s) => s.seat === seat);
+  return row?.name || `مقعد ${seat + 1}`;
+}
+
+function SeatPicker({ name, setName, disabledSeats, claiming, onClaim }) {
+  const radius = 96;
+  const center = 116;
+  const canClaim = name.trim().length > 0;
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center" style={{ padding: 24, gap: 24 }}>
+      <h1 className="font-ar-body font-extrabold text-center leading-none" style={{ fontSize: 36, color: 'var(--gold-ink)' }}>
+        كوت
+      </h1>
+      <p className="font-en-body text-center" style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.14em' }} lang="en">
+        CHOOSE YOUR SEAT
+      </p>
+
+      <input
+        type="text"
+        value={name}
+        maxLength={20}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="اسمك"
+        aria-label="اسمك"
+        className="w-full max-w-xs font-ar-body font-bold text-center"
+        style={{
+          background: 'var(--input-bg)',
+          border: '4px solid var(--blue)',
+          boxShadow: 'inset 4px 4px 0 var(--inset)',
+          padding: '10px 12px',
+          color: 'var(--text)',
+          fontSize: 24,
+        }}
+      />
+
+      {!canClaim && (
+        <p className="font-ar-body" style={{ fontSize: 14, color: 'var(--muted)' }}>
+          أدخل اسمك ثم اختر مقعدك
+        </p>
+      )}
+
+      <div className="relative" style={{ width: center * 2, height: center * 2 }}>
+        {Array.from({ length: MAX_SEATS }, (_, seat) => seat).map((seat) => {
+          const angle = (seat / MAX_SEATS) * 2 * Math.PI - Math.PI / 2;
+          const x = center + radius * Math.cos(angle) - 34;
+          const y = center + radius * Math.sin(angle) - 34;
+          const blocked = disabledSeats.has(seat) || !canClaim || claiming;
+          const team = teamOf(seat);
+          return (
+            <button
+              key={seat}
+              type="button"
+              disabled={blocked}
+              onClick={() => onClaim(seat)}
+              className="absolute flex items-center justify-center font-en-body font-bold transition-transform duration-100 enabled:hover:-translate-y-1"
+              style={{
+                left: x,
+                top: y,
+                width: 68,
+                height: 68,
+                background: disabledSeats.has(seat) ? 'var(--cleared-bg)' : 'var(--panel)',
+                border: `4px solid ${disabledSeats.has(seat) ? 'var(--line)' : TEAM_COLOR[team]}`,
+                color: disabledSeats.has(seat) ? 'var(--muted2)' : 'var(--text)',
+                boxShadow: blocked ? 'none' : '0 6px 0 var(--shadow)',
+                opacity: canClaim ? 1 : 0.6,
+                fontSize: 22,
+              }}
+            >
+              {seat + 1}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function StatusStrip({ game }) {
+  const [t0, t1] = game.team_names ?? ['فريق ١', 'فريق ٢'];
+  const [s0, s1] = game.score ?? [0, 0];
+  return (
+    <div
+      className="flex items-center justify-between sticky top-0 z-10"
+      style={{ padding: '10px 16px', background: 'var(--panel)', borderBottom: '4px solid var(--gold-d)' }}
+    >
+      <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 16, color: TEAM_COLOR[0] }}>
+        {t0} · {s0}
+      </span>
+      <span className="font-en-body leading-none" style={{ fontSize: 9, color: 'var(--muted)' }} lang="en">
+        الهدف ١٠١
+      </span>
+      <span className="font-ar-body font-bold leading-none truncate" style={{ fontSize: 16, color: TEAM_COLOR[1] }}>
+        {s1} · {t1}
+      </span>
+    </div>
+  );
+}
+
+export default function SeatScreen() {
+  const joinCode = useMemo(() => window.location.hash.replace(/^#/, ''), []);
+  const [ready, setReady] = useState(false);
+  const [sessionError, setSessionError] = useState('');
+  const [name, setName] = useState('');
+  const [disabledSeats, setDisabledSeats] = useState(() => new Set());
+  const [claiming, setClaiming] = useState(false);
+  const [joined, setJoined] = useState(null); // { gameId, seat }
+  const [actionError, setActionError] = useState('');
+
+  useEffect(() => {
+    ensureSession()
+      .then(() => setReady(true))
+      .catch(() => setSessionError('تعذّر تسجيل الدخول، أعد فتح الرابط من جديد'));
+  }, []);
+
+  useEffect(() => {
+    if (!actionError) return undefined;
+    const t = setTimeout(() => setActionError(''), 4000);
+    return () => clearTimeout(t);
+  }, [actionError]);
+
+  const { game, seats, hand } = useKoutGame(joined?.gameId ?? null);
+
+  async function handleClaim(seat) {
+    if (claiming || !name.trim()) return;
+    setClaiming(true);
+    try {
+      const { gameId } = await claimSeat(joinCode, seat, name.trim());
+      setJoined({ gameId, seat });
+    } catch (e) {
+      setDisabledSeats((prev) => new Set(prev).add(seat));
+      setActionError(arabicError(e.message));
+    } finally {
+      setClaiming(false);
+    }
+  }
+
+  // Every mutation funnels through here so one place turns a server refusal
+  // into an inline Arabic message instead of an unhandled rejection.
+  async function guarded(fn) {
+    try {
+      await fn();
+    } catch (e) {
+      setActionError(arabicError(e.message));
+    }
+  }
+
+  if (sessionError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ padding: 24 }}>
+        <p className="font-ar-body font-bold text-center" style={{ fontSize: 20, color: 'var(--red)' }}>{sessionError}</p>
+      </div>
+    );
+  }
+
+  if (!joinCode) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ padding: 24 }}>
+        <p className="font-ar-body font-bold text-center" style={{ fontSize: 20, color: 'var(--red)' }}>
+          رابط الدخول غير صالح
+        </p>
+      </div>
+    );
+  }
+
+  if (!ready || !joined) {
+    return (
+      <>
+        {!ready ? (
+          <div className="min-h-screen flex items-center justify-center">
+            <p className="font-ar-body font-bold" style={{ fontSize: 20, color: 'var(--muted)' }}>جارٍ الاتصال...</p>
+          </div>
+        ) : (
+          <SeatPicker
+            name={name}
+            setName={setName}
+            disabledSeats={disabledSeats}
+            claiming={claiming}
+            onClaim={handleClaim}
+          />
+        )}
+        {actionError && <ErrorBanner text={actionError} />}
+      </>
+    );
+  }
+
+  if (!game) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="font-ar-body font-bold" style={{ fontSize: 20, color: 'var(--muted)' }}>جارٍ تحميل اللعبة...</p>
+      </div>
+    );
+  }
+
+  const mySeat = joined.seat;
+  const myTurn = game.turn_seat === mySeat;
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <StatusStrip game={game} />
+
+      <div className="flex-1 flex flex-col items-center justify-center" style={{ padding: 20, gap: 16 }}>
+        {game.status === 'lobby' && (
+          <>
+            <p className="font-ar-body font-bold text-center" style={{ fontSize: 24, color: 'var(--gold-ink)' }}>
+              بانتظار المضيف
+            </p>
+            <p className="font-en-body" style={{ fontSize: 10, color: 'var(--muted)' }} lang="en">
+              {seats.filter((s) => s.user_id).length}/{game.seat_count} SEATED
+            </p>
+          </>
+        )}
+
+        {game.status === 'bidding' && (myTurn ? (
+          <>
+            <p className="font-ar-body font-bold" style={{ fontSize: 20, color: 'var(--gold-ink)' }}>دورك — زايد</p>
+            <div className="flex flex-wrap justify-center" style={{ gap: 10 }}>
+              {Array.from({ length: MAX_BID - MIN_BID + 1 }, (_, i) => MIN_BID + i).map((n) => {
+                const standingBid = seats.reduce(
+                  (max, s) => (typeof s.bid === 'number' && s.bid !== PASS && s.bid > max ? s.bid : max),
+                  0,
+                );
+                const enabled = n > standingBid;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    disabled={!enabled}
+                    onClick={() => guarded(() => placeBid(joined.gameId, n))}
+                    className="font-en-body font-bold enabled:hover:-translate-y-1 transition-transform duration-100"
+                    style={{
+                      width: 56,
+                      height: 56,
+                      fontSize: 24,
+                      background: enabled ? 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)' : 'var(--cleared-bg)',
+                      border: `4px solid ${enabled ? 'var(--outline)' : 'var(--line)'}`,
+                      color: enabled ? 'var(--outline)' : 'var(--muted2)',
+                      boxShadow: enabled ? '0 6px 0 var(--gold-sh)' : 'none',
+                    }}
+                  >
+                    {AR_DIGIT[n]}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => guarded(() => placeBid(joined.gameId, PASS))}
+                className="font-ar-body font-bold enabled:hover:-translate-y-1 transition-transform duration-100"
+                style={{
+                  padding: '0 18px',
+                  height: 56,
+                  fontSize: 22,
+                  background: 'var(--panel2)',
+                  border: '4px solid var(--red)',
+                  color: 'var(--text)',
+                  boxShadow: '0 6px 0 var(--shadow)',
+                }}
+              >
+                طاف
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="font-ar-body font-bold text-center" style={{ fontSize: 20, color: 'var(--muted)' }}>
+            دور {seatLabel(seats, game.turn_seat)}
+          </p>
+        ))}
+
+        {game.status === 'hukm' && (game.bidder_seat === mySeat ? (
+          <>
+            <p className="font-ar-body font-bold" style={{ fontSize: 20, color: 'var(--gold-ink)' }}>اختر الحكم</p>
+            <div className="grid grid-cols-2" style={{ gap: 12 }}>
+              {SUITS.map((suit) => (
+                <button
+                  key={suit}
+                  type="button"
+                  onClick={() => guarded(() => setHukm(joined.gameId, suit))}
+                  className="font-ar-body font-bold flex flex-col items-center justify-center enabled:hover:-translate-y-1 transition-transform duration-100"
+                  style={{
+                    width: 100,
+                    height: 100,
+                    fontSize: 40,
+                    background: 'var(--panel)',
+                    border: '4px solid var(--outline)',
+                    color: suit === 'H' || suit === 'D' ? 'var(--red)' : 'var(--text)',
+                    boxShadow: '0 6px 0 var(--shadow)',
+                  }}
+                >
+                  <span>{suit === 'S' ? '♠' : suit === 'H' ? '♥' : suit === 'D' ? '♦' : '♣'}</span>
+                  <span style={{ fontSize: 14, marginTop: 4 }}>{suitLabelAr(suit)}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="font-ar-body font-bold text-center" style={{ fontSize: 18, color: 'var(--muted)' }}>
+            {seatLabel(seats, game.bidder_seat)} يحدد الحكم على {AR_DIGIT[game.bid] ?? game.bid}
+          </p>
+        ))}
+
+        {game.status === 'playing' && (
+          <>
+            <p className="font-ar-body font-bold" style={{ fontSize: 16, color: myTurn ? 'var(--gold-ink)' : 'var(--muted)' }}>
+              {myTurn ? 'دورك — العب ورقة' : `دور ${seatLabel(seats, game.turn_seat)}`}
+            </p>
+            <HandStrip
+              hand={hand}
+              trick={game.trick}
+              myTurn={myTurn}
+              onPlay={(card) => guarded(() => playCard(joined.gameId, card))}
+            />
+          </>
+        )}
+
+        {game.status === 'round_end' && (() => {
+          const delta = scoreRound({
+            bid: game.bid, bidderSeat: game.bidder_seat, mulzum: game.mulzum, tricksWon: game.tricks_won,
+          });
+          return (
+            <>
+              <p className="font-ar-body font-extrabold" style={{ fontSize: 22, color: 'var(--gold-ink)' }}>
+                نهاية الجولة
+              </p>
+              <p className="font-ar-body" style={{ fontSize: 18, color: TEAM_COLOR[0] }}>
+                {game.team_names[0]}: +{delta[0]}
+              </p>
+              <p className="font-ar-body" style={{ fontSize: 18, color: TEAM_COLOR[1] }}>
+                {game.team_names[1]}: +{delta[1]}
+              </p>
+              <p className="font-ar-body font-bold text-center" style={{ fontSize: 14, color: 'var(--muted)' }}>
+                بانتظار المضيف للجولة التالية
+              </p>
+            </>
+          );
+        })()}
+
+        {game.status === 'finished' && (
+          <>
+            <p className="font-ar-body font-extrabold" style={{ fontSize: 26, color: TEAM_COLOR[game.winner_team] }}>
+              فاز {game.team_names[game.winner_team]}!
+            </p>
+            <p className="font-en-body" style={{ fontSize: 12, color: 'var(--muted)' }} lang="en">
+              {game.score[0]} — {game.score[1]}
+            </p>
+            <a href="/home" className="font-ar-body font-bold" style={{ fontSize: 14, color: 'var(--blue-ink)' }}>
+              العودة للرئيسية
+            </a>
+          </>
+        )}
+      </div>
+
+      {actionError && <ErrorBanner text={actionError} />}
+    </div>
+  );
+}
+
+function ErrorBanner({ text }) {
+  return (
+    <div
+      className="fixed bottom-0 start-0 end-0 z-30 text-center font-ar-body font-bold"
+      style={{ padding: '12px 16px', background: 'var(--red-d)', color: '#F4ECD8', borderTop: '4px solid var(--outline)' }}
+      role="alert"
+    >
+      {text}
+    </div>
+  );
+}
