@@ -39,3 +39,42 @@ export function buildDeck(seatCount) {
   deck.push(RED_JOKER, BLACK_JOKER);
   return deck;
 }
+
+/* mulberry32 — small, fast, seedable. Tests pass a seed; production passes a
+   crypto-backed rng so a shuffle is not predictable from the game id. */
+export function makeRng(seed) {
+  let a = seed >>> 0;
+  return function rng() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function shuffle(deck, rng) {
+  const out = [...deck];
+  for (let i = out.length - 1; i > 0; i--) {
+    // Clamp: a hostile or buggy rng returning >= 1 must not index out of range.
+    const j = Math.min(i, Math.floor(rng() * (i + 1)));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/* The single point where deck integrity is enforced. Nothing writes a hand to
+   the database without passing through here, so "no repeated card" is a
+   property of one tested function rather than of every query. */
+export function dealHands(seatCount, rng) {
+  const deck = shuffle(buildDeck(seatCount), rng);
+  const hands = [];
+  for (let seat = 0; seat < seatCount; seat++) {
+    hands.push(deck.slice(seat * HAND_SIZE, (seat + 1) * HAND_SIZE));
+  }
+  const flat = hands.flat();
+  if (flat.length !== seatCount * HAND_SIZE || new Set(flat).size !== flat.length) {
+    throw new Error('dealHands: corrupt deal — duplicate or missing cards');
+  }
+  return hands;
+}

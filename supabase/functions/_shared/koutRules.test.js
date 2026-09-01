@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildDeck, suitOf, rankOf, isJoker, RED_JOKER, BLACK_JOKER } from './koutRules.js';
+import { buildDeck, suitOf, rankOf, isJoker, RED_JOKER, BLACK_JOKER, makeRng, shuffle, dealHands } from './koutRules.js';
 
 describe('buildDeck', () => {
   it('bo-6 is the full 52 plus both jokers', () => {
@@ -36,5 +36,43 @@ describe('card helpers', () => {
     expect(suitOf(RED_JOKER)).toBe(null);
     expect(isJoker(BLACK_JOKER)).toBe(true);
     expect(isJoker('AS')).toBe(false);
+  });
+});
+
+describe('shuffle', () => {
+  it('is a permutation, not a mutation', () => {
+    const deck = buildDeck(4);
+    const out = shuffle(deck, makeRng(1));
+    expect(out).toHaveLength(deck.length);
+    expect([...out].sort()).toEqual([...deck].sort());
+    expect(deck[0]).toBe(buildDeck(4)[0]); // input untouched
+  });
+
+  it('is deterministic for a given seed', () => {
+    expect(shuffle(buildDeck(6), makeRng(42))).toEqual(shuffle(buildDeck(6), makeRng(42)));
+  });
+
+  it('actually moves cards', () => {
+    const deck = buildDeck(6);
+    expect(shuffle(deck, makeRng(7))).not.toEqual(deck);
+  });
+});
+
+describe('dealHands', () => {
+  it.each([4, 6])('gives %i players nine distinct cards each, using the whole deck', (n) => {
+    const hands = dealHands(n, makeRng(3));
+    expect(hands).toHaveLength(n);
+    for (const h of hands) expect(h).toHaveLength(9);
+    const all = hands.flat();
+    expect(all).toHaveLength(n * 9);
+    expect(new Set(all).size).toBe(n * 9); // THE no-duplicate guarantee
+    expect([...all].sort()).toEqual([...buildDeck(n)].sort());
+  });
+
+  it('clamps an out-of-range rng instead of dealing out of bounds', () => {
+    // An rng that returns >= 1 would push an out-of-range index.
+    expect(() => dealHands(4, () => 1)).not.toThrow(); // clamped, still valid
+    const hands = dealHands(4, () => 1);
+    expect(new Set(hands.flat()).size).toBe(36);
   });
 });
