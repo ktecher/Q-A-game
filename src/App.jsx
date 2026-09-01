@@ -29,6 +29,12 @@ const UsersPage = lazy(() => import('./screens/Dashboard/pages/UsersPage'));
 const DrawingWordsPage = lazy(() => import('./screens/Dashboard/pages/DrawingWordsPage'));
 const SettingsPage = lazy(() => import('./screens/Dashboard/pages/SettingsPage'));
 
+// Kout — a second game mode, reachable only by the host typing /kout, so it
+// too is code-split out of the main bundle.
+const KoutSetup = lazy(() => import('./screens/Kout/SetupScreen'));
+const KoutTable = lazy(() => import('./screens/Kout/TableScreen'));
+const KoutSeat = lazy(() => import('./screens/Kout/SeatScreen'));
+
 export default function App() {
   // Provider nesting (outer → inner): QueryClient → Theme → Auth → Game → Router. Inner providers may depend on outer ones.
   return (
@@ -49,6 +55,11 @@ export default function App() {
             <Route path="/play/question" element={<QuestionScreen />} />
             <Route path="/play/challenge" element={<ChallengeScreen />} />
             <Route path="/play/results" element={<ResultsScreen />} />
+            {/* Kout — host setup and the table are typed URLs like /dashboard;
+                the seat screen is reached by QR and must stay unauthenticated. */}
+            <Route path="/kout" element={<KoutSetup />} />
+            <Route path="/kout/table" element={<KoutTable />} />
+            <Route path="/kout/seat" element={<KoutSeat />} />
             {/* Admin dashboard — reachable only by typing /dashboard, lazy-loaded. */}
             <Route path="/dashboard" element={<Dashboard />}>
               <Route index element={<OverviewPage />} />

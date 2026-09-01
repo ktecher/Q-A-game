@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import ColorSwatchPicker from '../../components/ColorSwatchPicker';
 import { TEAM_COLORS } from './constants';
 
 export default function TeamCard({ team, index, otherColor, onChange }) {
@@ -68,35 +69,12 @@ export default function TeamCard({ team, index, otherColor, onChange }) {
         }}
       />
 
-      <div className="flex flex-wrap" style={{ gap: 6 }}>
-        {TEAM_COLORS.map((hex) => {
-          const isMine = team.color === hex;
-          // Held by the other team — still selectable, just marked.
-          const isTaken = !isMine && otherColor === hex;
-          return (
-            <button
-              key={hex}
-              type="button"
-              disabled={isTaken}
-              aria-label={`اختر اللون ${hex}${isTaken ? ' — مستخدم من الفريق الآخر' : ''}`}
-              aria-pressed={isMine}
-              title={isTaken ? 'مستخدم من الفريق الآخر · Taken by the other team' : undefined}
-              onClick={() => onChange({ color: hex })}
-              style={{
-                width: 22,
-                height: 22,
-                background: hex,
-                border: isMine ? '3px solid #F4ECD8' : '3px solid transparent',
-                // Greyed rather than hidden: the swatch keeps its place in the
-                // row, so the palette does not reflow as colours change hands.
-                filter: isTaken ? 'grayscale(1)' : undefined,
-                opacity: isTaken ? 0.3 : 1,
-                cursor: isTaken ? 'not-allowed' : undefined,
-              }}
-            />
-          );
-        })}
-      </div>
+      <ColorSwatchPicker
+        colors={TEAM_COLORS}
+        value={team.color}
+        otherValue={otherColor}
+        onChange={(hex) => onChange({ color: hex })}
+      />
 
       {/* Player roster — not on the handoff sheet, but the game already
           supports named players, so it stays behind a disclosure. */}
