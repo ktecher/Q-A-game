@@ -26,6 +26,13 @@ const json = (body: unknown, status = 200) =>
 
 const fail = (error: string, status = 400) => json({ ok: false, error }, status);
 
+// A Postgres/PostgREST error carries column and constraint names — log it
+// server-side, never forward it to the caller.
+const dbFail = (context: string, error: { message: string }) => {
+  console.error(`kout: ${context}:`, error.message);
+  return fail('internal error', 500);
+};
+
 // Crypto-backed rng — a shuffle must not be predictable from the game id.
 const secureRng = () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296;
 
@@ -48,21 +55,30 @@ Deno.serve(async (req) => {
   const uid = await callerId(req);
   if (!uid) return fail('not signed in', 401);
 
-  const { action, ...args } = await req.json();
+  // Everything past this point is untrusted client input — never let it
+  // escape as an uncaught exception instead of the documented { ok: false } shape.
+  try {
+    const { action, ...args } = await req.json();
 
-  switch (action) {
-    case 'create': return create(uid, args);
-    case 'claimSeat': return claimSeat(uid, args);
-    case 'startRound': return startRound(uid, args);
-    case 'bid': return bid(uid, args);
-    case 'setHukm': return setHukm(uid, args);
-    case 'play': return play(uid, args);
-    default: return fail(`unknown action: ${action}`);
+    switch (action) {
+      case 'create': return await create(uid, args);
+      case 'claimSeat': return await claimSeat(uid, args);
+      case 'startRound': return await startRound(uid, args);
+      case 'bid': return await bid(uid, args);
+      case 'setHukm': return await setHukm(uid, args);
+      case 'play': return await play(uid, args);
+      default: return fail(`unknown action: ${action}`);
+    }
+  } catch (e) {
+    if (e instanceof SyntaxError) return fail('bad request');
+    console.error('kout: unhandled', e);
+    return fail('internal error', 500);
   }
 });
 
 async function create(uid: string, { seatCount, teamNames }: any) {
   if (seatCount !== 4 && seatCount !== 6) return fail('seatCount must be 4 or 6');
+  if (teamNames !== undefined && !Array.isArray(teamNames)) return fail('teamNames must be an array');
 
   const joinCode = newJoinCode();
   const { data: game, error } = await admin
@@ -75,18 +91,21 @@ async function create(uid: string, { seatCount, teamNames }: any) {
     })
     .select()
     .single();
-  if (error) return fail(error.message, 500);
+  if (error) return dbFail('create game', error);
 
   const seats = Array.from({ length: seatCount }, (_, seat) => ({
     game_id: game.id, seat,
   }));
   const { error: seatErr } = await admin.from('kout_seats').insert(seats);
-  if (seatErr) return fail(seatErr.message, 500);
+  if (seatErr) return dbFail('create seats', seatErr);
 
   return json({ ok: true, gameId: game.id, joinCode });
 }
 
 async function claimSeat(uid: string, { joinCode, seat, name }: any) {
+  if (!Number.isInteger(seat)) return fail('seat must be an integer');
+  if (name !== undefined && typeof name !== 'string') return fail('name must be a string');
+
   const { data: game } = await admin
     .from('kout_games').select('*').eq('join_code', joinCode).single();
   if (!game) return fail('no such game', 404);
@@ -104,7 +123,7 @@ async function claimSeat(uid: string, { joinCode, seat, name }: any) {
     .from('kout_seats')
     .update({ user_id: uid, name: (name ?? '').slice(0, 20), connected: true })
     .eq('game_id', game.id).eq('seat', seat);
-  if (error) return fail(error.message, 500);
+  if (error) return dbFail('claim seat', error);
 
   return json({ ok: true, gameId: game.id, seat });
 }
@@ -113,6 +132,12 @@ async function startRound(uid: string, { gameId }: any) {
   const { data: game } = await admin.from('kout_games').select('*').eq('id', gameId).single();
   if (!game) return fail('no such game', 404);
   if (game.host_id !== uid) return fail('only the host starts a round', 403);
+  // A re-deal mid-round would silently overwrite hands and reset the trick,
+  // bid and turn order for a round already in progress — only a brand-new
+  // game or the gap between rounds may trigger one.
+  if (game.status !== 'lobby' && game.status !== 'round_end') {
+    return fail('a round is already in progress');
+  }
 
   const { data: seats } = await admin
     .from('kout_seats').select('*').eq('game_id', gameId).order('seat');
@@ -127,7 +152,7 @@ async function startRound(uid: string, { gameId }: any) {
     })),
     { onConflict: 'game_id,seat' },
   );
-  if (handErr) return fail(handErr.message, 500);
+  if (handErr) return dbFail('deal hands', handErr);
 
   const dealer = game.round_no === 0 ? game.dealer_seat
                                      : nextSeat(game.dealer_seat, game.seat_count);
@@ -145,7 +170,7 @@ async function startRound(uid: string, { gameId }: any) {
     trick: [], played_cards: [], tricks_won: [0, 0],
     updated_at: new Date().toISOString(),
   }).eq('id', gameId);
-  if (error) return fail(error.message, 500);
+  if (error) return dbFail('start round', error);
 
   return json({ ok: true });
 }
@@ -170,7 +195,9 @@ async function bid(uid: string, { gameId, bid: value }: any) {
   if (err) return err;
 
   const isPass = value === PASS;
-  if (!isPass && (value < MIN_BID || value > MAX_BID)) return fail('bid must be 5-9 or pass');
+  if (!isPass && (!Number.isInteger(value) || value < MIN_BID || value > MAX_BID)) {
+    return fail('bid must be 5-9 or pass');
+  }
 
   await admin.from('kout_seats')
     .update({ bid: value }).eq('game_id', gameId).eq('seat', seat.seat);
