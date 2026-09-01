@@ -172,9 +172,11 @@ export function scoreRound({ bid, bidderSeat, mulzum, tricksWon }) {
   if (taken >= bid) {
     out[bidTeam] = bid === MAX_BID ? BAWN_SCORE : taken;
   } else {
-    // A مُلزم bid is always MIN_BID, so "double" is always 10 — never a floor.
-    // Confirmed at the first play-test: a forced bid carries a reduced flat
-    // penalty instead, not the doubled punishment of a bid the team chose.
+    // Pending confirmation at the first play-test. A مُلزم bid is always 5, so
+    // "double the bid" is always 10 and the sources' "minimum 5" can never bind —
+    // read as a flat reduced penalty it is meaningful, and a bid nobody wanted
+    // should not carry the full punishment. If the diwaniya plays it as 10,
+    // this is the one line to change.
     out[other] = mulzum ? MIN_BID : bid * 2;
   }
   return out;
