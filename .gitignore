@@ -50,3 +50,9 @@ content/*.xlsx
 preview-challenge-flow.html
 preview-sword-intro.html
 .env*
+
+# Local tool state, never part of the app. Serena's project cache and the
+# subagent-driven-development workspace (ledger, briefs, review packages) are
+# scratch for whoever is driving the session — git history is the real record.
+.serena/
+.superpowers/
