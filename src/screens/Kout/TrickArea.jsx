@@ -77,6 +77,11 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
     // is on the table (390px of height can't spare it there); an empty
     // lobby has nothing better to show, so the QR IS the screen here.
     const claimed = seats.filter((s) => s.user_id).length;
+    // Ready gates only this first deal — a claimed-but-unready seat means
+    // someone scanned the QR and never actually looked up from their phone.
+    // `round_end` below has no such check: players are already mid-game there.
+    const ready = seats.filter((s) => s.user_id && s.ready).length;
+    const waitingOn = seats.filter((s) => s.user_id && !s.ready).map((s) => s.name || `#${s.seat + 1}`);
     return (
       <div className="absolute inset-0 flex items-center justify-center gap-8">
         <JoinQrPanel joinCode={game.join_code} size={170} />
@@ -87,12 +92,20 @@ export default function TrickArea({ game, seats, seatCount, orientation, gameId 
           <span className="font-en-body leading-none" style={{ fontSize: 12, color: 'var(--muted)' }} lang="en">
             {claimed}/{seatCount} SEATS CLAIMED
           </span>
+          <span className="font-en-body leading-none" style={{ fontSize: 12, color: ready < claimed ? 'var(--gold-ink)' : 'var(--muted)' }} lang="en">
+            {ready}/{claimed} READY
+          </span>
+          {waitingOn.length > 0 && (
+            <span className="font-ar-body font-bold leading-none" style={{ fontSize: 12, color: 'var(--gold-ink)' }}>
+              بانتظار: {waitingOn.join('، ')}
+            </span>
+          )}
           {err && (
             <span className="font-en-body leading-none" style={{ fontSize: 11, color: 'var(--red-ink)' }}>
               {err}
             </span>
           )}
-          <button type="button" disabled={claimed < seatCount || busy} onClick={handleStart} className="text-center disabled:opacity-40" style={btnStyle}>
+          <button type="button" disabled={ready < seatCount || busy} onClick={handleStart} className="text-center disabled:opacity-40" style={btnStyle}>
             <span className="font-ar-body font-extrabold leading-none" style={{ fontSize: 22 }}>ابدأ الجولة</span>{' '}
             <span className="font-en-body leading-none" style={{ fontSize: 10 }} lang="en">START</span>
           </button>

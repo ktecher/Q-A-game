@@ -16,10 +16,25 @@ import JoinQr from './JoinQr';
 const RED_SUIT = { H: true, D: true };
 
 const menuBtnStyle = {
-  padding: '12px 16px',
+  padding: '14px 16px',
+  fontSize: 16,
   background: 'var(--panel2)',
   border: '4px solid var(--line)',
   color: 'var(--text)',
+};
+
+// The strip's own control, read from across a room at TV distance — needs a
+// bigger target and more contrast than a phone-held-at-arm's-length button,
+// so it borrows the gold treatment other primary actions use instead of the
+// muted var(--line) outline the rest of the strip uses.
+const menuOpenBtnStyle = {
+  width: 42,
+  height: 42,
+  background: 'var(--panel3)',
+  border: '3px solid var(--gold)',
+  color: 'var(--gold-ink)',
+  fontSize: 22,
+  marginInlineStart: 4,
 };
 
 /* The host's table — mirrored to a TV, landscape, ~844×390. Every seat here
@@ -117,7 +132,7 @@ export default function TableScreen() {
             aria-label="القائمة"
             onClick={() => { setMenuError(''); setMenuOpen(true); }}
             className="flex items-center justify-center shrink-0"
-            style={{ width: 30, height: 30, background: 'var(--panel2)', border: '3px solid var(--line)', color: 'var(--gold-ink)', fontSize: 15, marginInlineStart: 4 }}
+            style={menuOpenBtnStyle}
           >
             <span aria-hidden="true">☰</span>
           </button>
