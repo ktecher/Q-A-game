@@ -111,3 +111,25 @@ export function trickWinner(trick, ctx) {
   }
   return best;
 }
+
+/* A joker has no suit and can never be hukm. Two consequences, both house rule
+   (design round 7), and both deliberately simpler than Jawaker's published
+   variant — which gates a joker lead behind the hukm honours or a bid of 8/9:
+
+     1. Leading is completely unrestricted. Any card, any time.
+     2. A joker-led trick sets NO lead suit, so nobody has anything to follow
+        and every player may play whatever they like into it. Only a
+        higher-power card can take it — see cardPower. */
+
+export function leadSuitFor(trick) {
+  if (!trick || trick.length === 0) return null;
+  const first = trick[0].card;
+  return isJoker(first) ? null : suitOf(first);
+}
+
+export function legalPlays(hand, { trick }) {
+  const lead = leadSuitFor(trick);
+  if (lead === null) return [...hand];        // leading, or a joker was led
+  const following = hand.filter((c) => suitOf(c) === lead);
+  return following.length > 0 ? following : [...hand];
+}

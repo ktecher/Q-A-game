@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildDeck, suitOf, rankOf, isJoker, RED_JOKER, BLACK_JOKER, makeRng, shuffle, dealHands, trickWinner, cardPower } from './koutRules.js';
+import { buildDeck, suitOf, rankOf, isJoker, RED_JOKER, BLACK_JOKER, makeRng, shuffle, dealHands, trickWinner, cardPower, legalPlays, leadSuitFor } from './koutRules.js';
 
 describe('buildDeck', () => {
   it('bo-6 is the full 52 plus both jokers', () => {
@@ -139,5 +139,69 @@ describe('trickWinner', () => {
     expect(trickWinner(trick, nullLead)).toBe(2);
     expect(cardPower('9H', nullLead)).toBe(0);
     expect(cardPower('KC', nullLead)).toBe(0);
+  });
+});
+
+const base = { seatCount: 4 };
+
+describe('legalPlays — leading', () => {
+  it('lets the leader play anything at all', () => {
+    const hand = ['7H', 'AS', RED_JOKER, BLACK_JOKER];
+    expect(legalPlays(hand, { ...base, trick: [] }).sort()).toEqual([...hand].sort());
+  });
+
+  it('never restricts a joker lead', () => {
+    const out = legalPlays(['9C', RED_JOKER, BLACK_JOKER], { ...base, trick: [] });
+    expect(out).toContain(RED_JOKER);
+    expect(out).toContain(BLACK_JOKER);
+  });
+});
+
+describe('legalPlays — following', () => {
+  it('must follow the lead suit when able', () => {
+    const hand = ['7H', 'KH', 'AS', '9C'];
+    const out = legalPlays(hand, { ...base, trick: [{ seat: 0, card: 'TH' }] });
+    expect(out.sort()).toEqual(['7H', 'KH']);
+  });
+
+  it('may play anything when void in the lead suit', () => {
+    const hand = ['AS', '9C', RED_JOKER];
+    const out = legalPlays(hand, { ...base, trick: [{ seat: 0, card: 'TH' }] });
+    expect(out.sort()).toEqual([...hand].sort());
+  });
+
+  it('does not count a joker as following suit', () => {
+    const hand = ['7H', RED_JOKER];
+    const out = legalPlays(hand, { ...base, trick: [{ seat: 0, card: 'TH' }] });
+    expect(out).toEqual(['7H']); // holding a heart, the heart is forced
+  });
+
+  it('frees everyone when a joker led — no suit was set', () => {
+    const hand = ['7H', 'AS', '9C'];
+    const out = legalPlays(hand, { ...base, trick: [{ seat: 0, card: RED_JOKER }] });
+    expect(out.sort()).toEqual([...hand].sort());
+  });
+
+  it('still frees everyone when the black joker led', () => {
+    const out = legalPlays(['7H', 'AS'], { ...base, trick: [{ seat: 0, card: BLACK_JOKER }] });
+    expect(out).toHaveLength(2);
+  });
+
+  it('always leaves at least one legal card', () => {
+    const out = legalPlays([RED_JOKER, BLACK_JOKER], { ...base, trick: [{ seat: 0, card: 'TH' }] });
+    expect(out).toHaveLength(2);
+  });
+});
+
+describe('leadSuitFor', () => {
+  it('is the suit of the first card', () => {
+    expect(leadSuitFor([{ seat: 0, card: 'TH' }])).toBe('H');
+  });
+  it('is null when a joker led — a joker has no suit', () => {
+    expect(leadSuitFor([{ seat: 0, card: RED_JOKER }])).toBe(null);
+    expect(leadSuitFor([{ seat: 0, card: BLACK_JOKER }])).toBe(null);
+  });
+  it('is null before anyone has played', () => {
+    expect(leadSuitFor([])).toBe(null);
   });
 });
