@@ -71,6 +71,7 @@ Deno.serve(async (req) => {
       case 'create': return await create(uid, args);
       case 'claimSeat': return await claimSeat(uid, args);
       case 'peekGame': return await peekGame(uid, args);
+      case 'setReady': return await setReady(uid, args);
       case 'startRound': return await startRound(uid, args);
       case 'bid': return await bid(uid, args);
       case 'setHukm': return await setHukm(uid, args);
@@ -174,15 +175,38 @@ async function peekGame(_uid: string, { joinCode }: any) {
   if (!game) return fail('no such game', 404);
 
   const { data: seats } = await admin
-    .from('kout_seats').select('seat, user_id, name').eq('game_id', game.id).order('seat');
+    .from('kout_seats').select('seat, user_id, name, ready').eq('game_id', game.id).order('seat');
 
   return json({
     ok: true,
     gameId: game.id,
     seatCount: game.seat_count,
     status: game.status,
-    seats: (seats ?? []).map((s) => ({ seat: s.seat, taken: Boolean(s.user_id), name: s.name })),
+    seats: (seats ?? []).map((s) => ({ seat: s.seat, taken: Boolean(s.user_id), name: s.name, ready: s.ready })),
   });
+}
+
+// Not turn-gated — any seated player may flip this at any point during the
+// lobby, in any order, including back off a mis-tap. It only ever matters
+// for the FIRST deal (see startRound): once the game is past lobby, nobody
+// reads it again, so there's nothing to reset between rounds.
+async function setReady(uid: string, { gameId, ready }: any) {
+  if (typeof ready !== 'boolean') return fail('ready must be a boolean');
+
+  const { data: game } = await admin.from('kout_games').select('status').eq('id', gameId).single();
+  if (!game) return fail('no such game', 404);
+  if (game.status !== 'lobby') return fail('ready only matters before the game starts');
+
+  const { data: seat } = await admin
+    .from('kout_seats').select('seat')
+    .eq('game_id', gameId).eq('user_id', uid).maybeSingle();
+  if (!seat) return fail('you hold no seat here', 403);
+
+  const { error } = await admin.from('kout_seats')
+    .update({ ready }).eq('game_id', gameId).eq('seat', seat.seat);
+  if (error) return dbFail('set ready', error);
+
+  return json({ ok: true });
 }
 
 async function startRound(uid: string, { gameId }: any) {
@@ -199,6 +223,13 @@ async function startRound(uid: string, { gameId }: any) {
   const { data: seats } = await admin
     .from('kout_seats').select('*').eq('game_id', gameId).order('seat');
   if (!seats || seats.some((s) => !s.user_id)) return fail('every seat must be claimed');
+  // Ready only gates the FIRST deal — between rounds everyone is already
+  // sitting there playing, so re-confirming would be friction with no
+  // purpose. game.status here is still 'lobby' or 'round_end' (checked
+  // above); only 'lobby' means nobody has been dealt in yet.
+  if (game.status === 'lobby' && seats.some((s) => !s.ready)) {
+    return fail('every player must be ready');
+  }
 
   // dealHands throws rather than emit a corrupt deal — see koutRules.js.
   const hands = dealHands(game.seat_count, secureRng);

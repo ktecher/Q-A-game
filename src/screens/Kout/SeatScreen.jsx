@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ensureSession, claimSeat, peekGame, placeBid, setHukm, playCard } from '../../lib/koutClient';
+import { ensureSession, claimSeat, peekGame, setReady as setSeatReady, placeBid, setHukm, playCard } from '../../lib/koutClient';
 import { useKoutGame } from '../../lib/useKoutGame';
 import { suitLabelAr } from '../../lib/koutCards';
 import { MIN_BID, MAX_BID, PASS, teamOf, scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
@@ -260,16 +260,36 @@ export default function SeatScreen() {
       <StatusStrip game={game} />
 
       <div className="flex-1 flex flex-col items-center justify-center" style={{ padding: 20, gap: 16 }}>
-        {game.status === 'lobby' && (
-          <>
-            <p className="font-ar-body font-bold text-center" style={{ fontSize: 24, color: 'var(--gold-ink)' }}>
-              بانتظار المضيف
-            </p>
-            <p className="font-en-body" style={{ fontSize: 10, color: 'var(--muted)' }} lang="en">
-              {seats.filter((s) => s.user_id).length}/{game.seat_count} SEATED
-            </p>
-          </>
-        )}
+        {game.status === 'lobby' && (() => {
+          const mySeatRow = seats.find((s) => s.seat === mySeat);
+          const iAmReady = Boolean(mySeatRow?.ready);
+          const readyCount = seats.filter((s) => s.ready).length;
+          return (
+            <>
+              <p className="font-ar-body font-bold text-center" style={{ fontSize: 24, color: 'var(--gold-ink)' }}>
+                بانتظار المضيف
+              </p>
+              <p className="font-en-body" style={{ fontSize: 10, color: 'var(--muted)' }} lang="en">
+                {seats.filter((s) => s.user_id).length}/{game.seat_count} SEATED · {readyCount}/{game.seat_count} READY
+              </p>
+              <button
+                type="button"
+                onClick={() => guarded(() => setSeatReady(joined.gameId, !iAmReady))}
+                className="font-ar-body font-extrabold transition-transform duration-100 hover:-translate-y-1 active:translate-y-1"
+                style={{
+                  padding: '16px 40px',
+                  fontSize: 22,
+                  background: iAmReady ? 'var(--panel2)' : 'linear-gradient(var(--gold) 50%, var(--gold-d) 50%)',
+                  border: `4px solid ${iAmReady ? 'var(--green)' : 'var(--outline)'}`,
+                  color: iAmReady ? 'var(--green)' : 'var(--outline)',
+                  boxShadow: iAmReady ? 'none' : '0 6px 0 var(--gold-sh)',
+                }}
+              >
+                {iAmReady ? 'جاهز! (اضغط للإلغاء)' : 'جاهز'}
+              </button>
+            </>
+          );
+        })()}
 
         {game.status === 'bidding' && (myTurn ? (
           <>
