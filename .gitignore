@@ -56,3 +56,6 @@ preview-sword-intro.html
 # scratch for whoever is driving the session — git history is the real record.
 .serena/
 .superpowers/
+
+# Supabase CLI scratch (project link state, generated types cache)
+supabase/.temp/
