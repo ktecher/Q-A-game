@@ -22,6 +22,21 @@ function seatLabel(seats, seat) {
   return row?.name || `مقعد ${seat + 1}`;
 }
 
+// This device's own claimed seat, remembered per game so a reload (or a
+// second claim attempt after one already succeeded here) can recognise it
+// without another server round trip. Scoped to koutPlayerSupabase's own
+// identity by construction: if that session is ever gone, this key is
+// meaningless anyway (ensurePlayerSession would mint a fresh anonymous uid).
+const mySeatKey = (joinCode) => `uah.kout_seat.${joinCode}`;
+function readMySeat(joinCode) {
+  try {
+    const v = localStorage.getItem(mySeatKey(joinCode));
+    return v === null ? null : Number(v);
+  } catch {
+    return null; // private mode / storage disabled — just means no memory across reloads
+  }
+}
+
 function SeatPicker({ name, setName, seatCount, seatInfo, disabledSeats, claiming, pickedSeat, onClaim }) {
   const radius = 96;
   const center = 116;
@@ -149,7 +164,10 @@ export default function SeatScreen() {
   const [peek, setPeek] = useState(null); // { seatCount, seats: [{ seat, taken, name }] }
   const [disabledSeats, setDisabledSeats] = useState(() => new Set());
   const [claiming, setClaiming] = useState(false);
-  const [pickedSeat, setPickedSeat] = useState(null);
+  // Seeded from localStorage, not null: if this device already holds a seat
+  // in this game (an earlier successful claim), the picker should show it as
+  // theirs from the first render, before any tap this session.
+  const [pickedSeat, setPickedSeat] = useState(() => readMySeat(joinCode));
   const [joined, setJoined] = useState(null); // { gameId, seat }
   const [actionError, setActionError] = useState('');
 
@@ -223,10 +241,27 @@ export default function SeatScreen() {
     try {
       const { gameId } = await claimSeat(joinCode, seat, name.trim());
       if (!mountedRef.current) return;
+      try { localStorage.setItem(mySeatKey(joinCode), String(seat)); } catch { /* best-effort only */ }
       setJoined({ gameId, seat });
     } catch (e) {
       if (!mountedRef.current) return;
-      setPickedSeat(null); // rejected — it isn't mine, fall back to taken/idle styling
+      // This device already holds a DIFFERENT seat in this game — a genuine
+      // reclaim (e.g. a second tab), not a failure. Recover into that seat
+      // instead of stranding them on a picker where every free seat will
+      // hit the same rejection.
+      if (e.message === 'you already hold a seat in this game') {
+        const known = readMySeat(joinCode);
+        if (known !== null) {
+          try {
+            const p = await peekGame(joinCode);
+            if (mountedRef.current) {
+              setJoined({ gameId: p.gameId, seat: known });
+              return;
+            }
+          } catch { /* peek failed too — fall through to the banner below */ }
+        }
+      }
+      setPickedSeat(readMySeat(joinCode)); // back to whatever this device truly holds, if anything
       setDisabledSeats((prev) => new Set(prev).add(seat));
       setActionError(arabicKoutError(e.message));
     } finally {

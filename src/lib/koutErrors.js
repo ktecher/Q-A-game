@@ -11,7 +11,10 @@ const KOUT_ERROR_AR = {
   'no such seat': 'لا يوجد هذا المقعد في هذه اللعبة',
   'seat taken': 'هذا المقعد محجوز، اختر مقعدًا آخر',
   'game already started': 'اللعبة بدأت بالفعل',
-  'you already hold a seat in this game': 'لديك مقعد بالفعل في هذه اللعبة',
+  // Not a failure — this device is already seated in this game (e.g. a
+  // second tab). SeatScreen tries to recover into that seat on its own
+  // before ever showing this; it only surfaces if that recovery itself fails.
+  'you already hold a seat in this game': 'أنت جالس بالفعل في هذه اللعبة',
   'only the host starts a round': 'هذا الحساب ليس مضيف اللعبة',
   'a round is already in progress': 'الجولة جارية بالفعل',
   'every seat must be claimed': 'يجب أن يشغل كل مقعد لاعب أولاً',
