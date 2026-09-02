@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ensureSession, claimSeat, peekGame, setReady as setSeatReady, placeBid, setHukm, playCard } from '../../lib/koutClient';
+import { ensurePlayerSession, claimSeat, peekGame, setReady as setSeatReady, placeBid, setHukm, playCard } from '../../lib/koutClient';
 import { useKoutGame } from '../../lib/useKoutGame';
+import { koutPlayerSupabase } from '../../lib/koutPlayerClient';
 import { suitLabelAr } from '../../lib/koutCards';
 import { MIN_BID, MAX_BID, PASS, teamOf, scoreRound } from '../../../supabase/functions/_shared/koutRules.js';
 import { TEAM_COLOR_FALLBACK } from '../../lib/teams';
@@ -157,7 +158,7 @@ export default function SeatScreen() {
 
   useEffect(() => {
     let alive = true;
-    ensureSession()
+    ensurePlayerSession()
       .then(() => { if (alive) setReady(true); })
       .catch(() => { if (alive) setSessionError('تعذّر تسجيل الدخول، أعد فتح الرابط من جديد'); });
     return () => { alive = false; };
@@ -202,7 +203,11 @@ export default function SeatScreen() {
     return () => clearTimeout(t);
   }, [actionError]);
 
-  const { game, seats, hand, error: gameError } = useKoutGame(joined?.gameId ?? null);
+  // Player client on purpose, and it must be the same one that claimed the
+  // seat: kout_hands' policy is `user_id = auth.uid()`, evaluated against the
+  // subscriber's session for the realtime stream too. Pass the app client here
+  // and this phone is seated but never receives its own cards.
+  const { game, seats, hand, error: gameError } = useKoutGame(joined?.gameId ?? null, koutPlayerSupabase);
 
   // useKoutGame surfaces a failed kout_games/kout_seats/kout_hands query here
   // specifically so it doesn't quietly render as an empty hand (see

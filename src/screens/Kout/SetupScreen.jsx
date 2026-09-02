@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ColorSwatchPicker from '../../components/ColorSwatchPicker';
 import { TEAM_COLORS } from '../SetupScreen/constants';
-import { ensureSession, createGame } from '../../lib/koutClient';
+import { ensureHostSession, createGame } from '../../lib/koutClient';
 import { arabicKoutError } from '../../lib/koutErrors';
 
 const SEAT_COUNTS = [4, 6];
@@ -47,7 +47,7 @@ export default function SetupScreen() {
     setBusy(true);
     setError('');
     try {
-      await ensureSession();
+      await ensureHostSession();
       const teamNames = names.map((n, i) => n.trim() || DEFAULT_NAMES[i]);
       const { gameId } = await createGame(seatCount, teamNames, colors);
       navigate(`/kout/table?g=${gameId}`);

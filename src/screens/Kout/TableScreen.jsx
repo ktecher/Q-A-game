@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useKoutGame } from '../../lib/useKoutGame';
+import { supabase } from '../../lib/supabase';
 import { startRound } from '../../lib/koutClient';
 import { SUIT_GLYPH } from '../../lib/koutCards';
 import { toArabicDigits } from '../../lib/format';
@@ -45,7 +46,10 @@ export default function TableScreen() {
   const [params] = useSearchParams();
   const gameId = params.get('g');
   const navigate = useNavigate();
-  const { game, seats, loading, error } = useKoutGame(gameId);
+  // Main app client on purpose: the host reads this game as kout_games.host_id,
+  // which is the account uid `create` stored. The player client would be a
+  // stranger to this game. See koutClient.js.
+  const { game, seats, loading, error } = useKoutGame(gameId, supabase);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuError, setMenuError] = useState('');
