@@ -42,7 +42,35 @@ import { koutPlayerSupabase } from './koutPlayerClient';
  */
 const KOUT_REGION = FunctionRegion.ApSoutheast1;
 
+/* Which ensure*Session belongs to a given client. Identity is chosen by the
+   client (see the note at the top of this file), so the way to restore a
+   session is chosen the same way. */
+const ensureSessionFor = (client) =>
+  (client === koutPlayerSupabase ? ensurePlayerSession : ensureHostSession)();
+
 async function call(client, action, args = {}) {
+  /* Establish the session BEFORE invoking, every time.
+   *
+   * With no session, supabase-js sends the publishable key as the bearer
+   * token. That used to be survivable because anon keys were themselves
+   * JWTs; the `sb_publishable_...` keys are opaque strings, so GoTrue
+   * rejects them outright — observed in production as
+   *
+   *   403 bad_jwt "token is malformed: token contains an invalid number of
+   *   segments"
+   *
+   * which this function reports as 'not signed in'. It arrived twelve times
+   * in twenty-four seconds, once per tick of SeatScreen's 2s peekGame poll,
+   * because nothing re-established the session once it was gone.
+   *
+   * getSession() inside the helpers refreshes an expired access token
+   * locally and only reaches the network when it must, so the common case
+   * costs nothing. For a player it also PRESERVES the uid whenever the
+   * refresh token is still good — which matters more than the latency:
+   * a fresh anonymous sign-in would mint a new uid and strand them outside
+   * their own seat. */
+  await ensureSessionFor(client);
+
   const { data, error } = await client.functions.invoke('kout', {
     body: { action, ...args },
     region: KOUT_REGION,
