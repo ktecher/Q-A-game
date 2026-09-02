@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { FunctionRegion } from '@supabase/supabase-js';
 import { koutPlayerSupabase } from './koutPlayerClient';
 
 /* Two identities, two clients — do NOT collapse these back into one.
@@ -18,9 +19,33 @@ import { koutPlayerSupabase } from './koutPlayerClient';
 
 /* Every Kout mutation goes through the `kout` Edge Function — clients have
    read-only grants on the game tables by design (see 0010_kout.sql). */
+/* Pin every invocation to the database's own region.
+ *
+ * Supabase geo-routes an Edge Function to whichever region is nearest the
+ * CALLER, and this project's Postgres is in ap-southeast-1. Production logs
+ * showed the same game served from Zurich, Mumbai and Marseille — so one
+ * `play`, which makes 7 sequential calls to Auth and PostgREST, was paying a
+ * cross-continent round trip on every one of them: ~230 ms each, a measured
+ * p50 of 1038 ms, and traced plays as slow as 2.5 s.
+ *
+ * Pinning moves the function next to the data it spends its whole life
+ * talking to, so those 7 hops become in-region. It makes the caller's own
+ * round trip slightly worse — everyone now reaches Singapore rather than the
+ * nearest edge — and that is the trade: roughly 150 ms spent to save 1600.
+ *
+ * Must match the project's region exactly. If the database ever moves, this
+ * moves with it, or the fix silently becomes the bug it was written for.
+ *
+ * Note this makes supabase-js send an `x-region` header, which makes the
+ * browser preflight ask for it — index.ts's access-control-allow-headers
+ * must list it. Deploy the function BEFORE shipping this.
+ */
+const KOUT_REGION = FunctionRegion.ApSoutheast1;
+
 async function call(client, action, args = {}) {
   const { data, error } = await client.functions.invoke('kout', {
     body: { action, ...args },
+    region: KOUT_REGION,
   });
   if (error) throw new Error(error.message);
   if (!data?.ok) throw new Error(data?.error ?? 'kout: unknown error');

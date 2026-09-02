@@ -19,10 +19,29 @@ const admin = createClient(
 // because supabase-js sends them on every functions.invoke() call; a
 // preflight asking for a header we don't allow fails the same as a missing
 // Authorization header does.
+//
+// `x-region` is here because koutClient.js pins this function to the
+// database's region. supabase-js sets that header itself when you pass
+// `region` to invoke(), which makes it a CUSTOM header on the request, which
+// makes the browser ask permission for it in the preflight. Leave it out of
+// this list and every action fails with an opaque CORS error that names
+// neither the header nor the cause — the same trap this file already carries
+// a scar from. This list must therefore be deployed BEFORE the client starts
+// sending the header, never after.
+//
+// max-age: without it browsers use their default, which in Chrome is 5
+// seconds — and players think for longer than 5 seconds between cards, so
+// EVERY tap was paying a full extra preflight round trip to another
+// continent. 86400 is the largest value worth sending (Chrome caps it at
+// 7200, Firefox at 86400); both clamp silently rather than reject. The cost
+// of a long cache is that a future change to the two lists above takes up to
+// that long to reach a browser that has already preflighted — acceptable,
+// since the lists only change when an action's shape does.
 const cors = {
   'access-control-allow-origin': '*',
-  'access-control-allow-headers': 'authorization, apikey, content-type, x-client-info',
+  'access-control-allow-headers': 'authorization, apikey, content-type, x-client-info, x-region',
   'access-control-allow-methods': 'POST, OPTIONS',
+  'access-control-max-age': '86400',
 };
 
 const json = (body: unknown, status = 200) =>
