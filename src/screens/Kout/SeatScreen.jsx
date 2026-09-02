@@ -285,11 +285,19 @@ export default function SeatScreen() {
 
   // Every mutation funnels through here so one place turns a server refusal
   // into an inline Arabic message instead of an unhandled rejection.
+  //
+  // Returns whether the action succeeded. Still never rethrows — HandStrip
+  // depends on `await onPlay(...)` always settling — but a caller that shows
+  // something optimistically needs to know whether to keep it. The four
+  // onClick handlers below ignore the result, as React ignores any value a
+  // handler returns; only the play path reads it.
   async function guarded(fn) {
     try {
       await fn();
+      return true;
     } catch (e) {
       setActionError(arabicKoutError(e.message));
+      return false;
     }
   }
 
