@@ -480,6 +480,15 @@ export default function SeatScreen() {
           </p>
         ))}
 
+        {/* Cards are dealt BEFORE the first bid (index.ts startRound), and both
+            bidding and naming the hukm are decisions about the hand you hold —
+            made blind until now, because the strip only rendered once play
+            began. Shown to every seat, not just whoever is on turn: the others
+            are deciding what they will bid when it reaches them. */}
+        {(game.status === 'bidding' || game.status === 'hukm') && (
+          <HandStrip hand={hand} trick={[]} myTurn={false} onPlay={() => {}} readOnly />
+        )}
+
         {game.status === 'playing' && (
           <>
             <p className="font-ar-body font-bold" style={{ fontSize: 16, color: myTurn ? 'var(--gold-ink)' : 'var(--muted)' }}>

@@ -45,11 +45,16 @@ function TrickCard({ card, teamColor, name, isLead }) {
           // dark ink, fixed red. It must NOT become var(--red): that token is
           // #9B2D3A in light mode, so the card would restyle with the app
           // chrome instead of staying a real playing card.
-          background: '#F4ECD8',
+          // A joker fills its card instead of tinting a star. On this screen
+          // that matters most: it is mirrored to a TV, where 4:2:0 chroma
+          // subsampling smears a red star toward a black one but leaves a
+          // light/dark fill untouched. Same fixed inks as the card face — see
+          // the note above; these must not become theme tokens.
+          background: face.joker ? (face.red ? '#C44150' : '#1D1F20') : '#F4ECD8',
           // The frame is the attribution channel that survives a truncated
           // name — the team read never has to depend on text.
           border: `4px solid ${teamColor}`,
-          color: face.red ? '#C44150' : '#1D1F20',
+          color: face.joker ? '#F4ECD8' : face.red ? '#C44150' : '#1D1F20',
           fontSize: 56,
         }}
         lang="en"
@@ -69,7 +74,13 @@ function TrickCard({ card, teamColor, name, isLead }) {
           />
         )}
         <span>{face.rank}</span>
-        {!face.joker && <span style={{ fontSize: 52 }}>{face.glyph}</span>}
+        {face.joker ? (
+          // Spelling it out is the second, non-colour channel: which joker it
+          // is stays legible even if the fill itself is misread.
+          <span className="font-ar-body font-bold" style={{ fontSize: 20, marginTop: 6 }}>{face.jokerAr}</span>
+        ) : (
+          <span style={{ fontSize: 52 }}>{face.glyph}</span>
+        )}
       </div>
       {/* Attribution rests entirely on this line and the frame above it now
           that position no longer says who played the card, so it never

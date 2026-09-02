@@ -12,6 +12,17 @@ describe('cardFace', () => {
     expect(cardFace('JR')).toMatchObject({ joker: true, red: true });
     expect(cardFace('JB')).toMatchObject({ joker: true, red: false });
   });
+
+  // Guards the fix, not the field: `red` is a colour, and colour is exactly
+  // the channel that fails on a chroma-subsampled TV feed. If the two jokers
+  // ever again differ ONLY by `red`, this fails.
+  it('separates the two jokers by something other than colour', () => {
+    const jr = cardFace('JR');
+    const jb = cardFace('JB');
+    expect(jr.jokerAr).toBeTruthy();
+    expect(jb.jokerAr).toBeTruthy();
+    expect(jr.jokerAr).not.toBe(jb.jokerAr);
+  });
 });
 
 describe('suitLabelAr', () => {
