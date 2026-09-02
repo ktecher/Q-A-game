@@ -1,9 +1,10 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { AuthProvider } from './contexts/AuthContext';
 import { GameProvider } from './contexts/GameContext';
+import lazyRoute from './lib/lazyRoute';
 import { ThemeProvider } from './contexts/ThemeContext';
 import LandingScreen from './screens/LandingScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -19,21 +20,21 @@ import ResultsScreen from './screens/ResultsScreen';
 // The admin dashboard (CMS) is reachable only by typing /dashboard and is used
 // by admins, never by players — so it is code-split out of the main bundle and
 // loaded on demand. Keeps the player-facing initial download small.
-const Dashboard = lazy(() => import('./screens/Dashboard'));
-const OverviewPage = lazy(() => import('./screens/Dashboard/pages/OverviewPage'));
-const CategoriesPage = lazy(() => import('./screens/Dashboard/pages/CategoriesPage'));
-const QuestionsPage = lazy(() => import('./screens/Dashboard/pages/QuestionsPage'));
-const WalaKalmaPage = lazy(() => import('./screens/Dashboard/pages/WalaKalmaPage'));
-const ChallengePromptsPage = lazy(() => import('./screens/Dashboard/pages/ChallengePromptsPage'));
-const UsersPage = lazy(() => import('./screens/Dashboard/pages/UsersPage'));
-const DrawingWordsPage = lazy(() => import('./screens/Dashboard/pages/DrawingWordsPage'));
-const SettingsPage = lazy(() => import('./screens/Dashboard/pages/SettingsPage'));
+const Dashboard = lazyRoute(() => import('./screens/Dashboard'));
+const OverviewPage = lazyRoute(() => import('./screens/Dashboard/pages/OverviewPage'));
+const CategoriesPage = lazyRoute(() => import('./screens/Dashboard/pages/CategoriesPage'));
+const QuestionsPage = lazyRoute(() => import('./screens/Dashboard/pages/QuestionsPage'));
+const WalaKalmaPage = lazyRoute(() => import('./screens/Dashboard/pages/WalaKalmaPage'));
+const ChallengePromptsPage = lazyRoute(() => import('./screens/Dashboard/pages/ChallengePromptsPage'));
+const UsersPage = lazyRoute(() => import('./screens/Dashboard/pages/UsersPage'));
+const DrawingWordsPage = lazyRoute(() => import('./screens/Dashboard/pages/DrawingWordsPage'));
+const SettingsPage = lazyRoute(() => import('./screens/Dashboard/pages/SettingsPage'));
 
 // Kout — a second game mode, reachable only by the host typing /kout, so it
 // too is code-split out of the main bundle.
-const KoutSetup = lazy(() => import('./screens/Kout/SetupScreen'));
-const KoutTable = lazy(() => import('./screens/Kout/TableScreen'));
-const KoutSeat = lazy(() => import('./screens/Kout/SeatScreen'));
+const KoutSetup = lazyRoute(() => import('./screens/Kout/SetupScreen'));
+const KoutTable = lazyRoute(() => import('./screens/Kout/TableScreen'));
+const KoutSeat = lazyRoute(() => import('./screens/Kout/SeatScreen'));
 
 export default function App() {
   // Provider nesting (outer → inner): QueryClient → Theme → Auth → Game → Router. Inner providers may depend on outer ones.
