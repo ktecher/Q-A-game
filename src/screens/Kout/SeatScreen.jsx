@@ -21,7 +21,7 @@ function seatLabel(seats, seat) {
   return row?.name || `مقعد ${seat + 1}`;
 }
 
-function SeatPicker({ name, setName, seatCount, seatInfo, disabledSeats, claiming, onClaim }) {
+function SeatPicker({ name, setName, seatCount, seatInfo, disabledSeats, claiming, pickedSeat, onClaim }) {
   const radius = 96;
   const center = 116;
   const canClaim = name.trim().length > 0;
@@ -67,12 +67,13 @@ function SeatPicker({ name, setName, seatCount, seatInfo, disabledSeats, claimin
           const team = teamOf(seat);
           const occupant = seatInfo.find((s) => s.seat === seat);
           const failedHere = disabledSeats.has(seat);
+          const mine = seat === pickedSeat;
           // `taken` is advisory (from peekGame, possibly a moment stale) —
           // it dims the seat and shows who's in it, but never disables the
           // tap: the seat might be yours from before a reload, and claimSeat
           // now lets you reclaim it in any status. Only a server-confirmed
           // rejection (failedHere) or a missing name actually blocks tapping.
-          const dim = failedHere || Boolean(occupant?.taken);
+          const dim = !mine && (failedHere || Boolean(occupant?.taken));
           const blocked = failedHere || !canClaim || claiming;
           return (
             <button
@@ -86,9 +87,15 @@ function SeatPicker({ name, setName, seatCount, seatInfo, disabledSeats, claimin
                 top: y,
                 width: 68,
                 height: 68,
-                background: dim ? 'var(--cleared-bg)' : 'var(--panel)',
-                border: `4px solid ${dim ? 'var(--line)' : TEAM_COLOR_FALLBACK[team]}`,
-                color: dim ? 'var(--muted2)' : 'var(--text)',
+                // "Mine" fills solid with the outline colour so a tap reads as
+                // registered the instant it's made — the whole point being to
+                // stop the tap-around-and-hope behaviour the stale picker used
+                // to cause. Gold ink on that near-black fill is high-contrast
+                // in both themes (--outline is dark in both), unlike --text
+                // which flips and would vanish against it in light mode.
+                background: mine ? 'var(--outline)' : dim ? 'var(--cleared-bg)' : 'var(--panel)',
+                border: `4px solid ${mine ? 'var(--outline)' : dim ? 'var(--line)' : TEAM_COLOR_FALLBACK[team]}`,
+                color: mine ? 'var(--gold)' : dim ? 'var(--muted2)' : 'var(--text)',
                 boxShadow: blocked ? 'none' : '0 6px 0 var(--shadow)',
                 opacity: canClaim ? 1 : 0.6,
                 fontSize: 22,
@@ -141,6 +148,7 @@ export default function SeatScreen() {
   const [peek, setPeek] = useState(null); // { seatCount, seats: [{ seat, taken, name }] }
   const [disabledSeats, setDisabledSeats] = useState(() => new Set());
   const [claiming, setClaiming] = useState(false);
+  const [pickedSeat, setPickedSeat] = useState(null);
   const [joined, setJoined] = useState(null); // { gameId, seat }
   const [actionError, setActionError] = useState('');
 
@@ -157,15 +165,36 @@ export default function SeatScreen() {
 
   // Pre-join visibility into the real seat_count and who's already seated —
   // needs a session first, since peekGame still runs behind the same "must
-  // be signed in" gate as every other action.
+  // be signed in" gate as every other action. RLS deliberately hides
+  // kout_games/kout_seats from anyone not yet seated (0010_kout.sql), so
+  // there's no realtime channel available pre-join — poll instead. This is
+  // a handful of phones in one room, not a scaling concern, so 2s is fine.
+  // Stops as soon as this player has joined; useKoutGame takes over with
+  // real realtime from there.
   useEffect(() => {
-    if (!ready || !joinCode) return undefined;
+    if (!ready || !joinCode || joined) return undefined;
     let alive = true;
-    peekGame(joinCode)
-      .then((p) => { if (alive) setPeek(p); })
-      .catch((e) => { if (alive) setActionError(arabicKoutError(e.message)); });
-    return () => { alive = false; };
-  }, [ready, joinCode]);
+    let gotOne = false; // once we've shown real data, a dropped poll just retries quietly
+    let toldOnce = false; // ...but a poll that's never once succeeded gets exactly one banner
+
+    function poll() {
+      peekGame(joinCode)
+        .then((p) => {
+          if (!alive) return;
+          gotOne = true;
+          setPeek(p);
+        })
+        .catch((e) => {
+          if (!alive || gotOne || toldOnce) return;
+          toldOnce = true;
+          setActionError(arabicKoutError(e.message));
+        });
+    }
+
+    poll();
+    const id = setInterval(poll, 2000);
+    return () => { alive = false; clearInterval(id); };
+  }, [ready, joinCode, joined]);
 
   useEffect(() => {
     if (!actionError) return undefined;
@@ -185,12 +214,14 @@ export default function SeatScreen() {
   async function handleClaim(seat) {
     if (claiming || !name.trim()) return;
     setClaiming(true);
+    setPickedSeat(seat); // fill it immediately — the round trip is what made taps look ignored
     try {
       const { gameId } = await claimSeat(joinCode, seat, name.trim());
       if (!mountedRef.current) return;
       setJoined({ gameId, seat });
     } catch (e) {
       if (!mountedRef.current) return;
+      setPickedSeat(null); // rejected — it isn't mine, fall back to taken/idle styling
       setDisabledSeats((prev) => new Set(prev).add(seat));
       setActionError(arabicKoutError(e.message));
     } finally {
@@ -241,6 +272,7 @@ export default function SeatScreen() {
             seatInfo={peek?.seats ?? []}
             disabledSeats={disabledSeats}
             claiming={claiming}
+            pickedSeat={pickedSeat}
             onClaim={handleClaim}
           />
         )}
