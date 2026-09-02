@@ -27,13 +27,20 @@ async function call(client, action, args = {}) {
   return data;
 }
 
+/* Both ensure*Session helpers rethrow Supabase's own AuthError untouched
+   rather than repacking it as `new Error(error.message)`. The message alone
+   is not enough to tell the layers apart: a disabled "anonymous sign-ins"
+   project setting and a failing trigger on auth.users both surface here, and
+   only `status` separates them (422 vs 500). Callers still read `.message`
+   exactly as before, so this costs nothing and keeps the diagnosis. */
+
 /* Host: whatever account is already signed in owns the game. Anonymous is
    only a fallback for a host who is signed into nothing at all. */
 export async function ensureHostSession() {
   const { data } = await supabase.auth.getSession();
   if (data.session) return data.session;
   const { data: anon, error } = await supabase.auth.signInAnonymously();
-  if (error) throw new Error(error.message);
+  if (error) throw error;
   return anon.session;
 }
 
@@ -44,7 +51,7 @@ export async function ensurePlayerSession() {
   const { data } = await koutPlayerSupabase.auth.getSession();
   if (data.session) return data.session;
   const { data: anon, error } = await koutPlayerSupabase.auth.signInAnonymously();
-  if (error) throw new Error(error.message);
+  if (error) throw error;
   return anon.session;
 }
 

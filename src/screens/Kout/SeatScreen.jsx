@@ -160,6 +160,12 @@ export default function SeatScreen() {
   const joinCode = useMemo(() => window.location.hash.replace(/^#/, ''), []);
   const [ready, setReady] = useState(false);
   const [sessionError, setSessionError] = useState('');
+  // The Arabic line above tells the player what to do; this one says what
+  // actually broke. Kept separate and shown small: a sign-in failure is the
+  // one error nobody can diagnose remotely, because it happens on someone
+  // else's phone where no console is reachable. Swallowing it cost a full
+  // round of live testing against a server that could not have worked.
+  const [sessionErrorDetail, setSessionErrorDetail] = useState('');
   const [name, setName] = useState('');
   const [peek, setPeek] = useState(null); // { seatCount, seats: [{ seat, taken, name }] }
   const [disabledSeats, setDisabledSeats] = useState(() => new Set());
@@ -178,7 +184,15 @@ export default function SeatScreen() {
     let alive = true;
     ensurePlayerSession()
       .then(() => { if (alive) setReady(true); })
-      .catch(() => { if (alive) setSessionError('تعذّر تسجيل الدخول، أعد فتح الرابط من جديد'); });
+      .catch((e) => {
+        console.error('[kout] sign-in failed', e);
+        if (!alive) return;
+        setSessionError('تعذّر تسجيل الدخول، أعد فتح الرابط من جديد');
+        // status separates the layers: 422 = anonymous sign-ins disabled on
+        // the project, 500 = a trigger on auth.users raising inside the
+        // signup transaction, network error = no status at all.
+        setSessionErrorDetail([e?.message, e?.status && `(${e.status})`].filter(Boolean).join(' '));
+      });
     return () => { alive = false; };
   }, []);
 
@@ -282,7 +296,14 @@ export default function SeatScreen() {
   if (sessionError) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ padding: 24 }}>
-        <p className="font-ar-body font-bold text-center" style={{ fontSize: 20, color: 'var(--red)' }}>{sessionError}</p>
+        <div className="text-center">
+          <p className="font-ar-body font-bold" style={{ fontSize: 20, color: 'var(--red)' }}>{sessionError}</p>
+          {sessionErrorDetail && (
+            <p dir="ltr" style={{ fontSize: 12, opacity: 0.65, marginTop: 10, wordBreak: 'break-word' }}>
+              {sessionErrorDetail}
+            </p>
+          )}
+        </div>
       </div>
     );
   }
