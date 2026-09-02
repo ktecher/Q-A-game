@@ -52,12 +52,29 @@ export function AuthProvider({ children }) {
     setGuestProfile(null);
   };
 
+  /* An ANONYMOUS session is not an account.
+   *
+   * Kout's host flow signs in anonymously when nobody is signed in
+   * (koutClient.js ensureHostSession) so the game has a uid to own it — and
+   * that session lands on this, the main app client. Counted as
+   * `isAuthenticated`, it silently promoted a guest who merely opened /kout
+   * into a signed-up user: SetupScreen switches on `isGuest` to choose
+   * between the 6-stage guest preset and the full category picker, so the
+   * whole paywall came off for the price of visiting an unguarded route.
+   *
+   * Supabase marks these sessions `user.is_anonymous`. Treating them as no
+   * account at all keeps every downstream `isAuthenticated`/`isGuest` check
+   * honest without any of them having to know Kout exists. Real accounts are
+   * unaffected — `is_anonymous` is false for anyone who actually signed up.
+   */
+  const account = session?.user && !session.user.is_anonymous ? session.user : null;
+
   const value = {
     session,
-    user: session?.user ?? null,
+    user: account,
     guestProfile,
-    isAuthenticated: !!session?.user,
-    isGuest: !session && !!guestProfile,
+    isAuthenticated: !!account,
+    isGuest: !account && !!guestProfile,
     loading,
     continueAsGuest,
     signOut,
